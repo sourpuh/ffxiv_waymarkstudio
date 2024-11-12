@@ -1,0 +1,12 @@
+{
+  "Author": "sourpuh",
+  "Name": "Waymark Studio",
+  "InternalName": "WaymarkStudio",
+  "Punchline": "The Ultimate FFXIV Waymark Plugin",
+  "Description": "A total replacement for the in-game waymark editor and Waymark Preset plugin. It provides a suite of tools to make placing and loading waymark presets simple, fast, and accurate.",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "waymark",
+    "studio"
+  ]
+}
