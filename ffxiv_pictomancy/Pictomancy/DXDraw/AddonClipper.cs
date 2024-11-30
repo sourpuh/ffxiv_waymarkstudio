@@ -136,7 +136,12 @@ internal class AddonClipper
             try
             {
                 AtkUnitBase* addon = *(AtkUnitBase**)Unsafe.AsPointer(ref loadedUnitsList->Entries[i]);
-                if (addon == null || !addon->IsVisible || addon->WindowNode == null || addon->Scale == 0)
+                if (addon == null
+                    || !addon->IsVisible
+                    || addon->WindowNode == null
+                    || addon->Scale == 0
+                    || addon->RootNode == null
+                    || !addon->RootNode->IsVisible())
                 {
                     continue;
                 }
@@ -577,10 +582,11 @@ internal class AddonClipper
         ClipAtkNodeDiamond(addon->UldManager.NodeList[13], scale: _diamondScale);
         ClipAtkNodeDiamond(addon->UldManager.NodeList[14], scale: _diamondScale);
         ClipAtkNodeCircle(addon->UldManager.NodeList[5], scale: _gaugeTextScale);
+        ClipAtkNodeRectangle(addon->UldManager.NodeList[16]->GetAsAtkComponentNode()->Component->UldManager.NodeList[0], scale: _resourceBarScale);
+        ClipAtkNodeCircle(addon->UldManager.NodeList[17], scale: _gaugeTextScale);
     }
     private unsafe void ClipMch()
     {
-
         var addon = GetVisibleAddonOrNull("JobHudMCH0", 10);
         if (addon == null) return;
         ClipAtkNodeRectangle(addon->UldManager.NodeList[3]->GetAsAtkComponentNode()->Component->UldManager.NodeList[0], scale: _resourceBarScale);

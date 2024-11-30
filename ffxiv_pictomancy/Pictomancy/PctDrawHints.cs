@@ -1,4 +1,4 @@
-namespace Pictomancy;
+﻿namespace Pictomancy;
 
 ///
 /// <summary>
@@ -20,6 +20,7 @@ public record struct PctDrawHints(
     AlphaBlendMode alphaBlendMode = AlphaBlendMode.Add,
     bool clipNativeUI = true)
 {
+    // Surely there's a better way to do this?
     public PctDrawHints() : this(false, false, true, 255, AlphaBlendMode.Add, true) { }
 
     public bool DrawInCutscene => drawInCutscene;

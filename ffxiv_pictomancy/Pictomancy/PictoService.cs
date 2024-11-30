@@ -1,5 +1,4 @@
-using Dalamud.Game;
-using Dalamud.Game.ClientState.Conditions;
+﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -15,9 +14,7 @@ public class PictoService
     [PluginService] public static IDalamudPluginInterface PluginInterface { get; private set; }
     [PluginService] public static IGameGui GameGui { get; private set; }
     [PluginService] public static ICondition Condition { get; private set; }
-    [PluginService] public static ISigScanner SigScanner { get; private set; }
     [PluginService] public static IPluginLog Log { get; private set; }
-    [PluginService] public static IAddonLifecycle AddonLifecycle { get; private set; }
 
     private static DXRenderer _renderer;
     private static AddonClipper _addonClipper;

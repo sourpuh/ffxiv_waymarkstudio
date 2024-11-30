@@ -41,13 +41,10 @@ public class PctDrawList : IDisposable
 
     public void Dispose()
     {
-        //PictoService.Log.Error("[Pictomancy] Dispose " + PictoService.Hints.AutoDraw);
         if (PictoService.DrawList == this) PictoService.DrawList = null;
         if (!PictoService.Hints.AutoDraw) return;
 
-        //PictoService.Log.Error("[Pictomancy] Disposing");
         PctTexture texture = DrawToTexture();
-        //PictoService.Log.Error("[Pictomancy] Texture " + texture.textureId);
         _drawList.AddImage(
             texture.TextureId,
             ImGuiHelpers.MainViewport.Pos,
