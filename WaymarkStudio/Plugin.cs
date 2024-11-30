@@ -6,7 +6,6 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using Lumina.Excel.Sheets;
-using System;
 using WaymarkStudio.Windows;
 
 
@@ -91,15 +90,9 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnTerritoryChange(ushort mapId)
     {
-        try
-        {
-            TerritoryType territory = DataManager.GetExcelSheet<TerritoryType>().GetRow(mapId);
+        if (DataManager.GetExcelSheet<TerritoryType>().TryGetRow(mapId, out var territory))
             WaymarkManager.OnTerritoryChange(territory);
-        }
-        catch (ArgumentOutOfRangeException e)
-        {
-            Log.Error(e.ToString());
-        }
+
 #if DEBUG
         if (EventFramework.GetCurrentContentType() == FFXIVClientStructs.FFXIV.Client.Game.Event.ContentType.Party)
         {

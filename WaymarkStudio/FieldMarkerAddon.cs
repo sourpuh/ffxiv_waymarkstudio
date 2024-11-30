@@ -13,34 +13,31 @@ namespace WaymarkStudio;
 public unsafe class FieldMarkerAddon : IDisposable
 {
     private readonly Hook<AgentFieldMarker.Delegates.Show>? show;
-    private readonly Hook<AgentFieldMarker.Delegates.Hide>? hide;
 
     int lastHover = -1;
 
     public FieldMarkerAddon()
     {
-        //show ??= Plugin.Hooker.HookFromAddress<AgentFieldMarker.Delegates.Show>((nint)AgentFieldMarker.Instance()->VirtualTable->Show, OnShow);
-        //hide ??= Plugin.Hooker.HookFromAddress<AgentFieldMarker.Delegates.Hide>((nint)AgentFieldMarker.Instance()->VirtualTable->Hide, OnHide);
+        show ??= Plugin.Hooker.HookFromAddress<AgentFieldMarker.Delegates.Show>((nint)AgentFieldMarker.Instance()->VirtualTable->Show, OnShow);
+        show.Enable();
 
         Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "FieldMarker", AddonPostDraw);
     }
     public void Dispose()
     {
-        //show?.Dispose();
-        //hide?.Dispose();
+        show?.Disable();
+        show?.Dispose();
+
         Plugin.AddonLifecycle.UnregisterListener(AddonPostDraw);
     }
     public void OnShow(AgentFieldMarker* thisPtr)
     {
-        Plugin.Chat.Print("show");
         if (thisPtr == null)
             return;
-    }
-    public void OnHide(AgentFieldMarker* thisPtr)
-    {
-        Plugin.Chat.Print("hide");
-        if (thisPtr == null)
-            return;
+        if (Plugin.Config.ReplaceNativeUi)
+            Plugin.StudioWindow.Toggle();
+        else
+            show!.Original(thisPtr);
     }
     public void AddonPostDraw(AddonEvent type, AddonArgs args)
     {

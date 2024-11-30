@@ -20,18 +20,12 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-        ImGui.Text("Did you think there would be something here?");
-        /*
-        if (ImGui.BeginTable("ConfigTable", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame))
+        bool needSave = false;
+        needSave |= ImGui.Checkbox("Replace Native Waymarks UI", ref Configuration.ReplaceNativeUi);
+        // needSave |= ImGui.Checkbox("Share Criterion Normal and Savage Presets", ref Configuration.ShareAcrossDifficulties);
+        if (needSave)
         {
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
-
-            if (ImGui.Checkbox("Share Criterion Normal and Savage Presets", ref Configuration.ShareAcrossDifficulties))
-            {
-            }
-            ImGui.EndTable();
+            Configuration.Save();
         }
-        */
     }
 }

@@ -20,7 +20,7 @@ public class Configuration : IPluginConfiguration
     public bool SnapXZToGrid = true;
     public bool PlaceRealIfPossible = false;
     public bool ShareAcrossDifficulties = true;
-
+    public bool ReplaceNativeUi = true;
     public List<WaymarkPreset> SavedPresets { get; set; } = [];
 
     public void Save()
