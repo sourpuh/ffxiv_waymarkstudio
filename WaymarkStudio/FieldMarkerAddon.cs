@@ -12,9 +12,10 @@ namespace WaymarkStudio;
  */
 public unsafe class FieldMarkerAddon : IDisposable
 {
+    const uint Pages = 6;
+    const uint EntriesPerPage = 5;
     private readonly Hook<AgentFieldMarker.Delegates.Show>? show;
-
-    int lastHover = -1;
+    private int lastHover = -1;
 
     public FieldMarkerAddon()
     {
@@ -49,7 +50,8 @@ public unsafe class FieldMarkerAddon : IDisposable
         {
             if (thisPtr->HoveredPresetIndex >= 0)
             {
-                var gamePreset = Plugin.Storage.GetNativePreset(thisPtr->SelectedPage, (uint)thisPtr->HoveredPresetIndex);
+                uint hoveredIndex = (uint)(thisPtr->SelectedPage * EntriesPerPage + thisPtr->HoveredPresetIndex);
+                var gamePreset = Plugin.Storage.GetNativePreset(hoveredIndex);
                 Plugin.WaymarkManager.SetHoverPreview(gamePreset.ToPreset());
             }
             else

@@ -64,8 +64,9 @@ internal static class Extensions
     internal static ushort TerritoryIdForContendId(ushort contentId)
     {
         var contentSheet = Plugin.DataManager.GetExcelSheet<ContentFinderCondition>();
-        var row = contentSheet.GetRowOrDefault(contentId);
-        return (ushort)row?.TerritoryType.Value.RowId;
+        if (contentSheet.TryGetRow(contentId, out var row))
+            return (ushort)row.TerritoryType.Value.RowId;
+        return 0;
     }
 
     public static WaymarkPreset ToPreset(this FieldMarkerPreset preset, string name = "")

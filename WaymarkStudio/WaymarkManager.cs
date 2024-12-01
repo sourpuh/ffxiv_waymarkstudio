@@ -1,5 +1,4 @@
 using Dalamud.Game.ClientState.Conditions;
-using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Common.Component.BGCollision;
@@ -10,11 +9,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-
 namespace WaymarkStudio;
-
-using ContentType = FFXIVClientStructs.FFXIV.Client.Game.Event.ContentType;
-
 /**
  * Manager for drafting and interacting with native waymarks.
  */
@@ -27,19 +22,23 @@ internal class WaymarkManager
     internal CircleGuide circleGuide;
     internal ushort territoryId;
     internal ushort contentFinderId;
+    internal ContentType contentType;
     internal string mapName;
     internal Dictionary<Waymark, Vector3> placeholders = new();
     internal IReadOnlyDictionary<Waymark, Vector3> hoverPreviews = EmptyWaymarks;
     private readonly Stopwatch lastPlacementTimer;
 
     private unsafe delegate byte PlaceWaymark(MarkingController* markingController, uint marker, Vector3 wPos);
-    private readonly PlaceWaymark? placeWaymarkFn;
+    private readonly PlaceWaymark placeWaymarkFn;
 
     private unsafe delegate byte ClearWaymarks(MarkingController* markingController);
     private readonly ClearWaymarks? clearWaymarksFn;
 
     private unsafe delegate byte WaymarkSafety();
     private readonly WaymarkSafety? waymarkSafetyFn;
+
+    private unsafe delegate byte PlacePreset(MarkingController* markingController, MarkerPresetPlacement* placement);
+    private readonly PlacePreset? placePresetFn;
 
     internal WaymarkPreset Preset { get { return new(mapName, territoryId, contentFinderId, new Dictionary<Waymark, Vector3>(placeholders)); } }
     internal IReadOnlyDictionary<Waymark, Vector3> Placeholders => placeholders;
@@ -53,6 +52,7 @@ internal class WaymarkManager
         placeWaymarkFn = Marshal.GetDelegateForFunctionPointer<PlaceWaymark>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 0F 85 ?? ?? ?? ?? EB 23"));
         clearWaymarksFn = Marshal.GetDelegateForFunctionPointer<ClearWaymarks>(Plugin.SigScanner.ScanText("41 55 48 83 EC 50 4C 8B E9"));
         waymarkSafetyFn = Marshal.GetDelegateForFunctionPointer<WaymarkSafety>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 0D B0 05"));
+        placePresetFn = Marshal.GetDelegateForFunctionPointer<PlacePreset>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 75 1B B0 01"));
     }
 
     internal void OnTerritoryChange(TerritoryType territory)
@@ -60,9 +60,11 @@ internal class WaymarkManager
         territoryId = (ushort)territory.RowId;
         mapName = territory.PlaceName.Value.Name.ExtractText();
         contentFinderId = (ushort)territory.ContentFinderCondition.RowId;
+        contentType = 0;
         if (contentFinderId != 0)
         {
             mapName = territory.ContentFinderCondition.Value.Name.ExtractText();
+            contentType = (ContentType)territory.ContentFinderCondition.Value.ContentType.RowId;
         }
         placeholders.Clear();
         hoverPreviews = EmptyWaymarks;
@@ -106,8 +108,8 @@ internal class WaymarkManager
     {
         if (Plugin.ClientState.LocalPlayer == null)
             return PlacementUnsafeReason.NoLocalPlayer;
-        if (!IsSupportedZone())
-            return PlacementUnsafeReason.UnsupportedZone;
+        if (!IsWaymarksEnabled())
+            return PlacementUnsafeReason.UnsupportedArea;
         if (Plugin.Condition[ConditionFlag.InCombat])
             return PlacementUnsafeReason.InCombat;
         if (Plugin.Condition[ConditionFlag.DutyRecorderPlayback])
@@ -166,7 +168,7 @@ internal class WaymarkManager
         await Plugin.Framework.Run(async () =>
         {
             // TODO tidy
-            while (SafePlaceWaymark(waymark, wPos))
+            while (!SafePlaceWaymark(waymark, wPos))
             {
                 await Plugin.Framework.DelayTicks(100);
                 if (territoryId != this.territoryId)
@@ -190,7 +192,7 @@ internal class WaymarkManager
         return false;
     }
 
-    internal unsafe bool IsSupportedZone()
+    internal unsafe bool IsWaymarksEnabled()
     {
         return (waymarkSafetyFn?.Invoke() ?? 0) == 0;
     }
@@ -200,6 +202,7 @@ internal class WaymarkManager
         var status = placeWaymarkFn?.Invoke(MarkingController.Instance(), (uint)waymark, wPos);
         if (status != 0)
         {
+            // return 2 too frequent
             Plugin.Chat.Print("[Report to dev] Native placement failed with status " + status);
         }
         return status == 0;
@@ -212,12 +215,21 @@ internal class WaymarkManager
 
     internal PlacementUnsafeReason DirectPlacementStatus()
     {
-        if (Plugin.ClientState.LocalPlayer == null)
-            return PlacementUnsafeReason.NoLocalPlayer;
-        if (Plugin.Condition[ConditionFlag.InCombat])
-            return PlacementUnsafeReason.InCombat;
-        if (EventFramework.GetCurrentContentType() is not ContentType.Instance)
-            return PlacementUnsafeReason.NotInInstance;
+        var status = GeneralWaymarkPlacementStatus();
+        if (status != PlacementUnsafeReason.Safe)
+            return status;
+        if (!(contentType is
+            ContentType.Dungeons
+            or ContentType.Guildhests
+            or ContentType.Trials
+            or ContentType.Raids
+            or ContentType.UltimateRaids
+            or ContentType.SavetheQueen
+            or ContentType.VCDungeonFinder
+            or ContentType.ChaoticAllianceRaid))
+            return PlacementUnsafeReason.UnsupportedContentType;
+        if (contentType is ContentType.SavetheQueen && contentFinderId is not /*DR*/760 or /*DRS*/761)
+            return PlacementUnsafeReason.UnsupportedContentType;
         if (Placeholders.Count == 0)
             return PlacementUnsafeReason.NoWaymarksPlaced;
         return PlacementUnsafeReason.Safe;
@@ -241,10 +253,18 @@ internal class WaymarkManager
             }
     }
 
-    private unsafe void UnsafeNativePlacePreset(FieldMarkerPreset preset)
+    private unsafe bool UnsafeNativePlacePreset(FieldMarkerPreset preset)
     {
         var placementStruct = preset.ToMarkerPresetPlacement();
-        MarkingController.Instance()->PlacePreset(&placementStruct);
+        var status = placePresetFn?.Invoke(MarkingController.Instance(), &placementStruct);
+        if (status != 0)
+        {
+            // 7.15 qword_1427C6F00 && (*(_BYTE *)(qword_1427C6F00 + 9) & 8) != 0
+            // 7.05 qword_1427316F0 && (*(_BYTE *)(qword_1427316F0 + 9) & 8) != 0
+            // returns 6 unsupported area?
+            Plugin.Chat.Print("[Report to dev] Native preset placement failed with status " + status);
+        }
+        return status == 0;
     }
 
     internal enum PlacementUnsafeReason
@@ -253,11 +273,11 @@ internal class WaymarkManager
         NoLocalPlayer,
         InCombat,
         DutyRecorderPlayback,
-        NotInInstance,
+        UnsupportedContentType,
         NoWaymarksPlaced,
         TooFar,
         NotGrounded,
         TooFrequent,
-        UnsupportedZone,
+        UnsupportedArea,
     }
 }

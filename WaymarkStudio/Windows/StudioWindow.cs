@@ -21,7 +21,7 @@ internal class StudioWindow : Window, IDisposable
     internal StudioWindow()
         : base("Waymark Studio", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
-        Size = new(310, 440);
+        Size = new(560, 505);
         SizeCondition = ImGuiCond.Once;
         SizeConstraints = new WindowSizeConstraints
         {
@@ -39,13 +39,13 @@ internal class StudioWindow : Window, IDisposable
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
             if (ImGui.CollapsingHeader("Draft", ImGuiTreeNodeFlags.DefaultOpen))
-                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsSupportedZone()))
+                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
                     DrawDraftSection();
 
             ImGui.Spacing();
 
             if (ImGui.CollapsingHeader("Guide", ImGuiTreeNodeFlags.DefaultOpen))
-                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsSupportedZone()))
+                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
                     DrawGuideSection();
 
             ImGui.Spacing();
@@ -64,7 +64,7 @@ internal class StudioWindow : Window, IDisposable
         ImGui.Checkbox("Place real marker if possible", ref Plugin.Config.PlaceRealIfPossible);
         ImGui.Checkbox("Snap to grid", ref Plugin.Config.SnapXZToGrid);
 
-        using (ImRaii.Disabled(!Plugin.WaymarkManager.IsSupportedZone()))
+        using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
         {
             WaymarkButton(Waymark.A); ImGui.SameLine();
             WaymarkButton(Waymark.B); ImGui.SameLine();
@@ -239,20 +239,12 @@ internal class StudioWindow : Window, IDisposable
 
             var presets = Plugin.Config.SavedPresets;
             deleteIndex = -1;
-            int i;
-            for (i = 0; i < presets.Count; i++)
-            {
-                var preset = presets[i];
-                if (preset.TerritoryId == Plugin.WaymarkManager.territoryId)
-                {
-                    DrawPresetRow(i, preset);
-                }
-            }
+
+            foreach ((var i, var preset) in Plugin.Storage.SavedPresets(Plugin.WaymarkManager.territoryId))
+                DrawPresetRow(i, preset);
+
             if (deleteIndex >= 0)
-            {
-                presets.RemoveAt(deleteIndex);
-                Plugin.Config.Save();
-            }
+                Plugin.Storage.DeleteSavedPreset(deleteIndex);
 
             if (Plugin.WaymarkManager.contentFinderId > 0)
             {
@@ -260,9 +252,7 @@ internal class StudioWindow : Window, IDisposable
                 ImGui.TableNextColumn();
                 ImGui.Text($"\nNative Presets");
                 foreach ((var j, var nativePreset) in Plugin.Storage.NativePresets(Plugin.WaymarkManager.contentFinderId))
-                {
-                    DrawPresetRow(i++, nativePreset.ToPreset($"{j + 1}. Game Preset"), isReadOnly: true);
-                }
+                    DrawPresetRow(j, nativePreset.ToPreset($"{j + 1}. Game Preset"), isReadOnly: true);
             }
             ImGui.EndTable();
         }
