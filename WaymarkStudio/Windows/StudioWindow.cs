@@ -21,7 +21,7 @@ internal class StudioWindow : Window, IDisposable
     internal StudioWindow()
         : base("Waymark Studio", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
-        Size = new(560, 505);
+        Size = new(575, 480);
         SizeCondition = ImGuiCond.Once;
         SizeConstraints = new WindowSizeConstraints
         {
@@ -140,7 +140,7 @@ internal class StudioWindow : Window, IDisposable
         {
             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Save, "Save Draft"))
             {
-                var preset = Plugin.WaymarkManager.Preset;
+                var preset = Plugin.WaymarkManager.DraftPreset;
                 preset.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(Plugin.WaymarkManager.territoryId) + 1}";
                 Plugin.Config.SavedPresets.Add(preset);
                 Plugin.Config.Save();
@@ -152,19 +152,9 @@ internal class StudioWindow : Window, IDisposable
         {
             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkedAlt, "Place Draft"))
             {
-                Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.Preset);
+                Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.DraftPreset);
             }
             HoverTooltip("Replace draft markers with real markers\nTBD how existing waymarks should be treated");
-        }
-        using (ImRaii.Disabled(Plugin.WaymarkManager.Waymarks.Count == 0))
-        {
-            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkerAlt, "Import markers"))
-            {
-                foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(w, p);
-                Plugin.WaymarkManager.NativeClearWaymarks();
-            }
-            HoverTooltip("Replace real markers with draft markers");
         }
     }
 
@@ -235,6 +225,31 @@ internal class StudioWindow : Window, IDisposable
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
             ImGui.Text($"{Plugin.WaymarkManager.mapName}");
+            var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
+            if (currentMarkers.MarkerPositions.Count > 0)
+            {
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.Save))
+                {
+                    Plugin.Config.SavedPresets.Add(currentMarkers);
+                    Plugin.Config.Save();
+                }
+                HoverTooltip("Save markers to presets");
+                ImGui.SameLine();
+                TextActiveWaymarks(currentMarkers);
+                ImGui.SameLine();
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.MapMarkerAlt))
+                {
+                    foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
+                        Plugin.WaymarkManager.PlaceWaymarkPlaceholder(w, p);
+                }
+                HoverTooltip("Import markers as draft");
+                ImGui.SameLine();
+                if (ImGuiComponents.IconButton(FontAwesomeIcon.Times))
+                {
+                    Plugin.WaymarkManager.NativeClearWaymarks();
+                }
+                HoverTooltip("Clear Waymarks");
+            }
             ImGui.Text("Saved Presets");
 
             var presets = Plugin.Config.SavedPresets;

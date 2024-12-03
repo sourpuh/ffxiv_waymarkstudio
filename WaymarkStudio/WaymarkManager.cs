@@ -40,7 +40,9 @@ internal class WaymarkManager
     private unsafe delegate byte PlacePreset(MarkingController* markingController, MarkerPresetPlacement* placement);
     private readonly PlacePreset? placePresetFn;
 
-    internal WaymarkPreset Preset { get { return new(mapName, territoryId, contentFinderId, new Dictionary<Waymark, Vector3>(placeholders)); } }
+    internal WaymarkPreset DraftPreset { get { return new(mapName, territoryId, contentFinderId, new Dictionary<Waymark, Vector3>(placeholders)); } }
+    internal WaymarkPreset WaymarkPreset { get { return new(mapName, territoryId, contentFinderId, new Dictionary<Waymark, Vector3>(Waymarks)); } }
+
     internal IReadOnlyDictionary<Waymark, Vector3> Placeholders => placeholders;
     internal IReadOnlyDictionary<Waymark, Vector3> HoverPreviews => hoverPreviews;
     internal unsafe IReadOnlyDictionary<Waymark, Vector3> Waymarks => MarkingController.Instance()->ActiveMarkers();
