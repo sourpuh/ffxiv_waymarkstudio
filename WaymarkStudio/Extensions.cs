@@ -5,13 +5,14 @@ using ImGuiNET;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace WaymarkStudio;
 internal static class Extensions
 {
-    static bool IsBitSet(byte b, int pos)
+    internal static bool IsBitSet(byte b, int pos)
     {
         return (b & (1 << pos)) != 0;
     }
@@ -114,5 +115,16 @@ internal static class Extensions
         Vector3 edge1 = hit.V2 - hit.V1;
         Vector3 edge2 = hit.V3 - hit.V1;
         return Vector3.Normalize(Vector3.Cross(edge1, edge2));
+    }
+
+    public static void Write7BitEncodedIntSigned(this BinaryWriter writer, int value)
+    {
+        writer.Write7BitEncodedInt((value << 1) ^ (value >> 31));
+    }
+
+    public static int Read7BitEncodedIntSigned(this BinaryReader reader)
+    {
+        int value = reader.Read7BitEncodedInt();
+        return (value >>> 1) ^ -(value & 1);
     }
 }

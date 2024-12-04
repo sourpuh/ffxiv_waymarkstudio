@@ -3,6 +3,7 @@ using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 
 namespace WaymarkStudio;
@@ -50,5 +51,67 @@ public class WaymarkPreset
         var contentSheet = Plugin.DataManager.GetExcelSheet<ContentFinderCondition>();
         var row = contentSheet.GetRow(contentId);
         return (ushort)row.TerritoryType.Value.RowId;
+    }
+
+    internal unsafe byte[] Serialize()
+    {
+        using (var memoryStream = new MemoryStream())
+        {
+            using (var writer = new BinaryWriter(memoryStream))
+            {
+                writer.Write(TerritoryId);
+                writer.Write(ContentFinderConditionId);
+                // write empty bitmask to advance the offset
+                byte active = 0;
+                writer.Write(active);
+                foreach (Waymark w in Enum.GetValues<Waymark>())
+                {
+                    if (MarkerPositions.ContainsKey(w))
+                    {
+                        var index = (int)w;
+                        active |= (byte)(1 << index);
+
+                        var position = MarkerPositions[w].ToGamePresetPoint();
+                        writer.Write7BitEncodedIntSigned(position.X);
+                        writer.Write7BitEncodedIntSigned(position.Y);
+                        writer.Write7BitEncodedIntSigned(position.Z);
+                    }
+                }
+                writer.Write(Name);
+                // write filled bitmask
+                writer.Seek(4, SeekOrigin.Begin);
+                writer.Write(active);
+            }
+            return memoryStream.ToArray();
+        }
+    }
+
+    internal static WaymarkPreset Deserialize(byte[] b)
+    {
+        WaymarkPreset preset = new();
+        using (var memoryStream = new MemoryStream(b))
+        {
+            using (var reader = new BinaryReader(memoryStream))
+            {
+                preset.TerritoryId = reader.ReadUInt16();
+                preset.ContentFinderConditionId = reader.ReadUInt16();
+                byte active = reader.ReadByte();
+                foreach (Waymark w in Enum.GetValues<Waymark>())
+                {
+                    if (Extensions.IsBitSet(active, (int)w))
+                    {
+                        GamePresetPoint position = new()
+                        {
+                            X = reader.Read7BitEncodedIntSigned(),
+                            Y = reader.Read7BitEncodedIntSigned(),
+                            Z = reader.Read7BitEncodedIntSigned()
+                        };
+                        preset.MarkerPositions.Add(w, position.ToWorldPosition());
+                    }
+                }
+                preset.Name = reader.ReadString();
+            }
+        }
+        return preset;
     }
 }

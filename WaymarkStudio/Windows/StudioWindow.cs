@@ -12,6 +12,7 @@ namespace WaymarkStudio.Windows;
 
 internal class StudioWindow : Window, IDisposable
 {
+    internal const string presetb64Prefix = "wms0";
     private readonly Vector2 iconButtonSize = new(30, 30);
     bool isHoverPreview = false;
     bool wasHoverPreview = false;
@@ -53,7 +54,6 @@ internal class StudioWindow : Window, IDisposable
         }
         ImGui.SameLine();
         DrawSavedPresets();
-
         if (wasHoverPreview && !isHoverPreview)
             Plugin.WaymarkManager.ClearHoverPreview();
         wasHoverPreview = isHoverPreview;
@@ -251,6 +251,19 @@ internal class StudioWindow : Window, IDisposable
                 HoverTooltip("Clear Waymarks");
             }
             ImGui.Text("Saved Presets");
+            ImGui.SameLine();
+            string clipboard = ImGui.GetClipboardText();
+            if (clipboard.StartsWith(presetb64Prefix))
+            {
+                if (ImGuiComponents.IconButton($"import_preset", FontAwesomeIcon.FileImport))
+                {
+                    var preset = WaymarkPreset.Deserialize(Convert.FromBase64String(clipboard.Substring(presetb64Prefix.Length)));
+                    Plugin.Config.SavedPresets.Add(preset);
+                    Plugin.Config.Save();
+                    ImGui.SetClipboardText("");
+                }
+                HoverTooltip("Import From clipboard");
+            }
 
             var presets = Plugin.Config.SavedPresets;
             deleteIndex = -1;
@@ -337,6 +350,12 @@ internal class StudioWindow : Window, IDisposable
                 deleteIndex = i;
             }
             HoverTooltip("Delete preset");
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton($"export_preset##{i}", FontAwesomeIcon.FileExport))
+            {
+                ImGui.SetClipboardText(presetb64Prefix + Convert.ToBase64String(preset.Serialize()));
+            }
+            HoverTooltip("Export to clipboard");
         }
     }
 
