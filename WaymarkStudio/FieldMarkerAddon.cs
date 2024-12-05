@@ -59,4 +59,9 @@ public unsafe class FieldMarkerAddon : IDisposable
             lastHover = thisPtr->HoveredPresetIndex;
         }
     }
+
+    public void Toggle()
+    {
+        show!.Original(AgentFieldMarker.Instance());
+    }
 }

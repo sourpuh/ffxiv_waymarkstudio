@@ -91,6 +91,6 @@ public sealed class Plugin : IDalamudPlugin
             WaymarkManager.OnTerritoryChange(territory);
     }
     private void DrawUI() => WindowSystem.Draw();
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => StudioWindow.Toggle();
+    public static void ToggleConfigUI() => ConfigWindow.Toggle();
+    public static void ToggleMainUI() => StudioWindow.Toggle();
 }
