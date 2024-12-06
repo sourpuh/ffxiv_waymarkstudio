@@ -229,7 +229,9 @@ internal class StudioWindow : Window, IDisposable
             ImGui.TableNextColumn();
             ImGui.Text($"{Plugin.WaymarkManager.mapName}");
             var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
-            if (currentMarkers.MarkerPositions.Count > 0)
+            TextActiveWaymarks(currentMarkers);
+            ImGui.SameLine();
+            using (ImRaii.Disabled(currentMarkers.MarkerPositions.Count == 0))
             {
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.Save))
                 {
@@ -237,8 +239,6 @@ internal class StudioWindow : Window, IDisposable
                     Plugin.Config.Save();
                 }
                 HoverTooltip("Save markers to presets");
-                ImGui.SameLine();
-                TextActiveWaymarks(currentMarkers);
                 ImGui.SameLine();
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.MapMarkerAlt))
                 {
@@ -447,13 +447,15 @@ internal class StudioWindow : Window, IDisposable
 
     internal void TextActiveWaymarks(WaymarkPreset preset)
     {
+        ImGui.SetWindowFontScale(1.2f);
         foreach (Waymark w in Enum.GetValues<Waymark>())
         {
             ImGui.PushStyleColor(ImGuiCol.Text, preset.MarkerPositions.ContainsKey(w) ? Waymarks.GetColor(w) : 0x70FFFFFF);
             ImGui.Text(Waymarks.GetName(w));
-            ImGui.SameLine();
+            if (w != Waymark.Four)
+                ImGui.SameLine();
             ImGui.PopStyleColor();
         }
-        ImGui.NewLine();
+        ImGui.SetWindowFontScale(1f);
     }
 }
