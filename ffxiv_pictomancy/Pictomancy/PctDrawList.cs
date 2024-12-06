@@ -105,7 +105,7 @@ public class PctDrawList : IDisposable
         }
     }
 
-    public void PathStroke(uint color, PctStrokeFlags flags, float thickness = 2f)
+    public void PathStroke(uint color, PctStrokeFlags flags = default, float thickness = 2f)
     {
         if (_renderer.StrokeDegraded)
         {

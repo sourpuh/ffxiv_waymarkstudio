@@ -186,7 +186,7 @@ internal class PctOverlay
                     DrawMarkers(drawList, Plugin.WaymarkManager.Placeholders);
                     DrawMarkers(drawList, Plugin.WaymarkManager.HoverPreviews);
                     if (Plugin.WaymarkManager.showGuide)
-                        Plugin.WaymarkManager.circleGuide.Draw(drawList);
+                        Plugin.WaymarkManager.guide.Draw(drawList);
                 }
             }
             catch (Exception e)

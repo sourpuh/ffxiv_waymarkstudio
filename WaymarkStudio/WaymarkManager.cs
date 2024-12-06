@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using WaymarkStudio.Guides;
+using Guide = WaymarkStudio.Guides.Guide;
 
 namespace WaymarkStudio;
 /**
@@ -19,7 +21,7 @@ internal class WaymarkManager
     private static readonly TimeSpan MinPlacementFrequency = TimeSpan.FromSeconds(0.25);
 
     internal bool showGuide = false;
-    internal CircleGuide circleGuide;
+    internal Guide guide;
     internal ushort territoryId;
     internal ushort contentFinderId;
     internal ContentType contentType;
@@ -71,7 +73,7 @@ internal class WaymarkManager
         placeholders.Clear();
         hoverPreviews = EmptyWaymarks;
         showGuide = false;
-        circleGuide = new(radius: 1);
+        guide = new CircleGuide(radius: 1);
     }
     internal void ClearPlaceholders()
     {

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using WaymarkStudio.Guides;
 
 namespace WaymarkStudio.Windows;
 
@@ -74,7 +75,7 @@ internal class StudioWindow : Window, IDisposable
             WaymarkButton(Waymark.D); ImGui.SameLine();
             using (ImRaii.Disabled(!Plugin.WaymarkManager.showGuide))
             {
-                var guide = Plugin.WaymarkManager.circleGuide;
+                var guide = Plugin.WaymarkManager.guide;
                 if (CustomTextureIconButton("circle_card", iconButtonSize))
                 {
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.A, guide.North);
@@ -103,7 +104,7 @@ internal class StudioWindow : Window, IDisposable
             WaymarkButton(Waymark.Four); ImGui.SameLine();
             using (ImRaii.Disabled(!Plugin.WaymarkManager.showGuide))
             {
-                var guide = Plugin.WaymarkManager.circleGuide;
+                var guide = Plugin.WaymarkManager.guide;
                 if (CustomTextureIconButton("square_intercard", iconButtonSize))
                 {
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.One, guide.NorthWest);
@@ -168,12 +169,12 @@ internal class StudioWindow : Window, IDisposable
         }
         else if (!Plugin.WaymarkManager.showGuide)
         {
-            if (Plugin.WaymarkManager.circleGuide.center == Vector3.Zero)
+            if (Plugin.WaymarkManager.guide.center == Vector3.Zero)
             {
                 if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.LocationCrosshairs, "Place Guide"))
                 {
                     Plugin.WaymarkManager.showGuide = true;
-                    Plugin.Overlay.StartMouseWorldPosSelecting("circleGuide");
+                    Plugin.Overlay.StartMouseWorldPosSelecting("rectangleGuide");
                 }
             }
             else if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Eye, "Show Guide"))
@@ -181,43 +182,95 @@ internal class StudioWindow : Window, IDisposable
                 Plugin.WaymarkManager.showGuide = true;
             }
         }
+        ImGui.SameLine();
+
+        if (ImGuiComponents.IconButton(FontAwesomeIcon.Bullseye))
+        {
+            var oldGuide = Plugin.WaymarkManager.guide;
+            if (oldGuide is RectangleGuide oldRectangleGuide)
+            {
+                var newGuide = new CircleGuide(Math.Max(oldRectangleGuide.HalfWidth, oldRectangleGuide.HalfDepth));
+                newGuide.center = oldRectangleGuide.center;
+                newGuide.RotationDegrees = oldRectangleGuide.RotationDegrees;
+                Plugin.WaymarkManager.guide = newGuide;
+            }
+        }
+        HoverTooltip("Circle Guide");
+        ImGui.SameLine();
+        if (ImGuiComponents.IconButton(FontAwesomeIcon.BorderAll))
+        {
+            var oldGuide = Plugin.WaymarkManager.guide;
+            if (oldGuide is CircleGuide oldCircleGuide)
+            {
+                var newGuide = new RectangleGuide(oldCircleGuide.Radius, oldCircleGuide.Radius);
+                newGuide.center = oldCircleGuide.center;
+                newGuide.RotationDegrees = oldCircleGuide.RotationDegrees;
+                Plugin.WaymarkManager.guide = newGuide;
+            }
+        }
+        HoverTooltip("Rectangle Guide");
 
         ImGui.TextUnformatted("Position:");
         ImGui.SetNextItemWidth(125f);
         ImGui.SameLine();
-        ImGui.InputFloat3("##position", ref Plugin.WaymarkManager.circleGuide.center, "%.1f");
+        ImGui.InputFloat3("##position", ref Plugin.WaymarkManager.guide.center, "%.1f");
         ImGui.SameLine();
         if (ImGuiComponents.IconButton(FontAwesomeIcon.MousePointer))
         {
             Plugin.WaymarkManager.showGuide = true;
-            Plugin.Overlay.StartMouseWorldPosSelecting("circleGuide");
+            Plugin.Overlay.StartMouseWorldPosSelecting("rectangleGuide");
         }
-        switch (Plugin.Overlay.MouseWorldPosSelection("circleGuide", ref Plugin.WaymarkManager.circleGuide.center))
+        switch (Plugin.Overlay.MouseWorldPosSelection("rectangleGuide", ref Plugin.WaymarkManager.guide.center))
         {
             case PctOverlay.SelectionResult.Canceled:
                 Plugin.WaymarkManager.showGuide = false;
                 break;
         }
 
-        ImGui.TextUnformatted("Radius:");
-        ImGui.SetNextItemWidth(120f);
-        ImGui.SameLine();
-        ImGui.SliderInt("##radius", ref Plugin.WaymarkManager.circleGuide.Radius, 1, 20);
+        if (Plugin.WaymarkManager.guide is CircleGuide circleGuide)
+        {
+            ImGui.TextUnformatted("Radius:");
+            ImGui.SetNextItemWidth(120f);
+            ImGui.SameLine();
+            ImGui.SliderInt("##radius", ref circleGuide.Radius, 1, 20);
 
-        ImGui.TextUnformatted("Spokes:");
-        ImGui.SetNextItemWidth(120f);
-        ImGui.SameLine();
-        ImGui.SliderInt("##spokes", ref Plugin.WaymarkManager.circleGuide.Spokes, 0, 16);
+            ImGui.TextUnformatted("Spokes:");
+            ImGui.SetNextItemWidth(120f);
+            ImGui.SameLine();
+            ImGui.SliderInt("##spokes", ref circleGuide.Spokes, 0, 16);
 
-        ImGui.TextUnformatted("Rings:");
-        ImGui.SetNextItemWidth(120f);
-        ImGui.SameLine();
-        ImGui.SliderInt("##rings", ref Plugin.WaymarkManager.circleGuide.Rings, 1, 10);
+            ImGui.TextUnformatted("Rings:");
+            ImGui.SetNextItemWidth(120f);
+            ImGui.SameLine();
+            ImGui.SliderInt("##rings", ref circleGuide.Rings, 1, 10);
 
-        ImGui.TextUnformatted("Rotation:");
-        ImGui.SetNextItemWidth(120f);
-        ImGui.SameLine();
-        ImGui.DragInt("##rotation", ref Plugin.WaymarkManager.circleGuide.RotationDegrees, 15, -180, 180);
+            ImGui.TextUnformatted("Rotation:");
+            ImGui.SetNextItemWidth(120f);
+            ImGui.SameLine();
+            ImGui.DragInt("##rotation", ref circleGuide.RotationDegrees, 15, -180, 180);
+        }
+        if (Plugin.WaymarkManager.guide is RectangleGuide rectangleGuide)
+        {
+            ImGui.TextUnformatted("Width:");
+            ImGui.SetNextItemWidth(120f);
+            ImGui.SameLine();
+            ImGui.SliderInt("##width", ref rectangleGuide.HalfWidth, 1, 20);
+
+            ImGui.TextUnformatted("Depth:");
+            ImGui.SetNextItemWidth(120f);
+            ImGui.SameLine();
+            ImGui.SliderInt("##depth", ref rectangleGuide.HalfDepth, 1, 20);
+
+            ImGui.TextUnformatted("Grid Size:");
+            ImGui.SetNextItemWidth(120f);
+            ImGui.SameLine();
+            ImGui.SliderInt("##gridSize", ref rectangleGuide.GridSize, 1, 5);
+
+            ImGui.TextUnformatted("Rotation:");
+            ImGui.SetNextItemWidth(120f);
+            ImGui.SameLine();
+            ImGui.DragInt("##rotation", ref rectangleGuide.RotationDegrees, 15, -180, 180);
+        }
     }
 
     internal void DrawSavedPresets()
