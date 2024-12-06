@@ -11,6 +11,8 @@ namespace WaymarkStudio;
 [Serializable]
 public class WaymarkPreset
 {
+    internal const string presetb64Prefix = "wms0";
+
     public string Name;
     public ushort TerritoryId;
     public ushort ContentFinderConditionId;
@@ -53,7 +55,7 @@ public class WaymarkPreset
         return (ushort)row.TerritoryType.Value.RowId;
     }
 
-    internal unsafe byte[] Serialize()
+    internal byte[] Serialize()
     {
         using (var memoryStream = new MemoryStream())
         {
@@ -86,6 +88,11 @@ public class WaymarkPreset
         }
     }
 
+    internal string Export()
+    {
+        return presetb64Prefix + Convert.ToBase64String(Serialize());
+    }
+
     internal static WaymarkPreset Deserialize(byte[] b)
     {
         WaymarkPreset preset = new();
@@ -113,5 +120,10 @@ public class WaymarkPreset
             }
         }
         return preset;
+    }
+
+    internal static WaymarkPreset Import(string s)
+    {
+        return Deserialize(Convert.FromBase64String(s.Substring(presetb64Prefix.Length)));
     }
 }

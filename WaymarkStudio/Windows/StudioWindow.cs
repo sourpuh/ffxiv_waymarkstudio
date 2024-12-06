@@ -12,7 +12,6 @@ namespace WaymarkStudio.Windows;
 
 internal class StudioWindow : Window, IDisposable
 {
-    internal const string presetb64Prefix = "wms0";
     private readonly Vector2 iconButtonSize = new(30, 30);
     bool isHoverPreview = false;
     bool wasHoverPreview = false;
@@ -256,11 +255,11 @@ internal class StudioWindow : Window, IDisposable
             ImGui.Text("Saved Presets");
             ImGui.SameLine();
             string clipboard = ImGui.GetClipboardText();
-            if (clipboard.StartsWith(presetb64Prefix))
+            if (clipboard.StartsWith(WaymarkPreset.presetb64Prefix))
             {
                 if (ImGuiComponents.IconButton($"import_preset", FontAwesomeIcon.FileImport))
                 {
-                    var preset = WaymarkPreset.Deserialize(Convert.FromBase64String(clipboard.Substring(presetb64Prefix.Length)));
+                    var preset = WaymarkPreset.Import(clipboard);
                     Plugin.Config.SavedPresets.Add(preset);
                     Plugin.Config.Save();
                     ImGui.SetClipboardText("");
@@ -284,6 +283,15 @@ internal class StudioWindow : Window, IDisposable
                 ImGui.Text($"\nNative Presets");
                 foreach ((var j, var nativePreset) in Plugin.Storage.NativePresets(Plugin.WaymarkManager.contentFinderId))
                     DrawPresetRow(j, nativePreset.ToPreset($"{j + 1}. Game Preset"), isReadOnly: true);
+            }
+            if (CommunityPresets.TerritoryToPreset.TryGetValue(Plugin.WaymarkManager.territoryId, out var communityPresets))
+            {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text($"\nCommunity Presets");
+                int i = 0;
+                foreach (var preset in communityPresets)
+                    DrawPresetRow(i++, preset, isReadOnly: true);
             }
             ImGui.EndTable();
         }
@@ -356,7 +364,7 @@ internal class StudioWindow : Window, IDisposable
             ImGui.SameLine();
             if (ImGuiComponents.IconButton($"export_preset##{i}", FontAwesomeIcon.FileExport))
             {
-                ImGui.SetClipboardText(presetb64Prefix + Convert.ToBase64String(preset.Serialize()));
+                ImGui.SetClipboardText(preset.Export());
             }
             HoverTooltip("Export to clipboard");
         }
