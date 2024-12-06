@@ -237,11 +237,16 @@ internal class WaymarkManager
         return PlacementUnsafeReason.Safe;
     }
 
-    public void SafePlacePreset(WaymarkPreset preset, bool clearPlaceholder = true)
+    public void SafePlacePreset(WaymarkPreset preset, bool clearPlaceholder = true, bool mergeNative = false)
     {
         if (preset.MarkerPositions.Count > 0)
             if (IsSafeToDirectPlacePreset())
             {
+                if (mergeNative)
+                    foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
+                        if (!preset.MarkerPositions.ContainsKey(w))
+                            preset.MarkerPositions.Add(w, p);
+
                 UnsafeNativePlacePreset(preset.ToGamePreset());
                 if (clearPlaceholder) Plugin.WaymarkManager.ClearPlaceholders();
             }

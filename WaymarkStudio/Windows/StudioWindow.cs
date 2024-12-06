@@ -154,9 +154,9 @@ internal class StudioWindow : Window, IDisposable
         {
             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkedAlt, "Place Draft"))
             {
-                Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.DraftPreset);
+                Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.DraftPreset, mergeNative: true);
             }
-            HoverTooltip("Replace draft markers with real markers\nTBD how existing waymarks should be treated");
+            HoverTooltip("Replace draft markers with real markers");
         }
     }
 
