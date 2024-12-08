@@ -29,6 +29,7 @@ internal class WaymarkManager
     internal Dictionary<Waymark, Vector3> placeholders = new();
     internal IReadOnlyDictionary<Waymark, Vector3> hoverPreviews = EmptyWaymarks;
     private readonly Stopwatch lastPlacementTimer;
+    private List<(Waymark waymark, Vector3 wPos)> safePlaceQueue = new();
 
     private unsafe delegate byte PlaceWaymark(MarkingController* markingController, uint marker, Vector3 wPos);
     private readonly PlaceWaymark placeWaymarkFn;
@@ -74,6 +75,7 @@ internal class WaymarkManager
         hoverPreviews = EmptyWaymarks;
         showGuide = false;
         guide = new CircleGuide(radius: 1);
+        safePlaceQueue.Clear();
     }
     internal void ClearPlaceholders()
     {
@@ -103,7 +105,7 @@ internal class WaymarkManager
         Vector3 castOrigin = point + castOffset;
         if (BGCollisionModule.RaycastMaterialFilter(castOrigin, -Vector3.UnitY, out RaycastHit hitInfo, castHeight))
         {
-            return point == hitInfo.Point.Round();
+            return point.Y == hitInfo.Point.Round().Y;
         }
         return false;
     }
@@ -164,25 +166,6 @@ internal class WaymarkManager
     internal void ClearWaymarkPlaceholder(Waymark waymark)
     {
         placeholders.Remove(waymark);
-    }
-
-    internal async void PlaceWaymarkWithRetries(Waymark waymark, Vector3 wPos, bool clearPlaceholder = true)
-    {
-        ushort territoryId = this.territoryId;
-        await Plugin.Framework.Run(async () =>
-        {
-            // TODO tidy
-            while (!SafePlaceWaymark(waymark, wPos))
-            {
-                await Plugin.Framework.DelayTicks(100);
-                if (territoryId != this.territoryId)
-                {
-                    return;
-                }
-            }
-            if (clearPlaceholder && placeholders.GetValueOrDefault(waymark) == wPos)
-                placeholders.Remove(waymark);
-        });
     }
 
     internal bool SafePlaceWaymark(Waymark waymark, Vector3 wPos)
@@ -257,9 +240,34 @@ internal class WaymarkManager
                 foreach (Waymark w in Enum.GetValues<Waymark>())
                 {
                     if (preset.MarkerPositions.TryGetValue(w, out var wPos))
-                        Plugin.WaymarkManager.PlaceWaymarkWithRetries(w, wPos, clearPlaceholder);
+                        safePlaceQueue.Add((w, wPos));
                 }
+                processSafePlaceQueue(clearPlaceholder);
             }
+    }
+
+    internal async void processSafePlaceQueue(bool clearPlaceholder = true)
+    {
+        await Plugin.Framework.Run(async () =>
+        {
+            var territoryId = this.territoryId;
+            int attempts = safePlaceQueue.Count + 2;
+            while (safePlaceQueue.Count > 0 && territoryId == this.territoryId && attempts-- > 0)
+            {
+                (Waymark waymark, Vector3 wPos) = safePlaceQueue[0];
+                safePlaceQueue.RemoveAt(0);
+                if (SafePlaceWaymark(waymark, wPos))
+                    if (clearPlaceholder && placeholders.GetValueOrDefault(waymark) == wPos)
+                        placeholders.Remove(waymark);
+                    else
+                        // requeue failure in case it was retriable
+                        // TODO actually differentiate between retriable and not
+                        safePlaceQueue.Add((waymark, wPos));
+                await Plugin.Framework.DelayTicks(50);
+            }
+            safePlaceQueue.Clear();
+            Plugin.Chat.Print("Placement complete");
+        });
     }
 
     private unsafe bool UnsafeNativePlacePreset(FieldMarkerPreset preset)
