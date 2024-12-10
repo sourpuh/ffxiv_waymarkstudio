@@ -1,17 +1,16 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
-using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Numerics;
 using WaymarkStudio.Guides;
 
 namespace WaymarkStudio.Windows;
 
-internal class StudioWindow : Window, IDisposable
+internal class StudioWindow : BaseWindow
 {
     private readonly Vector2 iconButtonSize = new(30, 30);
     bool isHoverPreview = false;
@@ -32,8 +31,6 @@ internal class StudioWindow : Window, IDisposable
         TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Config"), Icon = FontAwesomeIcon.Cog, IconOffset = new(2, 1.5f), Click = _ => Plugin.ToggleConfigUI() });
         TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Waymarks UI"), Icon = FontAwesomeIcon.Atlas, IconOffset = new(2, 1.5f), Click = _ => Plugin.FieldMarkerAddon.Toggle() });
     }
-
-    public void Dispose() { }
 
     public unsafe override void Draw()
     {
@@ -323,21 +320,24 @@ internal class StudioWindow : Window, IDisposable
             var presets = Plugin.Config.SavedPresets;
             deleteIndex = -1;
 
-            foreach ((var i, var preset) in Plugin.Storage.SavedPresets(Plugin.WaymarkManager.territoryId))
+            foreach ((var i, var preset) in Plugin.Storage.ListSavedPresets(Plugin.WaymarkManager.territoryId))
                 DrawPresetRow(i, preset);
 
             if (deleteIndex >= 0)
                 Plugin.Storage.DeleteSavedPreset(deleteIndex);
 
-            if (Plugin.WaymarkManager.contentFinderId > 0)
+            var nativePresets = Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId);
+            if (nativePresets.Any())
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGui.Text($"\nNative Presets");
-                foreach ((var j, var nativePreset) in Plugin.Storage.NativePresets(Plugin.WaymarkManager.contentFinderId))
+                foreach ((var j, var nativePreset) in nativePresets)
                     DrawPresetRow(j, nativePreset.ToPreset($"{j + 1}. Game Preset"), isReadOnly: true);
             }
-            if (CommunityPresets.TerritoryToPreset.TryGetValue(Plugin.WaymarkManager.territoryId, out var communityPresets))
+
+            var communityPresets = Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId);
+            if (communityPresets.Any())
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
@@ -367,7 +367,8 @@ internal class StudioWindow : Window, IDisposable
                 HoverTooltip(() =>
                 {
                     TextActiveWaymarks(preset);
-                    ImGui.TextUnformatted(preset.Time.ToLocalTime().ToString());
+                    if (preset.Time > DateTimeOffset.MinValue)
+                        ImGui.TextUnformatted(preset.Time.ToLocalTime().ToString());
                 });
             }
             ImGui.TableNextColumn();
@@ -450,50 +451,6 @@ internal class StudioWindow : Window, IDisposable
                 Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
                 break;
         }
-    }
-
-    internal bool TextureIconButton(uint iconId, Vector2 size)
-    {
-        var wrap = Plugin.TextureProvider.GetFromGameIcon(iconId).GetWrapOrEmpty();
-        if (wrap != null)
-            return ImGui.ImageButton(wrap.ImGuiHandle, size, Vector2.Zero, Vector2.One, 1, Vector4.Zero);
-        else
-            return ImGui.Button("##" + iconId, size);
-    }
-
-    internal bool CustomTextureIconButton(string name, Vector2 size)
-    {
-        var wrap = Plugin.TextureProvider.GetFromFile(GetCustomImagePath(name)).GetWrapOrEmpty();
-        if (wrap != null)
-            return ImGui.ImageButton(wrap.ImGuiHandle, size, Vector2.Zero, Vector2.One, 1, Vector4.Zero);
-        else
-            return ImGui.Button("##" + name, size);
-    }
-    private static string GetCustomImagePath(string name)
-    {
-        return Path.Combine(Plugin.Interface.AssemblyLocation.Directory?.FullName!, "res", $"{name}.png");
-    }
-
-    internal static void HoverTooltip(string text)
-    {
-        HoverTooltip(() => ImGui.TextUnformatted(text));
-    }
-
-    internal static void HoverTooltip(Action action)
-    {
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-        {
-            DisplayTooltip(action);
-        }
-    }
-
-    private static void DisplayTooltip(Action action)
-    {
-        ImGui.BeginTooltip();
-        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 35f);
-        action();
-        ImGui.PopTextWrapPos();
-        ImGui.EndTooltip();
     }
 
     internal static bool HoverWaymarkPreview(WaymarkPreset preset)

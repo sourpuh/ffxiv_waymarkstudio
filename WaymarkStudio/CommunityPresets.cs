@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,7 +13,8 @@ internal class CommunityPresets
     static CommunityPresets()
     {
         TerritoryToPreset = presets
-            .ConvertAll(WaymarkPreset.Import)
+            .Select(WaymarkPreset.Import)
+            .Select(w => { w.Time = DateTimeOffset.MinValue; return w; })
             .GroupBy(preset => preset.TerritoryId)
             .ToDictionary(group => group.Key, group => group.ToList());
 

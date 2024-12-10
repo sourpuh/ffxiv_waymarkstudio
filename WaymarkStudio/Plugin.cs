@@ -69,8 +69,6 @@ public sealed class Plugin : IDalamudPlugin
         FieldMarkerAddon.Dispose();
         WindowSystem.RemoveAllWindows();
 
-        ConfigWindow.Dispose();
-        StudioWindow.Dispose();
         Overlay.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
