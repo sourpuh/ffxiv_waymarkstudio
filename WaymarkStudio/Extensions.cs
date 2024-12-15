@@ -70,8 +70,29 @@ internal static class Extensions
         return 0;
     }
 
+    public static string GetName(this TerritoryType territory)
+    {
+        var mapName = territory.PlaceName.Value.Name.ExtractText();
+        if (territory.ContentFinderCondition.RowId != 0)
+        {
+            mapName = territory.ContentFinderCondition.Value.Name.ExtractText();
+        }
+        return mapName;
+    }
+
+    public static uint GetContentId(this TerritoryType territory)
+    {
+        var mapName = territory.PlaceName.Value.Name.ExtractText();
+        if (territory.ContentFinderCondition.IsValid)
+        {
+            return territory.ContentFinderCondition.RowId;
+        }
+        return 0;
+    }
+
     public static WaymarkPreset ToPreset(this FieldMarkerPreset preset, string name = "")
     {
+        if (preset.ContentFinderConditionId == 0) return new(name);
         WaymarkPreset p = new(name, TerritoryIdForContendId(preset.ContentFinderConditionId), preset.ContentFinderConditionId, null, DateTimeOffset.FromUnixTimeSeconds(preset.Timestamp));
         foreach (Waymark w in Enum.GetValues<Waymark>())
         {
