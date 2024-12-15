@@ -244,7 +244,7 @@ internal class StudioWindow : BaseWindow
             ImGui.TextUnformatted("Rotation:");
             ImGui.SetNextItemWidth(120f);
             ImGui.SameLine();
-            ImGui.DragInt("##rotation", ref circleGuide.RotationDegrees, 15, -180, 180);
+            ImguiRotationInput(ref circleGuide.RotationDegrees);
         }
         if (Plugin.WaymarkManager.guide is RectangleGuide rectangleGuide)
         {
@@ -266,7 +266,7 @@ internal class StudioWindow : BaseWindow
             ImGui.TextUnformatted("Rotation:");
             ImGui.SetNextItemWidth(120f);
             ImGui.SameLine();
-            ImGui.DragInt("##rotation", ref rectangleGuide.RotationDegrees, 15, -180, 180);
+            ImguiRotationInput(ref rectangleGuide.RotationDegrees);
         }
     }
 
@@ -477,5 +477,18 @@ internal class StudioWindow : BaseWindow
             ImGui.PopStyleColor();
         }
         ImGui.SetWindowFontScale(1f);
+    }
+
+    internal void ImguiRotationInput(ref int rotationDegrees)
+    {
+        ImGui.DragInt("##rotation", ref rotationDegrees, 15, -180, 180);
+        ImGui.SameLine();
+        if (ImGuiComponents.IconButton("rotate_guide", FontAwesomeIcon.LevelDownAlt))
+        {
+            rotationDegrees += 90;
+            if (rotationDegrees > 180)
+                rotationDegrees -= 360;
+        }
+        HoverTooltip("Rotate 90° Clockwise");
     }
 }
