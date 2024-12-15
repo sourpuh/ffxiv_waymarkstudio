@@ -453,6 +453,13 @@ internal class StudioWindow : BaseWindow
                 Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
                 break;
         }
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+        {
+            if (Plugin.Config.PlaceRealIfPossible)
+                Plugin.WaymarkManager.NativeClearWaymark(w);
+            else
+                Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
+        }
     }
 
     internal static bool HoverWaymarkPreview(WaymarkPreset preset)
