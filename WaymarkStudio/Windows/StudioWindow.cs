@@ -429,6 +429,8 @@ internal class StudioWindow : BaseWindow
         if (TextureIconButton(Waymarks.GetIconId(w), iconButtonSize))
         {
             Plugin.Overlay.StartMouseWorldPosSelecting(w);
+            if (Plugin.Config.PlaceRealIfPossible)
+                Plugin.WaymarkManager.NativeClearWaymark(w);
         }
         Vector3 pos = Plugin.WaymarkManager.placeholders.GetValueOrDefault(w);
         switch (Plugin.Overlay.MouseWorldPosSelection(w, ref pos))
