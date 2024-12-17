@@ -249,7 +249,15 @@ internal class WaymarkManager
             foreach (Waymark w in Enum.GetValues<Waymark>())
             {
                 if (preset.MarkerPositions.TryGetValue(w, out var wPos))
+                {
+                    if (Waymarks.TryGetValue(w, out var existingWPos) && wPos == existingWPos)
+                    {
+                        if (clearPlaceholder)
+                            placeholders.Remove(w);
+                        continue;
+                    }
                     safePlaceQueue.Add((w, wPos));
+                }
             }
             processSafePlaceQueue(clearPlaceholder);
         }
@@ -266,12 +274,16 @@ internal class WaymarkManager
                 (Waymark waymark, Vector3 wPos) = safePlaceQueue[0];
                 safePlaceQueue.RemoveAt(0);
                 if (SafePlaceWaymark(waymark, wPos))
+                {
                     if (clearPlaceholder && placeholders.GetValueOrDefault(waymark) == wPos)
                         placeholders.Remove(waymark);
-                    else
-                        // requeue failure in case it was retriable
-                        // TODO actually differentiate between retriable and not
-                        safePlaceQueue.Add((waymark, wPos));
+                }
+                else
+                {
+                    // requeue failure in case it was retriable
+                    // TODO actually differentiate between retriable and not
+                    safePlaceQueue.Add((waymark, wPos));
+                }
                 await Plugin.Framework.DelayTicks(50);
             }
             safePlaceQueue.Clear();
