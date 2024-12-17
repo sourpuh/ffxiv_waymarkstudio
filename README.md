@@ -8,8 +8,8 @@ Features include:
 1. Place waymark placeholders in recordings and during combat
 1. Save and Load presets outside of instances
 1. Mouse hover preset preview
-1. Download community created presets from Codex (planned)
-1. Seamlessly share waymarks between Criterion Normal and Savage (planned)
+1. Place from a suite of packaged community created presets
+1. Seamlessly share waymarks between Criterion Normal and Savage
 1. Automatically load presets when entering an instance or dungeon region (planned)
 
 WMS is still in development and may be unstable. As far as I know, the plugin does not allow you to do anything detectable or bannable, but there is no guarantee. Use at your own risk.
