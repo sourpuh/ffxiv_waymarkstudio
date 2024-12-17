@@ -183,31 +183,37 @@ internal class StudioWindow : BaseWindow
         }
         ImGui.SameLine();
 
-        if (ImGuiComponents.IconButton("circle_guide", FontAwesomeIcon.Bullseye))
+        using (ImRaii.Disabled(Plugin.WaymarkManager.guide is CircleGuide))
         {
-            var oldGuide = Plugin.WaymarkManager.guide;
-            if (oldGuide is RectangleGuide oldRectangleGuide)
+            if (ImGuiComponents.IconButton("circle_guide", FontAwesomeIcon.Bullseye))
             {
-                var newGuide = new CircleGuide(Math.Max(oldRectangleGuide.HalfWidth, oldRectangleGuide.HalfDepth));
-                newGuide.center = oldRectangleGuide.center;
-                newGuide.RotationDegrees = oldRectangleGuide.RotationDegrees;
-                Plugin.WaymarkManager.guide = newGuide;
+                var oldGuide = Plugin.WaymarkManager.guide;
+                if (oldGuide is RectangleGuide oldRectangleGuide)
+                {
+                    var newGuide = new CircleGuide(Math.Max(oldRectangleGuide.HalfWidth, oldRectangleGuide.HalfDepth));
+                    newGuide.center = oldRectangleGuide.center;
+                    newGuide.RotationDegrees = oldRectangleGuide.RotationDegrees;
+                    Plugin.WaymarkManager.guide = newGuide;
+                }
             }
+            HoverTooltip("Circle Guide");
         }
-        HoverTooltip("Circle Guide");
         ImGui.SameLine();
-        if (ImGuiComponents.IconButton("rectangle_guide", FontAwesomeIcon.BorderAll))
+        using (ImRaii.Disabled(Plugin.WaymarkManager.guide is RectangleGuide))
         {
-            var oldGuide = Plugin.WaymarkManager.guide;
-            if (oldGuide is CircleGuide oldCircleGuide)
+            if (ImGuiComponents.IconButton("rectangle_guide", FontAwesomeIcon.BorderAll))
             {
-                var newGuide = new RectangleGuide(oldCircleGuide.Radius, oldCircleGuide.Radius);
-                newGuide.center = oldCircleGuide.center;
-                newGuide.RotationDegrees = oldCircleGuide.RotationDegrees;
-                Plugin.WaymarkManager.guide = newGuide;
+                var oldGuide = Plugin.WaymarkManager.guide;
+                if (oldGuide is CircleGuide oldCircleGuide)
+                {
+                    var newGuide = new RectangleGuide(oldCircleGuide.Radius, oldCircleGuide.Radius);
+                    newGuide.center = oldCircleGuide.center;
+                    newGuide.RotationDegrees = oldCircleGuide.RotationDegrees;
+                    Plugin.WaymarkManager.guide = newGuide;
+                }
             }
+            HoverTooltip("Rectangle Guide");
         }
-        HoverTooltip("Rectangle Guide");
 
         ImGui.TextUnformatted("Position:");
         ImGui.SetNextItemWidth(125f);
