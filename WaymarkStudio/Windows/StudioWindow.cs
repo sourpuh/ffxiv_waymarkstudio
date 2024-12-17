@@ -477,16 +477,19 @@ internal class StudioWindow : BaseWindow
                     Vector2 size = new(150, ImGui.GetFrameHeight());
                     if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Edit, "Rename", size: size, defaultColor: new()))
                     {
+                        ImGui.CloseCurrentPopup();
                         renameIndex = i;
                         renamingPresetName = preset.Name;
                         renameFocus = true;
                     }
                     if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, "Delete", size: size, defaultColor: new()))
                     {
+                        ImGui.CloseCurrentPopup();
                         deleteIndex = i;
                     }
                     if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
                     {
+                        ImGui.CloseCurrentPopup();
                         ImGui.SetClipboardText(preset.Export());
                     }
                     ImGui.EndPopup();
