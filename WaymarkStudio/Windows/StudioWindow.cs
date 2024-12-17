@@ -38,6 +38,9 @@ internal class StudioWindow : BaseWindow
     public unsafe override void Draw()
     {
         isHoverPreview = false;
+
+        DrawStudio();
+        /*
         ImGui.BeginTabBar("TabBar");
         if (ImGui.BeginTabItem("Studio"))
         {
@@ -51,6 +54,7 @@ internal class StudioWindow : BaseWindow
         }
         ImGui.EndTabItem();
         ImGui.EndTabBar();
+        */
 
         if (wasHoverPreview && !isHoverPreview)
             Plugin.WaymarkManager.ClearHoverPreview();
