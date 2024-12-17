@@ -292,6 +292,7 @@ internal class StudioWindow : BaseWindow
             {
                 if (ImGuiComponents.IconButton("save_markers", FontAwesomeIcon.Save))
                 {
+                    currentMarkers.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(Plugin.WaymarkManager.territoryId) + 1}";
                     Plugin.Config.SavedPresets.Add(currentMarkers);
                     Plugin.Config.Save();
                 }
