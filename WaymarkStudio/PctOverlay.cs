@@ -63,31 +63,20 @@ internal class PctOverlay
         drawList.PathStroke(0xFFFFFFFF, new());
     }
 
+    private void DrawDebugMaterial(PctDrawList drawList, RaycastHit hit)
+    {
+        drawList.AddText(hit.Point, 0xFFFF00FF, hit.Material + "\n" + Convert.ToString((long)hit.Material, 2) + "\n" + hit.ComputeNormal(), 5);
+
+        drawList.PathLineTo(hit.Point);
+        drawList.PathLineTo(hit.Point + hit.ComputeNormal());
+        drawList.PathStroke(0xFFFFFFFF, new());
+    }
+
     public Vector3 SnapToGrid(Vector3 input)
     {
         input.X = MathF.Round(input.X);
         input.Z = MathF.Round(input.Z);
         return input;
-    }
-    internal bool ScreenToWorld(Vector2 screenPos, out Vector3 worldPos, float castHeight = 2)
-    {
-        if (Plugin.GameGui.ScreenToWorld(screenPos, out worldPos, 100))
-        {
-            // TODO this should be in waymark manager so it can snap to guide
-            if (Plugin.Config.SnapXZToGrid)
-                worldPos = SnapToGrid(worldPos);
-
-            Vector3 castOffset = new(0, castHeight / 2, 0);
-            Vector3 castOrigin = worldPos + castOffset;
-            if (BGCollisionModule.RaycastMaterialFilter(castOrigin, -Vector3.UnitY, out RaycastHit hit, castHeight))
-            {
-                var d = Vector3.Dot(hit.ComputeNormal(), Vector3.UnitY);
-                if (d < 0.7f) return false;
-                worldPos = hit.Point;
-                return true;
-            }
-        }
-        return false;
     }
 
     internal void StartMouseWorldPosSelecting(object thing)
@@ -112,9 +101,16 @@ internal class PctOverlay
         }
 
         var mousePos = ImGui.GetIO().MousePos;
-        if (ScreenToWorld(mousePos, out worldPos))
+        if (Raycaster.ScreenToWorld(mousePos, out worldPos))
         {
+            // TODO this should be in waymark manager so it can snap to guide
+            if (Plugin.Config.SnapXZToGrid)
+                worldPos = SnapToGrid(worldPos);
             worldPos = worldPos.Round();
+
+            if (!Raycaster.CheckAndSnapY(ref worldPos))
+                return SelectionResult.SelectingInvalid;
+
             // Use RMB to cancel selection if clicked with negligible drift.
             var rmbdown = UIInputData.Instance()->UIFilteredCursorInputs.MouseButtonHeldFlags.HasFlag(MouseButtonFlags.RBUTTON);
             if (rmbdown && rmb == null)

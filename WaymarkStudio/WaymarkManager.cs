@@ -111,7 +111,7 @@ internal class WaymarkManager
         const float castHeight = 1f;
         Vector3 castOffset = new(0, castHeight / 2, 0);
         Vector3 castOrigin = point + castOffset;
-        if (BGCollisionModule.RaycastMaterialFilter(castOrigin, -Vector3.UnitY, out RaycastHit hitInfo, castHeight))
+        if (Raycaster.Raycast(castOrigin, -Vector3.UnitY, out RaycastHit hitInfo, castHeight))
         {
             return point.Y == hitInfo.Point.Round().Y;
         }
@@ -160,7 +160,7 @@ internal class WaymarkManager
     {
         Vector3 castOffset = new(0, castHeight / 2, 0);
         Vector3 castOrigin = wPos + castOffset;
-        if (BGCollisionModule.RaycastMaterialFilter(castOrigin, -Vector3.UnitY, out RaycastHit hit, castHeight))
+        if (Raycaster.Raycast(castOrigin, -Vector3.UnitY, out RaycastHit hit, castHeight))
         {
             var d = Vector3.Dot(hit.ComputeNormal(), Vector3.UnitY);
             if (d >= 0.7f)
