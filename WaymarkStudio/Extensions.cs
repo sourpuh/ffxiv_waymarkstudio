@@ -12,11 +12,6 @@ using System.Runtime.CompilerServices;
 namespace WaymarkStudio;
 internal static class Extensions
 {
-    internal static bool IsBitSet(byte b, int pos)
-    {
-        return (b & (1 << pos)) != 0;
-    }
-
     // The game rounds world positions floats for waymarks to the thousandth decimal.
     internal static float Round(this float value)
     {
@@ -54,7 +49,7 @@ internal static class Extensions
         MarkerPresetPlacement placementStruct = new();
         for (int i = 0; i < 8; i++)
         {
-            placementStruct.Active[i] = IsBitSet(preset.ActiveMarkers, i);
+            placementStruct.Active[i] = preset.IsMarkerActive(i);
             placementStruct.X[i] = preset.Markers[i].X;
             placementStruct.Y[i] = preset.Markers[i].Y;
             placementStruct.Z[i] = preset.Markers[i].Z;

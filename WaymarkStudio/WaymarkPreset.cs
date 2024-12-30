@@ -63,16 +63,14 @@ public class WaymarkPreset
             {
                 writer.Write(TerritoryId);
                 writer.Write(ContentFinderConditionId);
-                // write empty bitmask to advance the offset
-                byte active = 0;
+                // write empty active mask to advance the offset
+                WaymarkMask active = default;
                 writer.Write(active);
                 foreach (Waymark w in Enum.GetValues<Waymark>())
                 {
                     if (MarkerPositions.ContainsKey(w))
                     {
-                        var index = (int)w;
-                        active |= (byte)(1 << index);
-
+                        active.Set(w, true);
                         var position = MarkerPositions[w].ToGamePresetPoint();
                         writer.Write7BitEncodedIntSigned(position.X);
                         writer.Write7BitEncodedIntSigned(position.Y);
@@ -80,7 +78,7 @@ public class WaymarkPreset
                     }
                 }
                 writer.Write(Name);
-                // write filled bitmask
+                // rewind and write real active mask
                 writer.Seek(4, SeekOrigin.Begin);
                 writer.Write(active);
             }
@@ -102,10 +100,10 @@ public class WaymarkPreset
             {
                 preset.TerritoryId = reader.ReadUInt16();
                 preset.ContentFinderConditionId = reader.ReadUInt16();
-                byte active = reader.ReadByte();
+                WaymarkMask active = reader.ReadByte();
                 foreach (Waymark w in Enum.GetValues<Waymark>())
                 {
-                    if (Extensions.IsBitSet(active, (int)w))
+                    if (active.IsSet(w))
                     {
                         GamePresetPoint position = new()
                         {
