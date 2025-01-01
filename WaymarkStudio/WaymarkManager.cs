@@ -94,6 +94,11 @@ internal class WaymarkManager
         return clearWaymarksFn.Invoke(MarkingController.Instance());
     }
 
+    public bool IsPlayerWithinTraceDistance(WaymarkPreset preset)
+    {
+        return preset.MaxDistanceTo(Plugin.ClientState.LocalPlayer.Position) < 200;
+    }
+
     public void SetHoverPreview(WaymarkPreset preset)
     {
         if (preset.TerritoryId != territoryId) return;
@@ -203,12 +208,12 @@ internal class WaymarkManager
         return status == 0;
     }
 
-    internal bool IsSafeToDirectPlacePreset()
+    internal bool IsPossibleToNativePlace()
     {
-        return DirectPlacementStatus() is PlacementUnsafeReason.Safe or PlacementUnsafeReason.NoWaymarksPlaced;
+        return NativePresetPlacementStatus() is PlacementUnsafeReason.Safe or PlacementUnsafeReason.NoWaymarksPlaced;
     }
 
-    internal PlacementUnsafeReason DirectPlacementStatus()
+    internal PlacementUnsafeReason NativePresetPlacementStatus()
     {
         var status = GeneralWaymarkPlacementStatus();
         if (status != PlacementUnsafeReason.Safe)
@@ -230,11 +235,30 @@ internal class WaymarkManager
         return PlacementUnsafeReason.Safe;
     }
 
+    public void AdjustPresetHeight(WaymarkPreset preset, float castHeight = 100000f)
+    {
+        if (preset.TerritoryId != territoryId) return;
+        if (!Plugin.WaymarkManager.IsPlayerWithinTraceDistance(preset)) return;
+        foreach (Waymark w in Enum.GetValues<Waymark>())
+        {
+            if (preset.PendingHeightAdjustment.IsSet(w)
+                && preset.MarkerPositions.TryGetValue(w, out Vector3 p))
+            {
+                if (Raycaster.CheckAndSnapY(ref p, castHeight: castHeight))
+                {
+                    preset.MarkerPositions[w] = p.Round();
+                    preset.PendingHeightAdjustment.Set(w, false);
+                }
+            }
+        }
+    }
+
     public void SafePlacePreset(WaymarkPreset preset, bool clearPlaceholder = true, bool mergeNative = false)
     {
-        if (preset.MarkerPositions.Count == 0)
-            return;
-        if (IsSafeToDirectPlacePreset())
+        if (preset.MarkerPositions.Count == 0) return;
+        if (preset.TerritoryId != territoryId) return;
+        if (preset.PendingHeightAdjustment.IsAnySet()) return;
+        if (IsPossibleToNativePlace())
         {
             if (mergeNative)
                 foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)

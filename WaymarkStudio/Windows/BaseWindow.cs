@@ -53,4 +53,18 @@ public abstract class BaseWindow : Window
         ImGui.PopTextWrapPos();
         ImGui.EndTooltip();
     }
+
+    internal void TextActiveWaymarks(WaymarkPreset preset)
+    {
+        ImGui.SetWindowFontScale(1.2f);
+        foreach (Waymark w in Enum.GetValues<Waymark>())
+        {
+            ImGui.PushStyleColor(ImGuiCol.Text, preset.MarkerPositions.ContainsKey(w) ? Waymarks.GetColor(w) : 0x70FFFFFF);
+            ImGui.Text(Waymarks.GetName(w));
+            if (w != Waymark.Four)
+                ImGui.SameLine();
+            ImGui.PopStyleColor();
+        }
+        ImGui.SetWindowFontScale(1f);
+    }
 }

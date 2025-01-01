@@ -7,7 +7,8 @@ using System.Numerics;
 namespace WaymarkStudio;
 internal static class Raycaster
 {
-    public unsafe static bool Raycast(Vector3 origin, Vector3 direction, out RaycastHit hitInfo, float maxDistance = 1000000f)
+    const bool DebugCast = false;
+    public unsafe static bool Raycast(Vector3 origin, Vector3 direction, out RaycastHit hitInfo, float maxDistance = 1120403456)
     {
         var framework = Framework.Instance();
         if (framework == null)
@@ -21,15 +22,30 @@ internal static class Raycaster
             hitInfo = default;
             return false;
         }
-        // These are the same flags used by ActionManager_UpdateAreaTargetingMode
+        // These are the same flags used by ActionManager_UpdateAreaTargetingMode for Eden 4
         var flags = stackalloc int[] { 0x8004000, 0, 0, 0 };
         var hit = new RaycastHit();
         var result = bgCollisionModule->RaycastMaterialFilter(&hit, &origin, &direction, maxDistance, 1, flags);
         hitInfo = hit;
+
+        if (DebugCast)
+        {
+            var flags2 = stackalloc int[] { 0x4000, 0, 0x4000, 0 };
+
+            RaycastHit hitInfo2;
+            var result2 = bgCollisionModule->RaycastMaterialFilter(&hitInfo2, &origin, &direction, maxDistance, 1, flags2);
+
+            if (result != result2 || hit.Point != hitInfo2.Point)
+            {
+                Plugin.Overlay.DeferDrawDebugRay(hit, hitInfo2);
+                Plugin.Chat.PrintError("MISMATCH");
+            }
+        }
+
         return result;
     }
 
-    public static unsafe bool ScreenToWorld(Vector2 screenPos, out Vector3 worldPos, float rayDistance = 100000.0f)
+    public static unsafe bool ScreenToWorld(Vector2 screenPos, out Vector3 worldPos, float rayDistance = 100000f)
     {
         // The game is only visible in the main viewport, so if the cursor is outside
         // of the game window, do not bother calculating anything

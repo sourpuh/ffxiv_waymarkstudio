@@ -42,14 +42,27 @@ internal class PctOverlay
         drawList.AddFan(worldPos, 0, 1.575f, MathF.PI / 4, MathF.PI * 2 + MathF.PI / 4, color, 4);
         drawList.AddFanFilled(worldPos, 1.575f, 2.1f, MathF.PI / 4, MathF.PI * 2 + MathF.PI / 4, glowColor, glowColor.WithAlpha(0), 4);
     }
-    private void DrawMarkers(PctDrawList drawList, IReadOnlyDictionary<Waymark, Vector3> waymarkPositions)
+    private void DrawMarkers(PctDrawList drawList, IReadOnlyDictionary<Waymark, Vector3> waymarkPositions, bool debugHeight = false)
     {
         foreach ((Waymark w, Vector3 p) in waymarkPositions)
         {
+            var pa = p;
+
+            if (debugHeight)
+            {
+                var castHeight = 100000f;
+                if (Raycaster.CheckAndSnapY(ref pa, castHeight: castHeight))
+                {
+                    drawList.PathLineTo(p + new Vector3(0, castHeight / 2, 0));
+                    drawList.PathLineTo(pa);
+                    drawList.PathStroke(0xFFFFFFFF, new());
+                }
+            }
+
             if (w is Waymark.One or Waymark.Two or Waymark.Three or Waymark.Four)
-                DrawSquareMarker(drawList, p, Waymarks.GetColor(w), Waymarks.GetGlowColor(w));
+                DrawSquareMarker(drawList, pa, Waymarks.GetColor(w), Waymarks.GetGlowColor(w));
             if (w is Waymark.A or Waymark.B or Waymark.C or Waymark.D)
-                DrawCircleMarker(drawList, p, Waymarks.GetColor(w), Waymarks.GetGlowColor(w));
+                DrawCircleMarker(drawList, pa, Waymarks.GetColor(w), Waymarks.GetGlowColor(w));
         }
     }
 
@@ -70,6 +83,18 @@ internal class PctOverlay
         drawList.PathLineTo(hit.Point);
         drawList.PathLineTo(hit.Point + hit.ComputeNormal());
         drawList.PathStroke(0xFFFFFFFF, new());
+    }
+
+    internal void DeferDrawDebugRay(RaycastHit hit1, RaycastHit hit2)
+    {
+        list.Add((PctDrawList drawList) => DrawDebugRay(drawList, hit1, hit2));
+    }
+
+    private void DrawDebugRay(PctDrawList drawList, RaycastHit hit1, RaycastHit hit2)
+    {
+        drawList.PathLineTo(hit1.Point);
+        drawList.PathLineTo(hit2.Point);
+        drawList.PathStroke(0xFF0000FF, new());
     }
 
     public Vector3 SnapToGrid(Vector3 input)

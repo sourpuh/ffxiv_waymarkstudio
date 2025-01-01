@@ -1,9 +1,11 @@
+using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 
 namespace WaymarkStudio;
@@ -19,6 +21,8 @@ public class WaymarkPreset
     public DateTimeOffset Time { get; set; } = new(DateTimeOffset.Now.UtcDateTime);
 
     public IDictionary<Waymark, Vector3> MarkerPositions;
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public WaymarkMask PendingHeightAdjustment;
 
     [JsonConstructor]
     public WaymarkPreset(string name = "", ushort territoryId = 0, ushort contentFinderConditionId = 0, IDictionary<Waymark, Vector3>? markerPositions = null, DateTimeOffset? time = null)
@@ -28,6 +32,16 @@ public class WaymarkPreset
         ContentFinderConditionId = contentFinderConditionId;
         MarkerPositions = markerPositions ?? new Dictionary<Waymark, Vector3>();
         Time = time ?? new(DateTimeOffset.Now.UtcDateTime);
+    }
+
+    public float MaxDistanceTo(Vector3 position)
+    {
+        return MarkerPositions.Values.Select(x => (position - x).Length()).Max();
+    }
+
+    public virtual FontAwesomeIcon GetIcon()
+    {
+        return PendingHeightAdjustment.IsAnySet() ? FontAwesomeIcon.Map : FontAwesomeIcon.MapMarkedAlt;
     }
 
     public FieldMarkerPreset ToGamePreset()

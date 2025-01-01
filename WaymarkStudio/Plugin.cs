@@ -12,6 +12,8 @@ namespace WaymarkStudio;
 
 public sealed class Plugin : IDalamudPlugin
 {
+    public const string Tag = "Waymark Studio";
+
     [PluginService] internal static IDalamudPluginInterface Interface { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static ICondition Condition { get; private set; } = null!;
@@ -32,7 +34,7 @@ public sealed class Plugin : IDalamudPlugin
     internal static PresetStorage Storage { get; private set; } = null!;
     internal static WaymarkManager WaymarkManager { get; private set; } = null!;
     internal static PctOverlay Overlay { get; private set; } = null!;
-    internal readonly WindowSystem WindowSystem = new("Waymark Studio");
+    internal readonly WindowSystem WindowSystem = new(Tag);
     internal static ConfigWindow ConfigWindow { get; private set; } = null!;
     internal static StudioWindow StudioWindow { get; private set; } = null!;
 

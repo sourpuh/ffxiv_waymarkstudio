@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using WaymarkStudio.FFLogs;
 using WaymarkStudio.Guides;
 
 namespace WaymarkStudio.Windows;
@@ -20,6 +21,7 @@ internal class StudioWindow : BaseWindow
     int renameIndex = -1;
     string renamingPresetName = "";
     bool renameFocus = false;
+    FFLogsImport? import;
 
     internal StudioWindow()
         : base("Waymark Studio")
@@ -40,6 +42,7 @@ internal class StudioWindow : BaseWindow
         isHoverPreview = false;
 
         DrawStudio();
+
         /*
         ImGui.BeginTabBar("TabBar");
         if (ImGui.BeginTabItem("Studio"))
@@ -316,9 +319,12 @@ internal class StudioWindow : BaseWindow
             }
             ImGui.Text("Saved Presets");
             ImGui.SameLine();
+            ImguiFFLogsImportButton();
+
             string clipboard = ImGui.GetClipboardText();
             if (clipboard.StartsWith(WaymarkPreset.presetb64Prefix))
             {
+                ImGui.SameLine();
                 if (ImGuiComponents.IconButton("import_preset", FontAwesomeIcon.FileImport))
                 {
                     var preset = WaymarkPreset.Import(clipboard);
@@ -460,22 +466,16 @@ internal class StudioWindow : BaseWindow
                 activeColor = new();
             }
 
-            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkedAlt, preset.Name + "##" + i,
+            if (ImGuiComponents.IconButtonWithText(preset.GetIcon(), preset.Name + "##" + i,
                 size: new(220, ImGui.GetFrameHeight()),
                 defaultColor: new(),
                 hoveredColor: hoveredColor,
                 activeColor: activeColor)
                 && canPlaceWaymark)
-            {
                 Plugin.WaymarkManager.SafePlacePreset(preset);
-            }
+
             isHoverPreview |= HoverWaymarkPreview(preset);
-            HoverTooltip(() =>
-            {
-                TextActiveWaymarks(preset);
-                if (preset.Time > DateTimeOffset.MinValue)
-                    ImGui.TextUnformatted($"{preset.Time.ToLocalTime()} ({(preset.Time - DateTimeOffset.Now).ToString("%d")}d)");
-            });
+            HoverTooltip(() => PresetTooltip(preset));
 
             if (!isReadOnly)
             {
@@ -557,28 +557,41 @@ internal class StudioWindow : BaseWindow
         }
     }
 
+    internal void PresetTooltip(WaymarkPreset preset)
+    {
+        if (preset.PendingHeightAdjustment.IsAnySet())
+        {
+            if (preset.TerritoryId != Plugin.WaymarkManager.territoryId)
+                ImGui.Text("(Enter area to complete import)");
+            else if (!Plugin.WaymarkManager.IsPlayerWithinTraceDistance(preset))
+                ImGui.Text("(Get closer to complete import)");
+            else
+                ImGui.Text("(Preset height adjustment failed - please report this issue)");
+        }
+        TextActiveWaymarks(preset);
+        if (preset.Time > DateTimeOffset.MinValue)
+            ImGui.TextUnformatted($"{preset.Time.ToLocalTime()} ({(preset.Time - DateTimeOffset.Now).ToString("%d")}d)");
+    }
+
     internal static bool HoverWaymarkPreview(WaymarkPreset preset)
     {
         if (ImGui.IsItemHovered())
         {
+            // Lazy solution until I add some sort of distance based trigger system.
+            // Adjust height when user hovers over the preset. Save if trace succeeded.
+            if (preset.PendingHeightAdjustment.IsAnySet())
+            {
+                Plugin.WaymarkManager.AdjustPresetHeight(preset);
+                if (!preset.PendingHeightAdjustment.IsAnySet())
+                {
+                    Plugin.Config.Save();
+                }
+                else return false;
+            }
             Plugin.WaymarkManager.SetHoverPreview(preset);
             return true;
         }
         return false;
-    }
-
-    internal void TextActiveWaymarks(WaymarkPreset preset)
-    {
-        ImGui.SetWindowFontScale(1.2f);
-        foreach (Waymark w in Enum.GetValues<Waymark>())
-        {
-            ImGui.PushStyleColor(ImGuiCol.Text, preset.MarkerPositions.ContainsKey(w) ? Waymarks.GetColor(w) : 0x70FFFFFF);
-            ImGui.Text(Waymarks.GetName(w));
-            if (w != Waymark.Four)
-                ImGui.SameLine();
-            ImGui.PopStyleColor();
-        }
-        ImGui.SetWindowFontScale(1f);
     }
 
     internal void ImguiRotationInput(ref int rotationDegrees)
@@ -592,5 +605,78 @@ internal class StudioWindow : BaseWindow
                 rotationDegrees -= 360;
         }
         HoverTooltip("Rotate 90° Clockwise");
+    }
+
+    internal void ImguiFFLogsImportButton()
+    {
+        bool focusTextInput = false;
+        ImGui.PushStyleColor(ImGuiCol.Text, 0xFFE1C864);
+        if (ImGuiComponents.IconButton("import_fflogs", FontAwesomeIcon.Gem))
+        {
+            ImGui.OpenPopup("fflogs_import_popup");
+            focusTextInput = true;
+        }
+        ImGui.PopStyleColor();
+        HoverTooltip("Import From FFLogs");
+
+        if (ImGui.BeginPopup("fflogs_import_popup"))
+        {
+            if (import == null)
+                import = FFLogsImport.New("Paste FFLogs link here");
+
+            // Url Input
+            if (focusTextInput) ImGui.SetKeyboardFocusHere(0);
+            ImGui.Text("FFLogs Report URL:");
+            ImGui.SameLine();
+            var runQueryReport = ImGui.InputText("##query_report", ref import.URL, 100, ImGuiInputTextFlags.EnterReturnsTrue);
+            if (!import.IsStarted)
+            {
+                using (ImRaii.Disabled(!import.CanQuery))
+                {
+                    if (ImGuiComponents.IconButton("query_report", FontAwesomeIcon.Check) || runQueryReport)
+                    {
+                        import.Start();
+                    }
+                }
+            }
+
+            // Fight dropdown
+            if (import.FightArray.Length > 0)
+            {
+                ImGui.Text("Fight:"); ImGui.SameLine();
+                ImGui.Combo("##fight", ref import.UserSelectedFightIndex, import.FightArray, import.FightArray.Length);
+
+                using (ImRaii.Disabled(!import.CanQuery))
+                {
+                    if (ImGuiComponents.IconButton("query_fight", FontAwesomeIcon.Check))
+                    {
+                        import.Continue();
+                    }
+                }
+            }
+
+            if (import.IsStarted)
+            {
+                if (import.Task.IsCompletedSuccessfully)
+                {
+                    var preset = import.Task.Result;
+                    Plugin.Config.SavedPresets.Add(preset);
+                    Plugin.Config.Save();
+                }
+                if (import.Task.IsFaulted)
+                {
+                    Plugin.Chat.PrintError(import.Task.Exception.Message, Plugin.Tag);
+                }
+            }
+
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton("cancel_query", FontAwesomeIcon.Times) || import.IsCompleted)
+            {
+                import = null;
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.EndPopup();
+        }
     }
 }

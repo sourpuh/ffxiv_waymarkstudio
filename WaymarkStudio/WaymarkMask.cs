@@ -1,6 +1,11 @@
+using Newtonsoft.Json;
+using System;
 namespace WaymarkStudio;
+
+[Serializable]
 public struct WaymarkMask
 {
+    [JsonProperty]
     private byte mask;
 
     public WaymarkMask(byte mask) { this.mask = mask; }
@@ -34,4 +39,5 @@ public struct WaymarkMask
     {
         Set((int)waymark, v);
     }
+    public bool IsAnySet() { return mask != 0; }
 }
