@@ -87,10 +87,12 @@ internal class WaymarkManager
     }
     internal unsafe byte NativeClearWaymark(Waymark waymark)
     {
+        if (!Waymarks.ContainsKey(waymark)) return 0;
         return clearWaymarkFn.Invoke(MarkingController.Instance(), (uint)waymark);
     }
     internal unsafe byte NativeClearWaymarks()
     {
+        if (Waymarks.Count == 0) return 0;
         return clearWaymarksFn.Invoke(MarkingController.Instance());
     }
 
@@ -181,14 +183,27 @@ internal class WaymarkManager
         placeholders.Remove(waymark);
     }
 
-    internal bool SafePlaceWaymark(Waymark waymark, Vector3 wPos)
+    internal bool SafePlaceWaymark(Waymark waymark, Vector3 wPos, bool retryError = false)
     {
         var reason = WaymarkPlacementStatus(wPos);
         if (reason == PlacementUnsafeReason.Safe)
         {
             lastPlacementTimer.Restart();
-            return UnsafeNativePlaceWaymark(waymark, wPos);
+            var status = UnsafeNativePlaceWaymark(waymark, wPos);
+            if (status == 0) return true;
+
+            // Too frequent
+            if (retryError && status == 2)
+            {
+                // TODO just place everything through the queue?
+                safePlaceQueue.Add((waymark, wPos));
+                processSafePlaceQueue(false);
+                return true;
+            }
+            if (status != 2)
+                Plugin.Chat.PrintError("Native placement failed with status " + status, Plugin.Tag);
         }
+
         return false;
     }
 
@@ -197,15 +212,9 @@ internal class WaymarkManager
         return waymarkSafetyFn.Invoke() == 0;
     }
 
-    private unsafe bool UnsafeNativePlaceWaymark(Waymark waymark, Vector3 wPos)
+    private unsafe byte UnsafeNativePlaceWaymark(Waymark waymark, Vector3 wPos)
     {
-        var status = placeWaymarkFn?.Invoke(MarkingController.Instance(), (uint)waymark, wPos);
-        if (status != 0)
-        {
-            // return 2 too frequent
-            Plugin.Chat.Print("[Report to dev] Native placement failed with status " + status);
-        }
-        return status == 0;
+        return placeWaymarkFn?.Invoke(MarkingController.Instance(), (uint)waymark, wPos) ?? 69;
     }
 
     internal bool IsPossibleToNativePlace()
@@ -324,7 +333,7 @@ internal class WaymarkManager
             // 7.15 qword_1427C6F00 && (*(_BYTE *)(qword_1427C6F00 + 9) & 8) != 0
             // 7.05 qword_1427316F0 && (*(_BYTE *)(qword_1427316F0 + 9) & 8) != 0
             // returns 6 unsupported area?
-            Plugin.Chat.Print("[Report to dev] Native preset placement failed with status " + status);
+            Plugin.Chat.PrintError("Native preset placement failed with status " + status, Plugin.Tag);
         }
         return status == 0;
     }

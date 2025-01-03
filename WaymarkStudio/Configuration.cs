@@ -21,6 +21,7 @@ public class Configuration : IPluginConfiguration
     public bool PlaceRealIfPossible = false;
     public bool CombineEquivalentDutyPresets = true;
     public bool ReplaceNativeUi = true;
+    public bool ClearNativeWhenPlacing = false;
     public List<WaymarkPreset> SavedPresets { get; set; } = [];
 
     public void Save()

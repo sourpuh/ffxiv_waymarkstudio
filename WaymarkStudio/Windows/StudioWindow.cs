@@ -524,7 +524,7 @@ internal class StudioWindow : BaseWindow
         if (TextureIconButton(Waymarks.GetIconId(w), iconButtonSize))
         {
             Plugin.Overlay.StartMouseWorldPosSelecting(w);
-            if (Plugin.Config.PlaceRealIfPossible)
+            if (Plugin.Config.ClearNativeWhenPlacing && Plugin.Config.PlaceRealIfPossible)
                 Plugin.WaymarkManager.NativeClearWaymark(w);
         }
         Vector3 pos = Plugin.WaymarkManager.placeholders.GetValueOrDefault(w);
@@ -535,7 +535,7 @@ internal class StudioWindow : BaseWindow
                 break;
             case PctOverlay.SelectionResult.Selected:
                 if (Plugin.Config.PlaceRealIfPossible
-                    && Plugin.WaymarkManager.SafePlaceWaymark(w, pos))
+                    && Plugin.WaymarkManager.SafePlaceWaymark(w, pos, retryError: true))
                 {
                     Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
                     break;
