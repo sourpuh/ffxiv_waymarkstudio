@@ -56,6 +56,7 @@ internal class FFLogsImport
             await continueSignal.WaitAsync();
         }
 
+        UserSelectedFightIndex = Math.Clamp(UserSelectedFightIndex, 0, fights.Count - 1);
         var userSelectedFight = fights[UserSelectedFightIndex];
         isQueryRunning = true;
         var preset = await Client.LoadFFLogsMarkers(reportId, userSelectedFight);
@@ -86,10 +87,16 @@ internal class FFLogsImport
             throw new ArgumentException("Invalid URI: The URI has an invalid report ID.");
 
         var query = HttpUtility.ParseQueryString(uri.Query);
-        var fightIndexStr = query.Get("fight");
+        var fightStr = query.Get("fight");
+
         var fightIndex = -1;
-        if (fightIndexStr != null)
-            fightIndex = int.Parse(fightIndexStr) - 1;
+        if (fightStr != null)
+        {
+            if (fightStr == "last")
+                fightIndex = int.MaxValue;
+            else
+                fightIndex = int.Parse(fightStr) - 1;
+        }
         return (reportId, fightIndex);
     }
 }
