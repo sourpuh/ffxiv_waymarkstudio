@@ -498,11 +498,12 @@ internal class StudioWindow : BaseWindow
                         ImGui.CloseCurrentPopup();
                         deleteIndex = i;
                     }
-                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
-                    {
-                        ImGui.CloseCurrentPopup();
-                        ImGui.SetClipboardText(preset.Export());
-                    }
+                    using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
+                        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
+                        {
+                            ImGui.CloseCurrentPopup();
+                            ImGui.SetClipboardText(preset.Export());
+                        }
                     ImGui.EndPopup();
                 }
             }
