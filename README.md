@@ -9,6 +9,7 @@ Features include:
 1. Save and Load presets outside of instances
 1. Mouse hover preset preview
 1. Place from a suite of packaged community created presets
+1. Import waymarks from FFLogs reports
 1. Seamlessly share waymarks between Criterion Normal and Savage
 1. Automatically load presets when entering an instance or dungeon region (planned)
 
