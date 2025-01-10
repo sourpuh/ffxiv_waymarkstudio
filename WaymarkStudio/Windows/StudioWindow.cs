@@ -157,7 +157,7 @@ internal class StudioWindow : BaseWindow
         {
             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkedAlt, "Place Draft"))
             {
-                Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.DraftPreset, mergeNative: true);
+                Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.DraftPreset, mergeExisting: true);
             }
             HoverTooltip("Replace draft markers with real markers");
         }
@@ -536,7 +536,7 @@ internal class StudioWindow : BaseWindow
                 break;
             case PctOverlay.SelectionResult.Selected:
                 if (Plugin.Config.PlaceRealIfPossible
-                    && Plugin.WaymarkManager.SafePlaceWaymark(w, pos, retryError: true))
+                    && Plugin.WaymarkManager.SafePlaceWaymark(w, pos))
                 {
                     Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
                     break;

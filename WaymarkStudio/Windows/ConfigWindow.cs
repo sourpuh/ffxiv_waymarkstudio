@@ -21,6 +21,8 @@ public class ConfigWindow : BaseWindow
         HoverTooltip("Clear already an placed waymark when beginning the place the same waymark.\nFor example, when you click the 'A' button to start placing it, the 'A' waymark will be removed if it's already been placed.\nThe game's default UI clears waymarks, but '/waymark' does not.");
         needSave |= ImGui.Checkbox("Combine Equivalent Duty Presets (Criterion and Savage)", ref Configuration.CombineEquivalentDutyPresets);
         HoverTooltip("Combine Criterion and Criterion Savage presets to use normal presets in savage and vice versa.\nUsing this setting will cause these presets to change which duty they belong to; this only matters if you disable the setting or share the preset to someone with it disabled.");
+        needSave |= ImGui.Checkbox("Disable World Preset Placement Safety Checks", ref Configuration.DisableWorldPresetSafetyChecks);
+        HoverTooltip("Disable distance, height, and frequency safety checks when placing presets in the open world / non-instance areas.\nWith this disabled, your preset placement will be obviously impossible; use at your own risk.");
         if (needSave)
         {
             Configuration.Save();

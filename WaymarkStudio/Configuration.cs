@@ -22,10 +22,14 @@ public class Configuration : IPluginConfiguration
     public bool CombineEquivalentDutyPresets = true;
     public bool ReplaceNativeUi = true;
     public bool ClearNativeWhenPlacing = false;
+    public bool DisableWorldPresetSafetyChecks = false;
     public List<WaymarkPreset> SavedPresets { get; set; } = [];
 
     public void Save()
     {
         Plugin.Interface.SavePluginConfig(this);
     }
+
+    [JsonIgnore]
+    public int WaymarkPlacementFrequency => DisableWorldPresetSafetyChecks ? 1 : 60;
 }
