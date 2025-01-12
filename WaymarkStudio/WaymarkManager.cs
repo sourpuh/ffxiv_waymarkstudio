@@ -28,20 +28,22 @@ internal class WaymarkManager
     internal IReadOnlyDictionary<Waymark, Vector3> hoverPreviews = EmptyWaymarks;
     private Queue<(Waymark waymark, Vector3 wPos)> safePlaceQueue = new();
 
-    private unsafe delegate byte PlaceWaymark(MarkingController* markingController, uint marker, Vector3 wPos);
-    private readonly PlaceWaymark placeWaymarkFn;
+#pragma warning disable IDE1006 // Naming Styles
+    private unsafe delegate byte PlaceWaymarkDelegate(MarkingController* markingController, uint marker, Vector3 wPos);
+    private readonly PlaceWaymarkDelegate PlaceWaymark;
 
-    private unsafe delegate byte ClearWaymark(MarkingController* markingController, uint marker);
-    private readonly ClearWaymark clearWaymarkFn;
+    private unsafe delegate byte ClearWaymarkDelegate(MarkingController* markingController, uint marker);
+    private readonly ClearWaymarkDelegate ClearWaymarkFn;
 
-    private unsafe delegate byte ClearWaymarks(MarkingController* markingController);
-    private readonly ClearWaymarks clearWaymarksFn;
+    private unsafe delegate byte ClearWaymarksDelegate(MarkingController* markingController);
+    private readonly ClearWaymarksDelegate ClearWaymarks;
 
-    private unsafe delegate byte WaymarkSafety();
-    private readonly WaymarkSafety waymarkSafetyFn;
+    private unsafe delegate byte WaymarkSafetyDelegate();
+    private readonly WaymarkSafetyDelegate WaymarkSafety;
 
-    private unsafe delegate byte PlacePreset(MarkingController* markingController, MarkerPresetPlacement* placement);
-    private readonly PlacePreset placePresetFn;
+    private unsafe delegate byte PlacePresetDelegate(MarkingController* markingController, MarkerPresetPlacement* placement);
+    private readonly PlacePresetDelegate PlacePreset;
+#pragma warning restore IDE1006 // Naming Styles
 
     internal WaymarkPreset DraftPreset { get { return new(mapName, territoryId, contentFinderId, new Dictionary<Waymark, Vector3>(placeholders)); } }
     internal WaymarkPreset WaymarkPreset { get { return new(mapName, territoryId, contentFinderId, new Dictionary<Waymark, Vector3>(Waymarks)); } }
@@ -52,11 +54,11 @@ internal class WaymarkManager
 
     public WaymarkManager()
     {
-        placeWaymarkFn = Marshal.GetDelegateForFunctionPointer<PlaceWaymark>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 0F 85 ?? ?? ?? ?? EB 23"));
-        clearWaymarkFn = Marshal.GetDelegateForFunctionPointer<ClearWaymark>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? EB D8 83 FB 09"));
-        clearWaymarksFn = Marshal.GetDelegateForFunctionPointer<ClearWaymarks>(Plugin.SigScanner.ScanText("41 55 48 83 EC 50 4C 8B E9"));
-        waymarkSafetyFn = Marshal.GetDelegateForFunctionPointer<WaymarkSafety>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 0D B0 05"));
-        placePresetFn = Marshal.GetDelegateForFunctionPointer<PlacePreset>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 75 1B B0 01"));
+        PlaceWaymark = Marshal.GetDelegateForFunctionPointer<PlaceWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 0F 85 ?? ?? ?? ?? EB 23"));
+        ClearWaymarkFn = Marshal.GetDelegateForFunctionPointer<ClearWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? EB D8 83 FB 09"));
+        ClearWaymarks = Marshal.GetDelegateForFunctionPointer<ClearWaymarksDelegate>(Plugin.SigScanner.ScanText("41 55 48 83 EC 50 4C 8B E9"));
+        WaymarkSafety = Marshal.GetDelegateForFunctionPointer<WaymarkSafetyDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 0D B0 05"));
+        PlacePreset = Marshal.GetDelegateForFunctionPointer<PlacePresetDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 75 1B B0 01"));
     }
 
     internal void OnTerritoryChange(TerritoryType territory)
@@ -83,12 +85,12 @@ internal class WaymarkManager
     internal unsafe byte NativeClearWaymark(Waymark waymark)
     {
         if (!Waymarks.ContainsKey(waymark)) return 0;
-        return clearWaymarkFn.Invoke(MarkingController.Instance(), (uint)waymark);
+        return ClearWaymarkFn(MarkingController.Instance(), (uint)waymark);
     }
     internal unsafe byte NativeClearWaymarks()
     {
         if (Waymarks.Count == 0) return 0;
-        return clearWaymarksFn.Invoke(MarkingController.Instance());
+        return ClearWaymarks(MarkingController.Instance());
     }
 
     public bool IsPlayerWithinTraceDistance(WaymarkPreset preset)
@@ -199,12 +201,12 @@ internal class WaymarkManager
     }
     private unsafe byte UnsafeNativePlaceWaymark(Waymark waymark, Vector3 wPos)
     {
-        return placeWaymarkFn?.Invoke(MarkingController.Instance(), (uint)waymark, wPos) ?? 69;
+        return PlaceWaymark(MarkingController.Instance(), (uint)waymark, wPos);
     }
 
     internal unsafe bool IsWaymarksEnabled()
     {
-        return waymarkSafetyFn.Invoke() == 0;
+        return WaymarkSafety() == 0;
     }
 
     internal bool IsPossibleToNativePlace()
@@ -327,7 +329,7 @@ internal class WaymarkManager
     private unsafe bool UnsafeNativePlacePreset(FieldMarkerPreset preset)
     {
         var placementStruct = preset.ToMarkerPresetPlacement();
-        var status = placePresetFn.Invoke(MarkingController.Instance(), &placementStruct);
+        var status = PlacePreset(MarkingController.Instance(), &placementStruct);
         if (status != 0)
         {
             // 7.15 qword_1427C6F00 && (*(_BYTE *)(qword_1427C6F00 + 9) & 8) != 0

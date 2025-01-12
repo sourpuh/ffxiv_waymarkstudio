@@ -75,7 +75,7 @@ internal class FFLogsClient
         WaymarkPreset preset = new(
             name: $"FFLogs Fight {fight.Id}",
             territoryId: territoryId,
-            contentFinderConditionId: (ushort)Plugin.Storage.GetContentId(territoryId)
+            contentFinderConditionId: TerritorySheet.GetContentId(territoryId)
             );
 
         foreach (var marker in WorldMarkers)

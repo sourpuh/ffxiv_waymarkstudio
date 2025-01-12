@@ -1,6 +1,7 @@
 namespace WaymarkStudio;
 public enum ContentType
 {
+    OpenWorld = 0,
     Dungeons = 2,
     Guildhests = 3,
     Trials = 4,
@@ -9,4 +10,5 @@ public enum ContentType
     SavetheQueen = 29,
     VCDungeonFinder = 30,
     ChaoticAllianceRaid = 37,
+    Other = 69,
 }

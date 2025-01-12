@@ -1,11 +1,13 @@
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.Interop;
-using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace WaymarkStudio;
+
+using PresetLibrary = ImmutableSortedDictionary<ushort, List<(int, WaymarkPreset)>>;
 
 /**
  * This should handle storage management for plugin and native presets.
@@ -22,44 +24,18 @@ internal class PresetStorage
         // [1153] = 1154, // P12 for testing
     };
 
-    struct TerritoryInfo
-    {
-        internal string name;
-        internal uint contentId;
-    }
-
-    private Dictionary<uint, TerritoryInfo> territoryIdToInfo;
-
-    internal string GetTerritoryName(uint territoryId)
-    {
-        return territoryIdToInfo[territoryId].name;
-    }
-
-    internal string GetContentName(uint contentId)
-    {
-        if (Plugin.DataManager.GetExcelSheet<ContentFinderCondition>().TryGetRow(contentId, out var content))
-            return content.Name.ToString();
-        return "";
-    }
-
-    internal uint GetContentId(uint territoryId)
-    {
-        if (territoryIdToInfo.TryGetValue(territoryId, out var value))
-            return value.contentId;
-        return 0;
-    }
-
     internal PresetStorage()
     {
         foreach (var kvp in equivalentTerritoryIds.ToList())
             equivalentTerritoryIds.Add(kvp.Value, kvp.Key);
-        territoryIdToInfo = Plugin.DataManager.GetExcelSheet<TerritoryType>()
-            .ToDictionary(x => x.RowId,
-            x => new TerritoryInfo()
-            {
-                name = x.GetName(),
-                contentId = x.GetContentId(),
-            });
+    }
+
+    public PresetLibrary GetPresetLibrary(TerritoryFilter filter)
+    {
+        return ListSavedPresets()
+            .Where(preset => !filter.IsTerritoryFiltered(preset.Item2.TerritoryId))
+            .GroupBy(preset => preset.Item2.TerritoryId, v => v)
+            .ToImmutableSortedDictionary(g => g.Key, g => g.ToList());
     }
 
     public int CountPresetsForTerritoryId(uint territoryId)
@@ -83,7 +59,7 @@ internal class PresetStorage
 
     public IEnumerable<(int, FieldMarkerPreset)> ListNativePresets(ushort territoryId = 0)
     {
-        uint contentId = GetContentId(territoryId);
+        uint contentId = TerritorySheet.GetContentId(territoryId);
         uint altContentId = 0;
         if (Plugin.Config.CombineEquivalentDutyPresets && equivalentTerritoryIds.TryGetValue(territoryId, out var altTerritoryId))
             equivalentTerritoryIds.TryGetValue(altTerritoryId, out altContentId);
@@ -130,7 +106,7 @@ internal class PresetStorage
             if (isAlt)
             {
                 preset.TerritoryId = territoryId;
-                preset.ContentFinderConditionId = (ushort)GetContentId(territoryId);
+                preset.ContentFinderConditionId = TerritorySheet.GetContentId(territoryId);
             }
 
             if (territoryId == 0
@@ -138,6 +114,12 @@ internal class PresetStorage
                 || isAlt)
                 yield return (i, preset);
         }
+    }
+
+    public void SavePreset(WaymarkPreset preset)
+    {
+        Plugin.Config.SavedPresets.Add(preset);
+        Plugin.Config.Save();
     }
 
     public void DeleteSavedPreset(int index)
@@ -158,7 +140,7 @@ internal class PresetStorage
                 altCommunityPresets.ForEach(preset =>
                 {
                     preset.TerritoryId = territoryId;
-                    preset.ContentFinderConditionId = (ushort)GetContentId(territoryId);
+                    preset.ContentFinderConditionId = TerritorySheet.GetContentId(territoryId);
                 });
                 presets = presets.Concat(altCommunityPresets);
             }

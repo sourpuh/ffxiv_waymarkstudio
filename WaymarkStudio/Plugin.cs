@@ -36,6 +36,7 @@ public sealed class Plugin : IDalamudPlugin
     internal static PctOverlay Overlay { get; private set; } = null!;
     internal readonly WindowSystem WindowSystem = new(Tag);
     internal static ConfigWindow ConfigWindow { get; private set; } = null!;
+    internal static LibraryWindow LibraryWindow { get; private set; } = null!;
     internal static StudioWindow StudioWindow { get; private set; } = null!;
 
     private const string CommandName = "/wms";
@@ -46,12 +47,14 @@ public sealed class Plugin : IDalamudPlugin
 
         FieldMarkerAddon = new();
         ConfigWindow = new();
+        LibraryWindow = new();
         StudioWindow = new();
         WaymarkManager = new();
         Overlay = new();
         Storage = new();
 
         WindowSystem.AddWindow(ConfigWindow);
+        WindowSystem.AddWindow(LibraryWindow);
         WindowSystem.AddWindow(StudioWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
@@ -92,5 +95,6 @@ public sealed class Plugin : IDalamudPlugin
     }
     private void DrawUI() => WindowSystem.Draw();
     public static void ToggleConfigUI() => ConfigWindow.Toggle();
+    public static void ToggleLibraryUI() => LibraryWindow.Toggle();
     public static void ToggleMainUI() => StudioWindow.Toggle();
 }

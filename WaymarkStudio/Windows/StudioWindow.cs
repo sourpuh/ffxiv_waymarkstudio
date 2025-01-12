@@ -4,29 +4,21 @@ using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
-using WaymarkStudio.FFLogs;
 using WaymarkStudio.Guides;
 
 namespace WaymarkStudio.Windows;
 
 internal class StudioWindow : BaseWindow
 {
-    private readonly Vector2 iconButtonSize = new(30, 30);
-    bool isHoverPreview = false;
-    bool wasHoverPreview = false;
-    string popupRename = "";
-    int deleteIndex = -1;
-    int renameIndex = -1;
-    string renamingPresetName = "";
-    bool renameFocus = false;
-    FFLogsImport? import;
+    private readonly Vector2 waymarkIconButtonSize = new(30);
+    private readonly Vector2 territoryInfoSize = new(20);
 
-    internal StudioWindow()
-        : base("Waymark Studio")
+    internal StudioWindow() : base("Waymark Studio")
     {
-        Size = new(555, 505);
+        Size = new(520, 480);
         SizeCondition = ImGuiCond.Once;
         SizeConstraints = new WindowSizeConstraints
         {
@@ -34,34 +26,13 @@ internal class StudioWindow : BaseWindow
         };
 
         TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Config"), Icon = FontAwesomeIcon.Cog, IconOffset = new(2, 1.5f), Click = _ => Plugin.ToggleConfigUI() });
-        TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Waymarks UI"), Icon = FontAwesomeIcon.Atlas, IconOffset = new(2, 1.5f), Click = _ => Plugin.FieldMarkerAddon.Toggle() });
+        TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Library"), Icon = FontAwesomeIcon.Atlas, IconOffset = new(2, 1.5f), Click = _ => Plugin.ToggleLibraryUI() });
+        TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Waymarks UI"), Icon = FontAwesomeIcon.ArrowUpRightFromSquare, IconOffset = new(2, 1.5f), Click = _ => Plugin.FieldMarkerAddon.Toggle() });
     }
 
-    public unsafe override void Draw()
+    public override void MyDraw()
     {
-        isHoverPreview = false;
-
         DrawStudio();
-
-        /*
-        ImGui.BeginTabBar("TabBar");
-        if (ImGui.BeginTabItem("Studio"))
-        {
-            DrawStudio();
-            ImGui.EndTabItem();
-        }
-        if (ImGui.BeginTabItem("Library"))
-        {
-            DrawLibrary();
-            ImGui.EndTabItem();
-        }
-        ImGui.EndTabItem();
-        ImGui.EndTabBar();
-        */
-
-        if (wasHoverPreview && !isHoverPreview)
-            Plugin.WaymarkManager.ClearHoverPreview();
-        wasHoverPreview = isHoverPreview;
     }
 
     internal void DrawStudio()
@@ -101,14 +72,14 @@ internal class StudioWindow : BaseWindow
             using (ImRaii.Disabled(!Plugin.WaymarkManager.showGuide))
             {
                 var guide = Plugin.WaymarkManager.guide;
-                if (CustomTextureIconButton("circle_card", iconButtonSize))
+                if (MyGui.CustomTextureButton("circle_card", waymarkIconButtonSize))
                 {
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.A, guide.North);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.B, guide.East);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.C, guide.South);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.D, guide.West);
                 }
-                HoverTooltip("Place Circles on guide cardinals");
+                MyGui.HoverTooltip("Place Circles on guide cardinals");
             }
 
             WaymarkButton(Waymark.One); ImGui.SameLine();
@@ -118,28 +89,28 @@ internal class StudioWindow : BaseWindow
             using (ImRaii.Disabled(!Plugin.WaymarkManager.showGuide))
             {
                 var guide = Plugin.WaymarkManager.guide;
-                if (CustomTextureIconButton("square_intercard", iconButtonSize))
+                if (MyGui.CustomTextureButton("square_intercard", waymarkIconButtonSize))
                 {
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.One, guide.NorthWest);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Two, guide.NorthEast);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Three, guide.SouthEast);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Four, guide.SouthWest);
                 }
-                HoverTooltip("Place Squares on guide intercardinals");
+                MyGui.HoverTooltip("Place Squares on guide intercardinals");
             }
 
-            if (TextureIconButton(61502, iconButtonSize))
+            if (MyGui.IconButton(61502, waymarkIconButtonSize))
             {
                 Plugin.WaymarkManager.ClearPlaceholders();
             }
-            HoverTooltip("Clear Draft");
+            MyGui.HoverTooltip("Clear Draft");
             ImGui.SameLine();
-            if (TextureIconButton(60026, iconButtonSize))
+            if (MyGui.IconButton(60026, waymarkIconButtonSize))
             {
                 Plugin.WaymarkManager.ClearPlaceholders();
                 Plugin.WaymarkManager.NativeClearWaymarks();
             }
-            HoverTooltip("Clear All");
+            MyGui.HoverTooltip("Clear All");
         }
         using (ImRaii.Disabled(Plugin.WaymarkManager.placeholders.Count == 0))
         {
@@ -147,10 +118,9 @@ internal class StudioWindow : BaseWindow
             {
                 var preset = Plugin.WaymarkManager.DraftPreset;
                 preset.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(Plugin.WaymarkManager.territoryId) + 1}";
-                Plugin.Config.SavedPresets.Add(preset);
-                Plugin.Config.Save();
+                Plugin.Storage.SavePreset(preset);
             }
-            HoverTooltip("Save current draft to saved presets");
+            MyGui.HoverTooltip("Save current draft to saved presets");
         }
         using (ImRaii.Disabled(Plugin.WaymarkManager.placeholders.Count == 0
             || !Plugin.WaymarkManager.IsSafeToPlaceWaymarks()))
@@ -159,7 +129,7 @@ internal class StudioWindow : BaseWindow
             {
                 Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.DraftPreset, mergeExisting: true);
             }
-            HoverTooltip("Replace draft markers with real markers");
+            MyGui.HoverTooltip("Replace draft markers with real markers");
         }
     }
 
@@ -199,7 +169,7 @@ internal class StudioWindow : BaseWindow
                     Plugin.WaymarkManager.guide = newGuide;
                 }
             }
-            HoverTooltip("Circle Guide");
+            MyGui.HoverTooltip("Circle Guide");
         }
         ImGui.SameLine();
         using (ImRaii.Disabled(Plugin.WaymarkManager.guide is RectangleGuide))
@@ -215,7 +185,7 @@ internal class StudioWindow : BaseWindow
                     Plugin.WaymarkManager.guide = newGuide;
                 }
             }
-            HoverTooltip("Rectangle Guide");
+            MyGui.HoverTooltip("Rectangle Guide");
         }
 
         ImGui.TextUnformatted("Position:");
@@ -285,8 +255,14 @@ internal class StudioWindow : BaseWindow
     {
         if (ImGui.BeginTable("PresetsTable", 2, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY))
         {
+            ImGui.TableSetupColumn("NameButton", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.TableSetupColumn("Buttons");
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
+            MyGui.ExpansionIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
+            ImGui.SameLine();
+            MyGui.ContentTypeIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
+            ImGui.SameLine();
             ImGui.Text($"{Plugin.WaymarkManager.mapName}");
             var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
             TextActiveWaymarks(currentMarkers);
@@ -296,17 +272,16 @@ internal class StudioWindow : BaseWindow
                 if (ImGuiComponents.IconButton("save_markers", FontAwesomeIcon.Save))
                 {
                     currentMarkers.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(Plugin.WaymarkManager.territoryId) + 1}";
-                    Plugin.Config.SavedPresets.Add(currentMarkers);
-                    Plugin.Config.Save();
+                    Plugin.Storage.SavePreset(currentMarkers);
                 }
-                HoverTooltip("Save markers to presets");
+                MyGui.HoverTooltip("Save markers to presets");
                 ImGui.SameLine();
                 if (ImGuiComponents.IconButton("draftify_markers", FontAwesomeIcon.MapMarkerAlt))
                 {
                     foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
                         Plugin.WaymarkManager.PlaceWaymarkPlaceholder(w, p);
                 }
-                HoverTooltip("Import markers as draft");
+                MyGui.HoverTooltip("Import markers as draft");
                 ImGui.SameLine();
                 using (ImRaii.Disabled(!Plugin.WaymarkManager.IsSafeToPlaceWaymarks()))
                 {
@@ -314,34 +289,16 @@ internal class StudioWindow : BaseWindow
                     {
                         Plugin.WaymarkManager.NativeClearWaymarks();
                     }
-                    HoverTooltip("Clear Waymarks");
+                    MyGui.HoverTooltip("Clear Waymarks");
                 }
             }
             ImGui.Text("Saved Presets");
             ImGui.SameLine();
             ImguiFFLogsImportButton();
-
-            string clipboard = ImGui.GetClipboardText();
-            if (clipboard.StartsWith(WaymarkPreset.presetb64Prefix))
-            {
-                ImGui.SameLine();
-                if (ImGuiComponents.IconButton("import_preset", FontAwesomeIcon.FileImport))
-                {
-                    var preset = WaymarkPreset.Import(clipboard);
-                    Plugin.Config.SavedPresets.Add(preset);
-                    Plugin.Config.Save();
-                    ImGui.SetClipboardText("");
-                }
-                HoverTooltip("Import From clipboard");
-            }
-
-            deleteIndex = -1;
+            ClipboardImportButton();
 
             foreach ((var i, var preset) in Plugin.Storage.ListSavedPresets(Plugin.WaymarkManager.territoryId))
-                DrawPresetRow(i, preset);
-
-            if (deleteIndex >= 0)
-                Plugin.Storage.DeleteSavedPreset(deleteIndex);
+                DrawPresetRow(i, preset, isRenaming: renameIndex == i);
 
             var nativePresets = Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId);
             if (nativePresets.Any())
@@ -367,162 +324,9 @@ internal class StudioWindow : BaseWindow
         }
     }
 
-    internal void DrawLibrary()
-    {
-        deleteIndex = -1;
-
-        var map = Plugin.Storage.ListSavedPresets().GroupBy(preset => preset.Item2.TerritoryId, v => v).ToDictionary(g => g.Key, g => g.ToList());
-
-        if (ImGui.BeginTable("saved_presets", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame))
-        {
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
-            foreach ((var territoryId, var presetList) in map)
-            {
-                if (ImGui.CollapsingHeader(Plugin.Storage.GetTerritoryName(territoryId), ImGuiTreeNodeFlags.DefaultOpen))
-                {
-                    if (ImGui.BeginTable("" + territoryId, 2, ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.RowBg))
-                    {
-                        foreach ((var i, var preset) in presetList)
-                            DrawPresetRow(i, preset);
-                        ImGui.EndTable();
-                    }
-                }
-            }
-            ImGui.EndTable();
-        }
-
-        if (deleteIndex >= 0)
-            Plugin.Storage.DeleteSavedPreset(deleteIndex);
-
-
-        ImGui.SameLine();
-
-        if (ImGui.BeginTable("native_presets", 2, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame | ImGuiTableFlags.RowBg))
-        {
-            var nativePresets = Plugin.Storage.ListNativePresets();
-            if (nativePresets.Any())
-            {
-                foreach ((var j, var nativePreset) in nativePresets)
-                {
-                    var name = Plugin.Storage.GetContentName(nativePreset.ContentFinderConditionId);
-                    DrawPresetRow(j, nativePreset.ToPreset($"{j + 1}. {name}"), isReadOnly: true);
-                }
-            }
-            ImGui.EndTable();
-        }
-    }
-
-    internal void DrawPresetRow(int i, WaymarkPreset preset, bool isReadOnly = false)
-    {
-        ImGui.TableNextRow();
-        ImGui.TableNextColumn();
-
-        if (preset.TerritoryId == 0)
-        {
-            ImGui.Text(preset.Name);
-            ImGui.TableNextColumn();
-            return;
-        }
-
-        var isSameTerritory = preset.TerritoryId == Plugin.WaymarkManager.territoryId;
-        var canPlaceWaymark = Plugin.WaymarkManager.IsSafeToPlaceWaymarks() && isSameTerritory;
-        var isRenaming = renameIndex == i;
-
-        if (isRenaming)
-        {
-            if (renameFocus)
-            {
-                ImGui.SetKeyboardFocusHere(0);
-                renameFocus = false;
-            }
-
-            ImGui.SetNextItemWidth(220);
-            var result = ImGui.InputText("##preset_rename", ref renamingPresetName, 50, ImGuiInputTextFlags.EnterReturnsTrue);
-            bool isUnfocused = false; //ImGui.IsItemDeactivated();
-            ImGui.TableNextColumn();
-            if (ImGuiComponents.IconButton("accept_rename", FontAwesomeIcon.Check) || result)
-            {
-                if (renamingPresetName.Length > 0)
-                {
-                    preset.Name = renamingPresetName;
-                    Plugin.Config.Save();
-                }
-                renameIndex = -1;
-            }
-            ImGui.SameLine();
-            if (ImGuiComponents.IconButton("cancel_rename", FontAwesomeIcon.Times) || isUnfocused)
-            {
-                renameIndex = -1;
-            }
-        }
-        else
-        {
-            Vector4? hoveredColor = null;
-            Vector4? activeColor = null;
-            if (!canPlaceWaymark)
-            {
-                hoveredColor = new();
-                activeColor = new();
-            }
-
-            if (ImGuiComponents.IconButtonWithText(preset.GetIcon(), preset.Name + "##" + i,
-                size: new(220, ImGui.GetFrameHeight()),
-                defaultColor: new(),
-                hoveredColor: hoveredColor,
-                activeColor: activeColor)
-                && canPlaceWaymark)
-                Plugin.WaymarkManager.SafePlacePreset(preset);
-
-            isHoverPreview |= HoverWaymarkPreview(preset);
-            HoverTooltip(() => PresetTooltip(preset));
-
-            if (!isReadOnly)
-            {
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                {
-                    ImGui.OpenPopup($"rightclick_popup##{i}");
-                }
-                if (ImGui.BeginPopup($"rightclick_popup##{i}"))
-                {
-                    Vector2 size = new(150, ImGui.GetFrameHeight());
-                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Edit, "Rename", size: size, defaultColor: new()))
-                    {
-                        ImGui.CloseCurrentPopup();
-                        renameIndex = i;
-                        renamingPresetName = preset.Name;
-                        renameFocus = true;
-                    }
-                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, "Delete", size: size, defaultColor: new()))
-                    {
-                        ImGui.CloseCurrentPopup();
-                        deleteIndex = i;
-                    }
-                    using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
-                        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
-                        {
-                            ImGui.CloseCurrentPopup();
-                            ImGui.SetClipboardText(preset.Export());
-                        }
-                    ImGui.EndPopup();
-                }
-            }
-            ImGui.TableNextColumn();
-            if (isSameTerritory)
-            {
-                if (ImGuiComponents.IconButton($"draft_preset##{i}", FontAwesomeIcon.MapMarkerAlt))
-                {
-                    Plugin.WaymarkManager.SetPlaceholderPreset(preset);
-                }
-                isHoverPreview |= HoverWaymarkPreview(preset);
-                HoverTooltip("Load as draft");
-            }
-        }
-    }
-
     internal void WaymarkButton(Waymark w)
     {
-        if (TextureIconButton(Waymarks.GetIconId(w), iconButtonSize))
+        if (MyGui.IconButton(Waymarks.GetIconId(w), waymarkIconButtonSize))
         {
             Plugin.Overlay.StartMouseWorldPosSelecting(w);
             if (Plugin.Config.ClearNativeWhenPlacing && Plugin.Config.PlaceRealIfPossible)
@@ -558,43 +362,6 @@ internal class StudioWindow : BaseWindow
         }
     }
 
-    internal void PresetTooltip(WaymarkPreset preset)
-    {
-        if (preset.PendingHeightAdjustment.IsAnySet())
-        {
-            if (preset.TerritoryId != Plugin.WaymarkManager.territoryId)
-                ImGui.Text("(Enter area to complete import)");
-            else if (!Plugin.WaymarkManager.IsPlayerWithinTraceDistance(preset))
-                ImGui.Text("(Get closer to complete import)");
-            else
-                ImGui.Text("(Preset height adjustment failed - please report this issue)");
-        }
-        TextActiveWaymarks(preset);
-        if (preset.Time > DateTimeOffset.MinValue)
-            ImGui.TextUnformatted($"{preset.Time.ToLocalTime()} ({(preset.Time - DateTimeOffset.Now).ToString("%d")}d)");
-    }
-
-    internal static bool HoverWaymarkPreview(WaymarkPreset preset)
-    {
-        if (ImGui.IsItemHovered())
-        {
-            // Lazy solution until I add some sort of distance based trigger system.
-            // Adjust height when user hovers over the preset. Save if trace succeeded.
-            if (preset.PendingHeightAdjustment.IsAnySet())
-            {
-                Plugin.WaymarkManager.AdjustPresetHeight(preset);
-                if (!preset.PendingHeightAdjustment.IsAnySet())
-                {
-                    Plugin.Config.Save();
-                }
-                else return false;
-            }
-            Plugin.WaymarkManager.SetHoverPreview(preset);
-            return true;
-        }
-        return false;
-    }
-
     internal void ImguiRotationInput(ref int rotationDegrees)
     {
         ImGui.DragInt("##rotation", ref rotationDegrees, 15, -180, 180);
@@ -605,79 +372,6 @@ internal class StudioWindow : BaseWindow
             if (rotationDegrees > 180)
                 rotationDegrees -= 360;
         }
-        HoverTooltip("Rotate 90° Clockwise");
-    }
-
-    internal void ImguiFFLogsImportButton()
-    {
-        bool focusTextInput = false;
-        ImGui.PushStyleColor(ImGuiCol.Text, 0xFFE1C864);
-        if (ImGuiComponents.IconButton("import_fflogs", FontAwesomeIcon.Gem))
-        {
-            ImGui.OpenPopup("fflogs_import_popup");
-            focusTextInput = true;
-        }
-        ImGui.PopStyleColor();
-        HoverTooltip("Import From FFLogs");
-
-        if (ImGui.BeginPopup("fflogs_import_popup"))
-        {
-            if (import == null)
-                import = FFLogsImport.New("Paste FFLogs link here");
-
-            // Url Input
-            if (focusTextInput) ImGui.SetKeyboardFocusHere(0);
-            ImGui.Text("FFLogs Report URL:");
-            ImGui.SameLine();
-            var runQueryReport = ImGui.InputText("##query_report", ref import.URL, 100, ImGuiInputTextFlags.EnterReturnsTrue);
-            if (!import.IsStarted)
-            {
-                using (ImRaii.Disabled(!import.CanQuery))
-                {
-                    if (ImGuiComponents.IconButton("query_report", FontAwesomeIcon.Check) || runQueryReport)
-                    {
-                        import.Start();
-                    }
-                }
-            }
-
-            // Fight dropdown
-            if (import.FightArray.Length > 0)
-            {
-                ImGui.Text("Fight:"); ImGui.SameLine();
-                ImGui.Combo("##fight", ref import.UserSelectedFightIndex, import.FightArray, import.FightArray.Length);
-
-                using (ImRaii.Disabled(!import.CanQuery))
-                {
-                    if (ImGuiComponents.IconButton("query_fight", FontAwesomeIcon.Check))
-                    {
-                        import.Continue();
-                    }
-                }
-            }
-
-            if (import.IsStarted)
-            {
-                if (import.Task.IsCompletedSuccessfully)
-                {
-                    var preset = import.Task.Result;
-                    Plugin.Config.SavedPresets.Add(preset);
-                    Plugin.Config.Save();
-                }
-                if (import.Task.IsFaulted)
-                {
-                    Plugin.Chat.PrintError(import.Task.Exception.Message, Plugin.Tag);
-                }
-            }
-
-            ImGui.SameLine();
-            if (ImGuiComponents.IconButton("cancel_query", FontAwesomeIcon.Times) || import.IsCompleted)
-            {
-                import = null;
-                ImGui.CloseCurrentPopup();
-            }
-
-            ImGui.EndPopup();
-        }
+        MyGui.HoverTooltip("Rotate 90° Clockwise");
     }
 }
