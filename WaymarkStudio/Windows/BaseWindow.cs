@@ -4,6 +4,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
+using System.Linq;
 using System.Numerics;
 using WaymarkStudio.FFLogs;
 
@@ -173,6 +174,27 @@ public abstract class BaseWindow : Window
                     {
                         ImGui.CloseCurrentPopup();
                         deleteIndex = i;
+                    }
+                    if (isSameTerritory)
+                    {
+                        if (Plugin.WaymarkManager.WaymarkPreset.MarkerPositions.Count > 0 &&
+                            ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Sync, "Overwrite", size: size, defaultColor: new()))
+                        {
+                            preset.MarkerPositions = Plugin.WaymarkManager.WaymarkPreset.MarkerPositions
+                                .ToDictionary(entry => entry.Key,
+                                              entry => entry.Value);
+                            Plugin.Config.Save();
+                            ImGui.CloseCurrentPopup();
+                        }
+                        if (Plugin.WaymarkManager.DraftPreset.MarkerPositions.Count > 0 &&
+                            ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Sync, "Overwrite (Draft)", size: size, defaultColor: new()))
+                        {
+                            preset.MarkerPositions = Plugin.WaymarkManager.DraftPreset.MarkerPositions
+                                .ToDictionary(entry => entry.Key,
+                                              entry => entry.Value);
+                            Plugin.Config.Save();
+                            ImGui.CloseCurrentPopup();
+                        }
                     }
                     using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
                         if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
