@@ -130,9 +130,54 @@ internal class WaymarkManager
             return PlacementUnsafeReason.UnsupportedArea;
         if (Plugin.Condition[ConditionFlag.InCombat])
             return PlacementUnsafeReason.InCombat;
+        if (IsOccupied())
+            return PlacementUnsafeReason.Occupied;
         if (Plugin.Condition[ConditionFlag.DutyRecorderPlayback])
             return PlacementUnsafeReason.DutyRecorderPlayback;
         return PlacementUnsafeReason.Safe;
+    }
+
+    public static bool IsOccupied()
+    {
+        var Condition = Plugin.Condition;
+        return Condition[ConditionFlag.Occupied]
+               || Condition[ConditionFlag.Occupied30]
+               || Condition[ConditionFlag.Occupied33]
+               || Condition[ConditionFlag.Occupied38]
+               || Condition[ConditionFlag.Occupied39]
+               || Condition[ConditionFlag.OccupiedInCutSceneEvent]
+               || Condition[ConditionFlag.OccupiedInEvent]
+               || Condition[ConditionFlag.OccupiedInQuestEvent]
+               || Condition[ConditionFlag.OccupiedSummoningBell]
+               || Condition[ConditionFlag.WatchingCutscene]
+               || Condition[ConditionFlag.WatchingCutscene78]
+               || Condition[ConditionFlag.BetweenAreas]
+               || Condition[ConditionFlag.BetweenAreas51]
+               || Condition[ConditionFlag.InThatPosition]
+               || Condition[ConditionFlag.Crafting]
+               || Condition[ConditionFlag.Crafting40]
+               || Condition[ConditionFlag.PreparingToCraft]
+               || Condition[ConditionFlag.InThatPosition]
+               || Condition[ConditionFlag.Unconscious]
+               || Condition[ConditionFlag.MeldingMateria]
+               || Condition[ConditionFlag.Gathering]
+               || Condition[ConditionFlag.OperatingSiegeMachine]
+               || Condition[ConditionFlag.CarryingItem]
+               || Condition[ConditionFlag.CarryingObject]
+               || Condition[ConditionFlag.BeingMoved]
+               || Condition[ConditionFlag.Mounted2]
+               || Condition[ConditionFlag.Mounting]
+               || Condition[ConditionFlag.Mounting71]
+               || Condition[ConditionFlag.ParticipatingInCustomMatch]
+               || Condition[ConditionFlag.PlayingLordOfVerminion]
+               || Condition[ConditionFlag.ChocoboRacing]
+               || Condition[ConditionFlag.PlayingMiniGame]
+               || Condition[ConditionFlag.Performing]
+               || Condition[ConditionFlag.PreparingToCraft]
+               || Condition[ConditionFlag.Fishing]
+               || Condition[ConditionFlag.Transformed]
+               || Condition[ConditionFlag.UsingHousingFunctions]
+               || Plugin.ClientState.LocalPlayer?.IsTargetable != true;
     }
 
     internal bool IsSafeToPlaceWaymarks()
@@ -344,6 +389,7 @@ internal class WaymarkManager
     {
         Safe,
         NoLocalPlayer,
+        Occupied,
         InCombat,
         DutyRecorderPlayback,
         UnsupportedContentType,
