@@ -20,12 +20,7 @@ internal class LibraryWindow : BaseWindow
         };
     }
 
-    public unsafe override void MyDraw()
-    {
-        DrawLibrary();
-    }
-
-    internal void DrawLibrary()
+    public override void Draw()
     {
         foreach (var expansion in Enum.GetValues<Expansion>())
         {
@@ -49,50 +44,29 @@ internal class LibraryWindow : BaseWindow
         var library = Plugin.Storage.GetPresetLibrary(filter);
         if (ImGui.BeginTable("saved_presets", 1, ImGuiTableFlags.BordersOuter))
         {
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
             if (library.IsEmpty)
             {
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
                 ImGui.Text("No Presets Found");
             }
             foreach ((var territoryId, var presetList) in library)
             {
+                ImGui.Separator();
                 TerritoryHeader(territoryId);
-                if (ImGui.BeginTable("" + territoryId, 2, ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame))
-                {
-                    ImGui.TableSetupColumn("NameButton", ImGuiTableColumnFlags.WidthStretch);
-                    ImGui.TableSetupColumn("Buttons");
-                    ImGui.Indent();
-                    foreach ((var i, var preset) in presetList)
-                        DrawPresetRow(i, preset, isRenaming: renameIndex == i);
-                    ImGui.Unindent();
-                    ImGui.EndTable();
-                }
+
+                ImGui.Indent();
+                DrawPresetList("" + territoryId, presetList);
+                ImGui.Unindent();
             }
             ImGui.EndTable();
         }
-
-        /*
-        ImGui.SameLine();
-
-        if (ImGui.BeginTable("native_presets", 2, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame | ImGuiTableFlags.RowBg))
-        {
-            var nativePresets = Plugin.Storage.ListNativePresets();
-            if (nativePresets.Any())
-            {
-                foreach ((var j, var nativePreset) in nativePresets)
-                {
-                    var name = TerritorySheet.GetContentName(nativePreset.ContentFinderConditionId);
-                    DrawPresetRow(j, nativePreset.ToPreset($"{j + 1}. {name}"), isReadOnly: true);
-                }
-            }
-            ImGui.EndTable();
-        }*/
     }
 
     private void TerritoryHeader(uint territoryId)
     {
-        ImGui.Separator();
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
         MyGui.ExpansionIcon(territoryId, headerSize);
         ImGui.SameLine();
         MyGui.ContentTypeIcon(territoryId, headerSize);

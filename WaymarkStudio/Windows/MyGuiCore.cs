@@ -2,9 +2,10 @@ using ImGuiNET;
 using System;
 using System.IO;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace WaymarkStudio.Windows;
-public class MyGui
+public partial class MyGui
 {
     public static void HoverTooltip(string text)
     {
@@ -24,6 +25,20 @@ public class MyGui
         action();
         ImGui.PopTextWrapPos();
         ImGui.EndTooltip();
+    }
+
+    public static void TextActiveWaymarks(WaymarkPreset preset)
+    {
+        ImGui.SetWindowFontScale(1.2f);
+        foreach (Waymark w in Enum.GetValues<Waymark>())
+        {
+            ImGui.PushStyleColor(ImGuiCol.Text, preset.MarkerPositions.ContainsKey(w) ? Waymarks.GetColor(w) : 0x70FFFFFF);
+            ImGui.Text(Waymarks.GetName(w));
+            if (w != Waymark.Four)
+                ImGui.SameLine();
+            ImGui.PopStyleColor();
+        }
+        ImGui.SetWindowFontScale(1f);
     }
 
     public static bool IconButton(uint iconId, Vector2 size, float borderClip = 0, bool state = true)
@@ -72,4 +87,8 @@ public class MyGui
     {
         return Path.Combine(Plugin.Interface.AssemblyLocation.Directory?.FullName!, "res", $"{name}.png");
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe bool IsDropping(string name)
+        => ImGui.AcceptDragDropPayload(name).NativePtr != null;
 }

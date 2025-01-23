@@ -15,6 +15,8 @@ using PresetLibrary = ImmutableSortedDictionary<ushort, List<(int, WaymarkPreset
 internal class PresetStorage
 {
     const uint MaxEntries = 30;
+    private TerritoryFilter lastFilter;
+    private PresetLibrary? cachedLibrary;
 
     private Dictionary<uint, uint> equivalentTerritoryIds = new()
     {
@@ -32,10 +34,13 @@ internal class PresetStorage
 
     public PresetLibrary GetPresetLibrary(TerritoryFilter filter)
     {
-        return ListSavedPresets()
+        if (cachedLibrary == null || filter != lastFilter)
+            cachedLibrary = ListSavedPresets()
             .Where(preset => !filter.IsTerritoryFiltered(preset.Item2.TerritoryId))
             .GroupBy(preset => preset.Item2.TerritoryId, v => v)
             .ToImmutableSortedDictionary(g => g.Key, g => g.ToList());
+        lastFilter = filter;
+        return cachedLibrary;
     }
 
     public int CountPresetsForTerritoryId(uint territoryId)
@@ -118,19 +123,43 @@ internal class PresetStorage
 
     public void SavePreset(WaymarkPreset preset)
     {
+        cachedLibrary = null;
         Plugin.Config.SavedPresets.Add(preset);
-        Plugin.Config.Save();
+        SaveConfig();
     }
 
     public void DeleteSavedPreset(int index)
     {
+        cachedLibrary = null;
         Plugin.Config.SavedPresets.RemoveAt(index);
+        SaveConfig();
+    }
+
+    public void MovePreset(int sourceIndex, int targetIndex)
+    {
+        var preset = Plugin.Config.SavedPresets[sourceIndex];
+        if (sourceIndex < targetIndex)
+        {
+            Plugin.Config.SavedPresets.Insert(targetIndex + 1, preset);
+            Plugin.Config.SavedPresets.RemoveAt(sourceIndex);
+        }
+        else if (targetIndex < sourceIndex)
+        {
+            Plugin.Config.SavedPresets.RemoveAt(sourceIndex);
+            Plugin.Config.SavedPresets.Insert(targetIndex, preset);
+        }
+        SaveConfig();
+    }
+
+    private void SaveConfig()
+    {
+        cachedLibrary = null;
         Plugin.Config.Save();
     }
 
-    public IEnumerable<WaymarkPreset> ListCommunityPresets(ushort territoryId = 0)
+    public IEnumerable<(int, WaymarkPreset)> ListCommunityPresets(ushort territoryId = 0)
     {
-        var presets = Enumerable.Empty<WaymarkPreset>();
+        var presets = Enumerable.Empty<(int, WaymarkPreset)>();
         if (CommunityPresets.TerritoryToPreset.TryGetValue(territoryId, out var communityPresets))
             presets = presets.Concat(communityPresets);
 
@@ -139,8 +168,8 @@ internal class PresetStorage
             {
                 altCommunityPresets.ForEach(preset =>
                 {
-                    preset.TerritoryId = territoryId;
-                    preset.ContentFinderConditionId = TerritorySheet.GetContentId(territoryId);
+                    preset.Item2.TerritoryId = territoryId;
+                    preset.Item2.ContentFinderConditionId = TerritorySheet.GetContentId(territoryId);
                 });
                 presets = presets.Concat(altCommunityPresets);
             }

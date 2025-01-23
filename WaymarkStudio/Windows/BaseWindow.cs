@@ -1,65 +1,19 @@
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Numerics;
 using WaymarkStudio.FFLogs;
-
 namespace WaymarkStudio.Windows;
 public abstract class BaseWindow : Window
 {
-    private bool isHoverPreview = false;
-    private bool wasHoverPreview = false;
-    private string popupRename = "";
-    private int deleteIndex = -1;
-    internal int renameIndex = -1;
-    private string renamingPresetName = "";
-    private bool renameFocus = false;
     internal FFLogsImport? import;
 
     public BaseWindow(string name, ImGuiWindowFlags flags = ImGuiWindowFlags.None) : base(name, flags) { }
-
-    public sealed override void Draw()
-    {
-        isHoverPreview = false;
-
-        deleteIndex = -1;
-
-        MyDraw();
-
-        if (deleteIndex >= 0)
-            Plugin.Storage.DeleteSavedPreset(deleteIndex);
-
-        if (wasHoverPreview && !isHoverPreview)
-            Plugin.WaymarkManager.ClearHoverPreview();
-        wasHoverPreview = isHoverPreview;
-    }
-
-    public abstract void MyDraw();
-
-    internal static bool HoverWaymarkPreview(WaymarkPreset preset)
-    {
-        if (ImGui.IsItemHovered())
-        {
-            // Lazy solution until I add some sort of distance based trigger system.
-            // Adjust height when user hovers over the preset. Save if trace succeeded.
-            if (preset.PendingHeightAdjustment.IsAnySet())
-            {
-                Plugin.WaymarkManager.AdjustPresetHeight(preset);
-                if (!preset.PendingHeightAdjustment.IsAnySet())
-                {
-                    Plugin.Config.Save();
-                }
-                else return false;
-            }
-            Plugin.WaymarkManager.SetHoverPreview(preset);
-            return true;
-        }
-        return false;
-    }
 
     internal void TextActiveWaymarks(WaymarkPreset preset)
     {
@@ -75,7 +29,7 @@ public abstract class BaseWindow : Window
         ImGui.SetWindowFontScale(1f);
     }
 
-    internal void PresetTooltip(WaymarkPreset preset)
+    internal void PresetTooltip(WaymarkPreset preset, bool readOnly = false)
     {
         if (preset.PendingHeightAdjustment.IsAnySet())
         {
@@ -89,132 +43,154 @@ public abstract class BaseWindow : Window
         TextActiveWaymarks(preset);
         if (preset.Time > DateTimeOffset.MinValue)
             ImGui.TextUnformatted($"{preset.Time.ToLocalTime()} ({(preset.Time - DateTimeOffset.Now).ToString("%d")}d)");
+        if (!readOnly)
+        {
+            ImGui.SetWindowFontScale(0.9f);
+            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudGrey);
+            ImGui.Text("(Drag to reorder)");
+            ImGui.PopStyleColor();
+            ImGui.SetWindowFontScale(1f);
+        }
     }
 
-    internal void DrawPresetRow(int i, WaymarkPreset preset, bool isReadOnly = false, bool isRenaming = false)
+    internal void DrawPresetList(string id, IEnumerable<(int, WaymarkPreset)> presetList, bool readOnly = false)
     {
-        ImGui.TableNextRow();
-        ImGui.TableNextColumn();
-
-        if (preset.TerritoryId == 0)
+        if (MyGui.BeginList(id, dragdroppable: !readOnly))
         {
-            ImGui.Text(preset.Name);
-            ImGui.TableNextColumn();
-            return;
-        }
-
-        var isSameTerritory = preset.TerritoryId == Plugin.WaymarkManager.territoryId;
-        var canPlaceWaymark = Plugin.WaymarkManager.IsSafeToPlaceWaymarks() && isSameTerritory;
-
-        if (isRenaming)
-        {
-            if (renameFocus)
+            foreach ((var index, var preset) in presetList)
             {
-                ImGui.SetKeyboardFocusHere(0);
-                renameFocus = false;
-            }
-
-            ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X);
-            var result = ImGui.InputText("##preset_rename", ref renamingPresetName, 50, ImGuiInputTextFlags.EnterReturnsTrue);
-            bool isUnfocused = false; //ImGui.IsItemDeactivated();
-            ImGui.TableNextColumn();
-            if (ImGuiComponents.IconButton("accept_rename", FontAwesomeIcon.Check) || result)
-            {
-                if (renamingPresetName.Length > 0)
+                if (MyGui.NextRow(index, preset.Name))
                 {
-                    preset.Name = renamingPresetName;
+                    var isSameTerritory = preset.TerritoryId == Plugin.WaymarkManager.territoryId;
+                    var canPlaceWaymark = Plugin.WaymarkManager.IsSafeToPlaceWaymarks() && isSameTerritory;
+
+                    Vector4 buttonColor = new(1, 1, 1, 0.1f);
+                    Vector4? hoveredColor = null;
+                    Vector4? activeColor = null;
+                    if (!canPlaceWaymark)
+                    {
+                        hoveredColor = ImGuiColors.DalamudGrey with { W = 0.2f };
+                        activeColor = new();
+                    }
+
+                    if (MyGui.IsDraggingItem())
+                    {
+                        buttonColor = ImGuiColors.DalamudGrey with { W = 0.5f };
+                    }
+
+                    if (ImGuiComponents.IconButtonWithText(preset.GetIcon(), $"{preset.Name}##{index}",
+                        size: new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetFrameHeight()),
+                        defaultColor: buttonColor,
+                        hoveredColor: hoveredColor,
+                        activeColor: activeColor)
+                        && canPlaceWaymark)
+                        Plugin.WaymarkManager.SafePlacePreset(preset);
+
+                    if (ImGui.IsItemHovered())
+                    {
+                        MyGui.DisplayTooltip(() => PresetTooltip(preset));
+                    }
+
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                    {
+                        ImGui.OpenPopup($"rightclick_popup_{id}##{index}");
+                    }
+                    if (ImGui.BeginPopup($"rightclick_popup_{id}##{index}"))
+                    {
+                        Vector2 size = new(150, ImGui.GetFrameHeight());
+
+                        var closePopup = false;
+                        if (!readOnly && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Edit, "Rename", size: size, defaultColor: new()))
+                        {
+                            MyGui.StartRowRename();
+                            closePopup = true;
+                        }
+                        if (!readOnly && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, "Delete", size: size, defaultColor: new()))
+                        {
+                            MyGui.DeleteRow();
+                            closePopup = true;
+                        }
+                        if (isSameTerritory)
+                        {
+                            if (!readOnly &&
+                                Plugin.WaymarkManager.WaymarkPreset.MarkerPositions.Count > 0 &&
+                                ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Sync, "Overwrite", size: size, defaultColor: new()))
+                            {
+                                preset.MarkerPositions = Plugin.WaymarkManager.WaymarkPreset.MarkerPositions.Clone();
+                                Plugin.Config.Save();
+                                closePopup = true;
+                            }
+                            if (!readOnly &&
+                                Plugin.WaymarkManager.DraftPreset.MarkerPositions.Count > 0 &&
+                                ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Sync, "Overwrite (From Draft)", size: size, defaultColor: new()))
+                            {
+                                preset.MarkerPositions = Plugin.WaymarkManager.DraftPreset.MarkerPositions.Clone();
+                                Plugin.Config.Save();
+                                closePopup = true;
+                            }
+                            using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
+                                if (!readOnly &&
+                                    ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
+                                {
+                                    ImGui.SetClipboardText(preset.Export());
+                                    closePopup = true;
+                                }
+                            using (ImRaii.Disabled(!canPlaceWaymark))
+                                if (ImGuiComponents.IconButtonWithText(preset.GetIcon(), "Place Preset", size: size, defaultColor: new()))
+                                {
+                                    Plugin.WaymarkManager.SafePlacePreset(preset);
+                                    closePopup = true;
+                                }
+                            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkerAlt, "Load as Draft", size: size, defaultColor: new()))
+                            {
+                                Plugin.WaymarkManager.SetPlaceholderPreset(preset);
+                                closePopup = true;
+                            }
+                        }
+                        if (closePopup)
+                            ImGui.CloseCurrentPopup();
+
+                        ImGui.EndPopup();
+                    }
+                    if (MyGui.OnStartHover())
+                    {
+                        // Lazy solution until I add some sort of distance based trigger system.
+                        // Adjust height when user hovers over the preset. Save if trace succeeded.
+                        if (preset.PendingHeightAdjustment.IsAnySet())
+                        {
+                            Plugin.WaymarkManager.AdjustPresetHeight(preset);
+                            if (preset.PendingHeightAdjustment.IsAnySet())
+                                return;
+                            Plugin.Config.Save();
+                        }
+                        Plugin.WaymarkManager.SetHoverPreview(preset);
+                    }
+
+                    if (MyGui.OnStopHover())
+                    {
+                        Plugin.WaymarkManager.ClearHoverPreview();
+                    }
+
+                    MyGui.EndRow();
+                }
+
+                if (MyGui.OnRename(out string newName))
+                {
+                    preset.Name = newName;
                     Plugin.Config.Save();
                 }
-                renameIndex = -1;
             }
-            ImGui.SameLine();
-            if (ImGuiComponents.IconButton("cancel_rename", FontAwesomeIcon.Times) || isUnfocused)
+            if (MyGui.OnMove(out int source, out int target))
             {
-                renameIndex = -1;
+                // Plugin.Chat.Print("Move s:" + source + " t:" + target);
+                Plugin.Storage.MovePreset(source, target);
             }
-        }
-        else
-        {
-            Vector4? hoveredColor = null;
-            Vector4? activeColor = null;
-            if (!canPlaceWaymark)
+            if (MyGui.OnDelete(out int deleteIndex))
             {
-                hoveredColor = new();
-                activeColor = new();
+                // Plugin.Chat.Print("Delete " + deleteIndex);
+                Plugin.Storage.DeleteSavedPreset(deleteIndex);
             }
-
-            if (ImGuiComponents.IconButtonWithText(preset.GetIcon(), preset.Name + "##" + i,
-                size: new(ImGui.GetContentRegionAvail().X, ImGui.GetFrameHeight()),
-                defaultColor: new(),
-                hoveredColor: hoveredColor,
-                activeColor: activeColor)
-                && canPlaceWaymark)
-                Plugin.WaymarkManager.SafePlacePreset(preset);
-
-            isHoverPreview |= HoverWaymarkPreview(preset);
-            MyGui.HoverTooltip(() => PresetTooltip(preset));
-
-            if (!isReadOnly)
-            {
-                if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                {
-                    ImGui.OpenPopup($"rightclick_popup##{i}");
-                }
-                if (ImGui.BeginPopup($"rightclick_popup##{i}"))
-                {
-                    Vector2 size = new(150, ImGui.GetFrameHeight());
-                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Edit, "Rename", size: size, defaultColor: new()))
-                    {
-                        ImGui.CloseCurrentPopup();
-                        renameIndex = i;
-                        renamingPresetName = preset.Name;
-                        renameFocus = true;
-                    }
-                    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, "Delete", size: size, defaultColor: new()))
-                    {
-                        ImGui.CloseCurrentPopup();
-                        deleteIndex = i;
-                    }
-                    if (isSameTerritory)
-                    {
-                        if (Plugin.WaymarkManager.WaymarkPreset.MarkerPositions.Count > 0 &&
-                            ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Sync, "Overwrite", size: size, defaultColor: new()))
-                        {
-                            preset.MarkerPositions = Plugin.WaymarkManager.WaymarkPreset.MarkerPositions
-                                .ToDictionary(entry => entry.Key,
-                                              entry => entry.Value);
-                            Plugin.Config.Save();
-                            ImGui.CloseCurrentPopup();
-                        }
-                        if (Plugin.WaymarkManager.DraftPreset.MarkerPositions.Count > 0 &&
-                            ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Sync, "Overwrite (Draft)", size: size, defaultColor: new()))
-                        {
-                            preset.MarkerPositions = Plugin.WaymarkManager.DraftPreset.MarkerPositions
-                                .ToDictionary(entry => entry.Key,
-                                              entry => entry.Value);
-                            Plugin.Config.Save();
-                            ImGui.CloseCurrentPopup();
-                        }
-                    }
-                    using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
-                        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
-                        {
-                            ImGui.CloseCurrentPopup();
-                            ImGui.SetClipboardText(preset.Export());
-                        }
-                    ImGui.EndPopup();
-                }
-            }
-            ImGui.TableNextColumn();
-            if (isSameTerritory)
-            {
-                if (ImGuiComponents.IconButton($"draft_preset##{i}", FontAwesomeIcon.MapMarkerAlt))
-                {
-                    Plugin.WaymarkManager.SetPlaceholderPreset(preset);
-                }
-                isHoverPreview |= HoverWaymarkPreview(preset);
-                MyGui.HoverTooltip("Load as draft");
-            }
+            MyGui.EndList();
         }
     }
 

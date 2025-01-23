@@ -16,7 +16,7 @@ internal class PctOverlay
 {
     object? currentMousePlacementThing;
     // TODO maybe Queue up everything to draw in this list if selection and placeholders should be separate
-    List<Action<PctDrawList>> list = new();
+    internal List<Action<PctDrawList>> list = new();
     Vector3? lmb;
     Vector3? rmb;
 

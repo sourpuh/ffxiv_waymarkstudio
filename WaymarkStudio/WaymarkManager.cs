@@ -33,7 +33,7 @@ internal class WaymarkManager
     private readonly PlaceWaymarkDelegate PlaceWaymark;
 
     private unsafe delegate byte ClearWaymarkDelegate(MarkingController* markingController, uint marker);
-    private readonly ClearWaymarkDelegate ClearWaymarkFn;
+    private readonly ClearWaymarkDelegate ClearWaymark;
 
     private unsafe delegate byte ClearWaymarksDelegate(MarkingController* markingController);
     private readonly ClearWaymarksDelegate ClearWaymarks;
@@ -55,7 +55,7 @@ internal class WaymarkManager
     public WaymarkManager()
     {
         PlaceWaymark = Marshal.GetDelegateForFunctionPointer<PlaceWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 0F 85 ?? ?? ?? ?? EB 23"));
-        ClearWaymarkFn = Marshal.GetDelegateForFunctionPointer<ClearWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? EB D8 83 FB 09"));
+        ClearWaymark = Marshal.GetDelegateForFunctionPointer<ClearWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? EB D8 83 FB 09"));
         ClearWaymarks = Marshal.GetDelegateForFunctionPointer<ClearWaymarksDelegate>(Plugin.SigScanner.ScanText("41 55 48 83 EC 50 4C 8B E9"));
         WaymarkSafety = Marshal.GetDelegateForFunctionPointer<WaymarkSafetyDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 0D B0 05"));
         PlacePreset = Marshal.GetDelegateForFunctionPointer<PlacePresetDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 75 1B B0 01"));
@@ -85,7 +85,7 @@ internal class WaymarkManager
     internal unsafe byte NativeClearWaymark(Waymark waymark)
     {
         if (!Waymarks.ContainsKey(waymark)) return 0;
-        return ClearWaymarkFn(MarkingController.Instance(), (uint)waymark);
+        return ClearWaymark(MarkingController.Instance(), (uint)waymark);
     }
     internal unsafe byte NativeClearWaymarks()
     {

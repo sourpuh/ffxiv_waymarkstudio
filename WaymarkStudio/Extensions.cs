@@ -6,12 +6,24 @@ using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace WaymarkStudio;
 internal static class Extensions
 {
+    public static IDictionary<TKey, TValue> Clone<TKey, TValue>(this IDictionary<TKey, TValue> dictionary)
+    {
+        return dictionary.ToDictionary(entry => entry.Key,
+                                       entry => entry.Value);
+    }
+
+    internal static Vector2 XZ(this Vector3 v)
+    {
+        return new Vector2(v.X, v.Z);
+    }
+
     // The game rounds world positions floats for waymarks to the thousandth decimal.
     internal static float Round(this float value)
     {

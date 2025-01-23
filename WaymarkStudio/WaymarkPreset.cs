@@ -44,6 +44,11 @@ public class WaymarkPreset
         return PendingHeightAdjustment.IsAnySet() ? FontAwesomeIcon.Map : FontAwesomeIcon.MapMarkedAlt;
     }
 
+    public override string? ToString()
+    {
+        return Name;
+    }
+
     public FieldMarkerPreset ToGamePreset()
     {
         FieldMarkerPreset preset = new();

@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using WaymarkStudio.Guides;
+using WaymarkStudio.Triggers;
 
 namespace WaymarkStudio.Windows;
 
@@ -15,6 +16,7 @@ internal class StudioWindow : BaseWindow
 {
     private readonly Vector2 waymarkIconButtonSize = new(30);
     private readonly Vector2 territoryInfoSize = new(20);
+    private CircleTrigger? trigger;
 
     internal StudioWindow() : base("Waymark Studio")
     {
@@ -30,12 +32,7 @@ internal class StudioWindow : BaseWindow
         TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Waymarks UI"), Icon = FontAwesomeIcon.ArrowUpRightFromSquare, IconOffset = new(2, 1.5f), Click = _ => Plugin.FieldMarkerAddon.Toggle() });
     }
 
-    public override void MyDraw()
-    {
-        DrawStudio();
-    }
-
-    internal void DrawStudio()
+    public override void Draw()
     {
         if (ImGui.BeginTable("StudioTable", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame))
         {
@@ -50,6 +47,11 @@ internal class StudioWindow : BaseWindow
             if (ImGui.CollapsingHeader("Guide", ImGuiTreeNodeFlags.DefaultOpen))
                 using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
                     DrawGuideSection();
+            /*
+            if (ImGui.CollapsingHeader("Trigger", ImGuiTreeNodeFlags.DefaultOpen))
+                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
+                    DrawTriggerSection();
+            */
 
             ImGui.Spacing();
             ImGui.EndTable();
@@ -251,12 +253,61 @@ internal class StudioWindow : BaseWindow
         }
     }
 
+    internal void DrawTriggerSection()
+    {
+        if (trigger == null && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.LocationCrosshairs, "Add Trigger"))
+        {
+            trigger = new("New trigger", Plugin.WaymarkManager.territoryId);
+            Plugin.Overlay.StartMouseWorldPosSelecting("trigger");
+        }
+
+        if (trigger == null)
+            return;
+
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.EyeSlash, "Remove Trigger"))
+        {
+            trigger = null;
+            return;
+        }
+
+        ImGui.SameLine();
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Save, "Save"))
+        {
+            Plugin.Config.Triggers.Add((trigger, null));
+            trigger = null;
+            return;
+        }
+
+        ImGui.TextUnformatted("Position:");
+        ImGui.SetNextItemWidth(125f);
+        ImGui.SameLine();
+        ImGui.InputFloat3("##position", ref trigger.Center, "%.1f");
+        ImGui.SameLine();
+        if (ImGuiComponents.IconButton("start_trigger_selection", FontAwesomeIcon.MousePointer))
+        {
+            Plugin.Overlay.StartMouseWorldPosSelecting("trigger");
+        }
+        switch (Plugin.Overlay.MouseWorldPosSelection("trigger", ref trigger.Center))
+        {
+            case PctOverlay.SelectionResult.Canceled:
+                trigger = null;
+                return;
+        }
+
+        ImGui.TextUnformatted("Radius:");
+        ImGui.SetNextItemWidth(120f);
+        ImGui.SameLine();
+        ImGui.SliderFloat("##trigger_radius", ref trigger.Radius, 1, 20);
+
+        trigger.Draw();
+    }
+
     internal void DrawSavedPresets()
     {
-        if (ImGui.BeginTable("PresetsTable", 2, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY))
+        if (ImGui.BeginTable("PresetsTable", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY))
         {
-            ImGui.TableSetupColumn("NameButton", ImGuiTableColumnFlags.WidthStretch);
-            ImGui.TableSetupColumn("Buttons");
+            ImGui.TableSetupColumn("Core", ImGuiTableColumnFlags.WidthStretch);
+
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
             MyGui.ExpansionIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
@@ -292,34 +343,40 @@ internal class StudioWindow : BaseWindow
                     MyGui.HoverTooltip("Clear Waymarks");
                 }
             }
+            /*
+            ImGui.Text("Triggers");
+            foreach ((var trigger, var preset) in Plugin.Config.Triggers)
+            {
+                var name = trigger.Name;
+                if (preset != null)
+                    name += $" {preset.Name}";
+                ImGui.Selectable(name);
+            }
+            */
+
             ImGui.Text("Saved Presets");
             ImGui.SameLine();
             ImguiFFLogsImportButton();
             ClipboardImportButton();
 
-            foreach ((var i, var preset) in Plugin.Storage.ListSavedPresets(Plugin.WaymarkManager.territoryId))
-                DrawPresetRow(i, preset, isRenaming: renameIndex == i);
-
+            DrawPresetList("mainListView", Plugin.Storage.ListSavedPresets(Plugin.WaymarkManager.territoryId));
             var nativePresets = Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId);
             if (nativePresets.Any())
             {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text($"\nNative Presets");
-                foreach ((var j, var nativePreset) in nativePresets)
-                    DrawPresetRow(j, nativePreset.ToPreset($"{j + 1}. Game Preset"), isReadOnly: true);
+                ImGui.Text($"Native Presets");
+                DrawPresetList("nativeListView",
+                    Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId).Select(x => (x.Item1, x.Item2.ToPreset($"Slot {x.Item1 + 1}"))),
+                    readOnly: true);
             }
-
             var communityPresets = Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId);
             if (communityPresets.Any())
             {
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text($"\nCommunity Presets");
-                int i = 0;
-                foreach (var preset in communityPresets)
-                    DrawPresetRow(i++, preset, isReadOnly: true);
+                ImGui.Text($"Community Presets");
+                DrawPresetList("communityListView",
+                    Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId),
+                    readOnly: true);
             }
+
             ImGui.EndTable();
         }
     }

@@ -1,6 +1,6 @@
 namespace WaymarkStudio;
 
-internal class TerritoryFilter
+internal record struct TerritoryFilter
 {
     public Expansion? SelectedExpansion;
     public ContentType? SelectedContentType;
