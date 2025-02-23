@@ -88,7 +88,7 @@ public abstract class BaseWindow : Window
 
                     if (ImGui.IsItemHovered())
                     {
-                        MyGui.DisplayTooltip(() => PresetTooltip(preset));
+                        MyGui.DisplayTooltip(() => PresetTooltip(preset, readOnly));
                     }
 
                     if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
