@@ -90,6 +90,23 @@ public abstract class BaseWindow : Window
                     {
                         MyGui.DisplayTooltip(() => PresetTooltip(preset, readOnly));
                     }
+                    if (MyGui.OnStartHover())
+                    {
+                        // Lazy solution until I add some sort of distance based trigger system.
+                        // Adjust height when user hovers over the preset. Save if trace succeeded.
+                        if (preset.PendingHeightAdjustment.IsAnySet())
+                        {
+                            Plugin.WaymarkManager.AdjustPresetHeight(preset);
+                            if (preset.PendingHeightAdjustment.IsAnySet())
+                                return;
+                            Plugin.Config.Save();
+                        }
+                        Plugin.WaymarkManager.SetHoverPreview(preset);
+                    }
+                    if (MyGui.OnStopHover())
+                    {
+                        Plugin.WaymarkManager.ClearHoverPreview();
+                    }
 
                     if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                     {
@@ -152,25 +169,6 @@ public abstract class BaseWindow : Window
 
                         ImGui.EndPopup();
                     }
-                    if (MyGui.OnStartHover())
-                    {
-                        // Lazy solution until I add some sort of distance based trigger system.
-                        // Adjust height when user hovers over the preset. Save if trace succeeded.
-                        if (preset.PendingHeightAdjustment.IsAnySet())
-                        {
-                            Plugin.WaymarkManager.AdjustPresetHeight(preset);
-                            if (preset.PendingHeightAdjustment.IsAnySet())
-                                return;
-                            Plugin.Config.Save();
-                        }
-                        Plugin.WaymarkManager.SetHoverPreview(preset);
-                    }
-
-                    if (MyGui.OnStopHover())
-                    {
-                        Plugin.WaymarkManager.ClearHoverPreview();
-                    }
-
                     MyGui.EndRow();
                 }
 

@@ -243,7 +243,13 @@ public partial class MyGui
         if (CurrentListState == null) return false;
         var s = CurrentListState;
 
-        return s.prevHoverIndex != s.hoverIndex && s.prevHoverIndex == -1;
+        if (ImGui.IsItemHovered())
+        {
+            s.hoverIndex = RowIndex;
+            return s.prevHoverIndex != s.hoverIndex;
+
+        }
+        return false;
     }
 
     public static bool OnStopHover()
@@ -251,7 +257,7 @@ public partial class MyGui
         if (CurrentListState == null) return false;
         var s = CurrentListState;
 
-        return s.prevHoverIndex != s.hoverIndex && s.hoverIndex == -1;
+        return s.prevHoverIndex != s.hoverIndex && s.prevHoverIndex == RowIndex && s.hoverIndex == -1;
     }
 
     public static bool IsDraggingItem()
