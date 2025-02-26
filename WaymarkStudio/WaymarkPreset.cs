@@ -49,13 +49,14 @@ public class WaymarkPreset
         return Name;
     }
 
+    // TODO Keeping this?
     public FieldMarkerPreset ToGamePreset()
     {
         FieldMarkerPreset preset = new();
 
         foreach (Waymark w in Enum.GetValues<Waymark>())
         {
-            int index = (int)w;
+            var index = (int)w;
             bool active = MarkerPositions.ContainsKey(w);
             preset.SetMarkerActive(index, active);
             preset.Markers[index] = active ? MarkerPositions[w].ToGamePresetPoint() : default;

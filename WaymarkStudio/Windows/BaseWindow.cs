@@ -59,6 +59,7 @@ public abstract class BaseWindow : Window
         {
             foreach ((var index, var preset) in presetList)
             {
+                bool confirmDelete = false;
                 if (MyGui.NextRow(index, preset.Name))
                 {
                     var isSameTerritory = preset.TerritoryId == Plugin.WaymarkManager.territoryId;
@@ -124,7 +125,10 @@ public abstract class BaseWindow : Window
                         }
                         if (!readOnly && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, "Delete", size: size, defaultColor: new()))
                         {
-                            MyGui.DeleteRow();
+                            if (Plugin.Triggers.HasReference(preset))
+                                confirmDelete = true;
+                            else
+                                MyGui.DeleteRow();
                             closePopup = true;
                         }
                         if (isSameTerritory)
@@ -167,6 +171,24 @@ public abstract class BaseWindow : Window
                         if (closePopup)
                             ImGui.CloseCurrentPopup();
 
+                        ImGui.EndPopup();
+                    }
+                    if (confirmDelete)
+                        ImGui.OpenPopup($"deletereference_popup_{id}##{index}");
+                    if (ImGui.BeginPopup($"deletereference_popup_{id}##{index}"))
+                    {
+                        ImGui.Text("This preset is linked to a Trigger. Delete anyway?");
+                        if (ImGuiComponents.IconButton("accept_deletereference", FontAwesomeIcon.Check))
+                        {
+                            Plugin.Triggers.DeleteReferences(preset);
+                            MyGui.DeleteRow();
+                            ImGui.CloseCurrentPopup();
+                        }
+                        ImGui.SameLine();
+                        if (ImGuiComponents.IconButton("cancel_deletereference", FontAwesomeIcon.Times))
+                        {
+                            ImGui.CloseCurrentPopup();
+                        }
                         ImGui.EndPopup();
                     }
                     MyGui.EndRow();

@@ -1,3 +1,4 @@
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Common.Component.BGCollision;
@@ -14,11 +15,12 @@ namespace WaymarkStudio;
  */
 internal class PctOverlay
 {
-    object? currentMousePlacementThing;
+    public object? currentMousePlacementThing;
     // TODO maybe Queue up everything to draw in this list if selection and placeholders should be separate
     internal List<Action<PctDrawList>> list = new();
-    Vector3? lmb;
-    Vector3? rmb;
+
+    Quaternion? rmbStart;
+    Quaternion? lmbStart;
 
     public PctOverlay()
     {
@@ -118,6 +120,29 @@ internal class PctOverlay
         Canceled,
     }
 
+    private unsafe Quaternion CameraRotation => FFXIVClientStructs.FFXIV.Common.Math.Quaternion.CreateFromRotationMatrix(CameraManager.Instance()->CurrentCamera->ViewMatrix);
+
+    private unsafe bool IsClicked(MouseButtonFlags button, ref Quaternion? startingCameraRotation)
+    {
+        // Use RMB to cancel selection if clicked with negligible drift.
+        var isDown = UIInputData.Instance()->UIFilteredCursorInputs.MouseButtonHeldFlags.HasFlag(button);
+        if (isDown && startingCameraRotation == null)
+        {
+            startingCameraRotation = CameraRotation;
+        }
+        if (!isDown && startingCameraRotation.HasValue)
+        {
+            var drift = 1 - Quaternion.Dot(CameraRotation, startingCameraRotation.Value);
+            startingCameraRotation = null;
+            if (drift < 0.001)
+            {
+                currentMousePlacementThing = null;
+                return true;
+            }
+        }
+        return false;
+    }
+
     internal unsafe SelectionResult MouseWorldPosSelection(object thing, ref Vector3 worldPos)
     {
         if (!thing.Equals(currentMousePlacementThing))
@@ -136,37 +161,14 @@ internal class PctOverlay
             if (!Raycaster.CheckAndSnapY(ref worldPos))
                 return SelectionResult.SelectingInvalid;
 
-            // Use RMB to cancel selection if clicked with negligible drift.
-            var rmbdown = UIInputData.Instance()->UIFilteredCursorInputs.MouseButtonHeldFlags.HasFlag(MouseButtonFlags.RBUTTON);
-            if (rmbdown && rmb == null)
+            if (IsClicked(MouseButtonFlags.RBUTTON, ref rmbStart))
             {
-                rmb = worldPos;
+                return SelectionResult.Canceled;
             }
-            if (!rmbdown && rmb != null)
+
+            if (IsClicked(MouseButtonFlags.LBUTTON, ref lmbStart))
             {
-                var drift = Vector3.DistanceSquared(worldPos, rmb.Value);
-                rmb = null;
-                if (drift < 1)
-                {
-                    currentMousePlacementThing = null;
-                    return SelectionResult.Canceled;
-                }
-            }
-            // Use LMB to confirm selection if clicked with negligible drift.
-            var lmbdown = UIInputData.Instance()->UIFilteredCursorInputs.MouseButtonHeldFlags.HasFlag(MouseButtonFlags.LBUTTON);
-            if (lmbdown && lmb == null)
-            {
-                lmb = worldPos;
-            }
-            if (!lmbdown && lmb != null)
-            {
-                var drift = Vector3.DistanceSquared(worldPos, lmb.Value);
-                lmb = null;
-                if (drift < 1)
-                {
-                    currentMousePlacementThing = null;
-                    return SelectionResult.Selected;
-                }
+                return SelectionResult.Selected;
             }
 
             var worldPosTemp = worldPos;
@@ -177,6 +179,8 @@ internal class PctOverlay
         return SelectionResult.SelectingInvalid;
     }
 
+    public bool CanDraw => Plugin.StudioWindow.IsOpen;
+
     bool once = true;
 
     private void OnUpdate()
@@ -184,13 +188,14 @@ internal class PctOverlay
         if (once)
         {
             var shouldDraw =
-                Plugin.StudioWindow.IsOpen
+                CanDraw
                 && (Plugin.WaymarkManager.Placeholders.Count > 0
                 || Plugin.WaymarkManager.HoverPreviews.Count > 0
                 || Plugin.WaymarkManager.showGuide
                 || list.Count > 0);
             if (!shouldDraw)
             {
+                list.Clear();
                 return;
             }
             try
@@ -199,7 +204,10 @@ internal class PctOverlay
                 {
 
                     if (drawList == null)
+                    {
+                        list.Clear();
                         return;
+                    }
                     foreach (var action in list)
                         action(drawList);
                     list.Clear();
@@ -212,7 +220,7 @@ internal class PctOverlay
             }
             catch (Exception e)
             {
-                Plugin.Chat.Print("caught " + e);
+                Plugin.Chat.PrintError($"Drawing Failed Please Report! Restart plugin to re-enable drawing. Caught {e}");
                 once = false;
             }
         }

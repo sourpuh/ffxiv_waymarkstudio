@@ -1,4 +1,5 @@
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
@@ -17,7 +18,9 @@ internal class StudioWindow : BaseWindow
     private readonly Vector2 waymarkIconButtonSize = new(30);
     private readonly Vector2 territoryInfoSize = new(20);
     private CircleTrigger? trigger;
-
+    private Vector2 windowPosition;
+    private Vector2 windowSize;
+    private int selectedPresetIndex = -1;
     internal StudioWindow() : base("Waymark Studio")
     {
         Size = new(520, 480);
@@ -28,12 +31,15 @@ internal class StudioWindow : BaseWindow
         };
 
         TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Config"), Icon = FontAwesomeIcon.Cog, IconOffset = new(2, 1.5f), Click = _ => Plugin.ToggleConfigUI() });
-        TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Library"), Icon = FontAwesomeIcon.Atlas, IconOffset = new(2, 1.5f), Click = _ => Plugin.ToggleLibraryUI() });
+        // TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Library"), Icon = FontAwesomeIcon.Atlas, IconOffset = new(2, 1.5f), Click = _ => Plugin.ToggleLibraryUI() });
         TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Waymarks UI"), Icon = FontAwesomeIcon.ArrowUpRightFromSquare, IconOffset = new(2, 1.5f), Click = _ => Plugin.FieldMarkerAddon.Toggle() });
     }
 
     public override void Draw()
     {
+        windowPosition = ImGui.GetWindowPos();
+        windowSize = ImGui.GetWindowSize();
+
         if (ImGui.BeginTable("StudioTable", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame))
         {
             ImGui.TableNextRow();
@@ -47,17 +53,22 @@ internal class StudioWindow : BaseWindow
             if (ImGui.CollapsingHeader("Guide", ImGuiTreeNodeFlags.DefaultOpen))
                 using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
                     DrawGuideSection();
-            /*
-            if (ImGui.CollapsingHeader("Trigger", ImGuiTreeNodeFlags.DefaultOpen))
-                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
-                    DrawTriggerSection();
-            */
 
             ImGui.Spacing();
             ImGui.EndTable();
         }
         ImGui.SameLine();
-        DrawSavedPresets();
+        if (ImGui.BeginTable("PresetsTable", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY))
+        {
+            ImGui.TableSetupColumn("Core", ImGuiTableColumnFlags.WidthStretch);
+
+            ImGui.TableNextRow();
+            ImGui.TableNextColumn();
+            DrawMarkerInfo();
+            ImGui.Separator();
+            DrawSavedPresets();
+            ImGui.EndTable();
+        }
     }
 
     internal void DrawDraftSection()
@@ -253,131 +264,182 @@ internal class StudioWindow : BaseWindow
         }
     }
 
-    internal void DrawTriggerSection()
+    internal void DrawMarkerInfo()
     {
-        if (trigger == null && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.LocationCrosshairs, "Add Trigger"))
-        {
-            trigger = new("New trigger", Plugin.WaymarkManager.territoryId);
-            Plugin.Overlay.StartMouseWorldPosSelecting("trigger");
-        }
-
-        if (trigger == null)
-            return;
-
-        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.EyeSlash, "Remove Trigger"))
-        {
-            trigger = null;
-            return;
-        }
-
+        MyGui.ExpansionIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
         ImGui.SameLine();
-        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Save, "Save"))
-        {
-            Plugin.Config.Triggers.Add((trigger, null));
-            trigger = null;
-            return;
-        }
-
-        ImGui.TextUnformatted("Position:");
-        ImGui.SetNextItemWidth(125f);
+        MyGui.ContentTypeIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
         ImGui.SameLine();
-        ImGui.InputFloat3("##position", ref trigger.Center, "%.1f");
-        ImGui.SameLine();
-        if (ImGuiComponents.IconButton("start_trigger_selection", FontAwesomeIcon.MousePointer))
+        ImGui.Text($"{Plugin.WaymarkManager.mapName}");
+        var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
+        TextActiveWaymarks(currentMarkers);
+        using (ImRaii.Disabled(currentMarkers.MarkerPositions.Count == 0))
         {
-            Plugin.Overlay.StartMouseWorldPosSelecting("trigger");
+            if (ImGuiComponents.IconButton("save_markers", FontAwesomeIcon.Save))
+            {
+                currentMarkers.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(Plugin.WaymarkManager.territoryId) + 1}";
+                Plugin.Storage.SavePreset(currentMarkers);
+            }
+            MyGui.HoverTooltip("Save markers to presets");
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton("draftify_markers", FontAwesomeIcon.MapMarkerAlt))
+            {
+                foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
+                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(w, p);
+            }
+            MyGui.HoverTooltip("Import markers as draft");
+            ImGui.SameLine();
+            using (ImRaii.Disabled(!Plugin.WaymarkManager.IsSafeToPlaceWaymarks()))
+            {
+                if (ImGuiComponents.IconButton("clear_markers", FontAwesomeIcon.Times))
+                {
+                    Plugin.WaymarkManager.NativeClearWaymarks();
+                }
+                MyGui.HoverTooltip("Clear Waymarks");
+            }
         }
-        switch (Plugin.Overlay.MouseWorldPosSelection("trigger", ref trigger.Center))
-        {
-            case PctOverlay.SelectionResult.Canceled:
-                trigger = null;
-                return;
-        }
-
-        ImGui.TextUnformatted("Radius:");
-        ImGui.SetNextItemWidth(120f);
         ImGui.SameLine();
-        ImGui.SliderFloat("##trigger_radius", ref trigger.Radius, 1, 20);
-
-        trigger.Draw();
+        ImGui.Spacing();
+        ImGui.SameLine();
+        using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
+        {
+            if (ImGuiComponents.IconButton("edit_triggers", FontAwesomeIcon.FlagCheckered))
+            {
+                Plugin.TriggerEditorWindow.Open(windowPosition, windowSize);
+            }
+            MyGui.HoverTooltip("Trigger Editor");
+        }
+        ImGui.SameLine();
+        if (ImGuiComponents.IconButton("library", FontAwesomeIcon.Atlas))
+        {
+            Plugin.ToggleLibraryUI();
+        }
+        MyGui.HoverTooltip("Preset Library");
     }
 
     internal void DrawSavedPresets()
     {
-        if (ImGui.BeginTable("PresetsTable", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.NoHostExtendX | ImGuiTableFlags.SizingFixedSame | ImGuiTableFlags.RowBg | ImGuiTableFlags.ScrollY))
+        DrawTriggerList();
+
+        ImGui.Text("Saved Presets");
+        ImGui.SameLine();
+        ImguiFFLogsImportButton();
+        ClipboardImportButton();
+
+        DrawPresetList("mainListView", Plugin.Storage.ListSavedPresets(Plugin.WaymarkManager.territoryId));
+        var nativePresets = Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId);
+        if (nativePresets.Any())
         {
-            ImGui.TableSetupColumn("Core", ImGuiTableColumnFlags.WidthStretch);
+            ImGui.Text($"Native Presets");
+            DrawPresetList("nativeListView",
+                Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId).Select(x => (x.Item1, x.Item2.ToPreset($"Slot {x.Item1 + 1}"))),
+                readOnly: true);
+        }
+        var communityPresets = Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId);
+        if (communityPresets.Any())
+        {
+            ImGui.Text($"Community Presets");
+            DrawPresetList("communityListView",
+                Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId),
+                readOnly: true);
+        }
+    }
 
-            ImGui.TableNextRow();
-            ImGui.TableNextColumn();
-            MyGui.ExpansionIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
-            ImGui.SameLine();
-            MyGui.ContentTypeIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
-            ImGui.SameLine();
-            ImGui.Text($"{Plugin.WaymarkManager.mapName}");
-            var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
-            TextActiveWaymarks(currentMarkers);
-            ImGui.SameLine();
-            using (ImRaii.Disabled(currentMarkers.MarkerPositions.Count == 0))
-            {
-                if (ImGuiComponents.IconButton("save_markers", FontAwesomeIcon.Save))
-                {
-                    currentMarkers.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(Plugin.WaymarkManager.territoryId) + 1}";
-                    Plugin.Storage.SavePreset(currentMarkers);
-                }
-                MyGui.HoverTooltip("Save markers to presets");
-                ImGui.SameLine();
-                if (ImGuiComponents.IconButton("draftify_markers", FontAwesomeIcon.MapMarkerAlt))
-                {
-                    foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
-                        Plugin.WaymarkManager.PlaceWaymarkPlaceholder(w, p);
-                }
-                MyGui.HoverTooltip("Import markers as draft");
-                ImGui.SameLine();
-                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsSafeToPlaceWaymarks()))
-                {
-                    if (ImGuiComponents.IconButton("clear_markers", FontAwesomeIcon.Times))
-                    {
-                        Plugin.WaymarkManager.NativeClearWaymarks();
-                    }
-                    MyGui.HoverTooltip("Clear Waymarks");
-                }
-            }
-            /*
+    internal void DrawTriggerList()
+    {
+        var triggers = Plugin.Triggers.ListSavedTriggers(Plugin.WaymarkManager.territoryId);
+        if (triggers.Any())
+        {
             ImGui.Text("Triggers");
-            foreach ((var trigger, var preset) in Plugin.Config.Triggers)
+            if (MyGui.BeginList("triggers"))
             {
-                var name = trigger.Name;
-                if (preset != null)
-                    name += $" {preset.Name}";
-                ImGui.Selectable(name);
-            }
-            */
+                foreach ((var index, var trigger, var preset) in triggers)
+                {
+                    trigger.Draw();
 
-            ImGui.Text("Saved Presets");
-            ImGui.SameLine();
-            ImguiFFLogsImportButton();
-            ClipboardImportButton();
+                    var name = trigger.Name;
+                    if (MyGui.NextRow(index, name))
+                    {
+                        Vector4 buttonColor = new(1, 1, 1, 0.1f);
+                        if (MyGui.IsDraggingItem())
+                        {
+                            buttonColor = ImGuiColors.DalamudGrey with { W = 0.5f };
+                        }
 
-            DrawPresetList("mainListView", Plugin.Storage.ListSavedPresets(Plugin.WaymarkManager.territoryId));
-            var nativePresets = Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId);
-            if (nativePresets.Any())
-            {
-                ImGui.Text($"Native Presets");
-                DrawPresetList("nativeListView",
-                    Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId).Select(x => (x.Item1, x.Item2.ToPreset($"Slot {x.Item1 + 1}"))),
-                    readOnly: true);
-            }
-            var communityPresets = Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId);
-            if (communityPresets.Any())
-            {
-                ImGui.Text($"Community Presets");
-                DrawPresetList("communityListView",
-                    Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId),
-                    readOnly: true);
-            }
+                        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FlagCheckered, $"{name}##{index}",
+                            size: new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetFrameHeight()),
+                            defaultColor: buttonColor))
+                            Plugin.TriggerEditorWindow.Open(windowPosition, windowSize, trigger);
 
-            ImGui.EndTable();
+                        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                        {
+                            ImGui.OpenPopup($"rightclick_trigger_popup##{index}");
+                        }
+                        if (ImGui.BeginPopup($"rightclick_trigger_popup##{index}"))
+                        {
+                            Vector2 size = new(150, ImGui.GetFrameHeight());
+
+                            var closePopup = false;
+                            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Edit, "Rename", size: size, defaultColor: new()))
+                            {
+                                MyGui.StartRowRename();
+                                closePopup = true;
+                            }
+                            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.TrashAlt, "Delete", size: size, defaultColor: new()))
+                            {
+                                MyGui.DeleteRow();
+                                closePopup = true;
+                            }
+                            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FilePen, "Edit", size: size, defaultColor: new()))
+                            {
+                                Plugin.TriggerEditorWindow.Open(windowPosition, windowSize, trigger);
+                                closePopup = true;
+                            }
+                            using (ImRaii.Disabled(preset == null))
+                                if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Unlink, "Detach", size: size, defaultColor: new()))
+                                {
+                                    Plugin.Triggers.SaveTrigger(trigger, null);
+                                    closePopup = true;
+                                }
+                            if (closePopup)
+                                ImGui.CloseCurrentPopup();
+                            ImGui.EndPopup();
+                        }
+
+                        if (ImGui.IsItemHovered())
+                            MyGui.DisplayTooltip(() =>
+                            {
+                                if (preset != null)
+                                    ImGui.Text($"Attached {preset.Name}");
+                                else
+                                    ImGui.Text("No attached preset");
+                                ImGui.SetWindowFontScale(0.9f);
+                                ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.DalamudGrey);
+                                ImGui.Text("(Drag to reorder)");
+                                ImGui.PopStyleColor();
+                                ImGui.SetWindowFontScale(1f);
+                            });
+
+                        MyGui.EndRow();
+                    }
+                    if (MyGui.OnRename(out string newName))
+                    {
+                        trigger.Name = newName;
+                        Plugin.Config.Save();
+                    }
+                }
+                if (MyGui.OnMove(out int source, out int target))
+                {
+                    // Plugin.Chat.Print("Move s:" + source + " t:" + target);
+                    Plugin.Triggers.MoveTrigger(source, target);
+                }
+                if (MyGui.OnDelete(out int deleteIndex))
+                {
+                    // Plugin.Chat.Print("Delete " + deleteIndex);
+                    Plugin.Triggers.DeleteSavedTrigger(deleteIndex);
+                }
+                MyGui.EndList();
+            }
         }
     }
 

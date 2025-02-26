@@ -1,6 +1,5 @@
 using Dalamud.Game.ClientState.Conditions;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Common.Component.BGCollision;
 using Lumina.Excel.Sheets;
 using System;
@@ -311,12 +310,14 @@ internal class WaymarkManager
                     if (!preset.MarkerPositions.ContainsKey(w))
                         preset.MarkerPositions.Add(w, p);
 
-            UnsafeNativePlacePreset(preset.ToGamePreset());
+            UnsafeNativePlacePreset(preset);
             if (clearPlaceholder) Plugin.WaymarkManager.ClearPlaceholders();
         }
         else
         {
             if (!IsSafeToPlaceWaymarks()) return;
+            // TODO calculate which is fewer operations; clear all or clear specific.
+            if (!mergeExisting) NativeClearWaymarks();
             foreach (Waymark w in Enum.GetValues<Waymark>())
             {
                 if (preset.MarkerPositions.TryGetValue(w, out var wPos))
@@ -329,8 +330,8 @@ internal class WaymarkManager
                     }
                     safePlaceQueue.Enqueue((w, wPos));
                 }
-                else if (!mergeExisting)
-                    NativeClearWaymark(w);
+                //else if (!mergeExisting)
+                //    NativeClearWaymark(w);
             }
             processSafePlaceQueue(clearPlaceholder);
         }
@@ -371,8 +372,10 @@ internal class WaymarkManager
         });
     }
 
-    private unsafe bool UnsafeNativePlacePreset(FieldMarkerPreset preset)
+    private unsafe bool UnsafeNativePlacePreset(WaymarkPreset preset)
     {
+        // TODO Does this do anything or does client do it for me?
+        if (Waymarks.Equals(preset.MarkerPositions)) return true;
         var placementStruct = preset.ToMarkerPresetPlacement();
         var status = PlacePreset(MarkingController.Instance(), &placementStruct);
         if (status != 0)

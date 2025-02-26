@@ -13,7 +13,7 @@ Features include:
 1. Place from a suite of packaged community created presets
 1. Import waymarks from FFLogs reports
 1. Seamlessly share waymarks between Criterion Normal and Savage
-1. Automatically load presets when entering an instance or dungeon region (planned)
+1. Create triggers to automatically load presets when entering a dungeon region
 
 > [!CAUTION]
 >Use at your own risk.
@@ -53,6 +53,20 @@ To import a preset from FFLogs:
 
 ## Community Presets
 WMS contains a set of community presets from https://github.com/Em-Six/FFXIVWaymarkPresets/wiki. If you have a preset that you want to include in community presets, follow the support process to suggest the preset.
+
+## Triggers
+Triggers are cylindrical regions that automatically load presets when you enter them. Presets were designed for criterion dungeons so you can place a trigger before each boss to automatically load their presets when you need them.
+
+To use triggers:
+1. Open the trigger editor window with the '🏁' button. Press 'Place Trigger' to begin creation.
+1. Left-click to place a trigger on the ground. The checker bordered circle shows the trigger's location and size.
+1. Adjust the trigger's name, position, and radius.
+1. Select a preset to attach.
+   * If you don't have a preset yet, you can still create the trigger and attach one later.
+1. Save the trigger. Once it is saved, it will appear in the studio window above your presets.
+1. Every time you walk into the trigger, it will load the attached preset.
+
+<img height=350 src="/ReadmeImages/trigger.png">
 
 ## Installation
 1. Open Dalamud settings using your preferred method, such as the `/xlsettings` chat command.

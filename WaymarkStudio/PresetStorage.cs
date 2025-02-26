@@ -18,18 +18,9 @@ internal class PresetStorage
     private TerritoryFilter lastFilter;
     private PresetLibrary? cachedLibrary;
 
-    private Dictionary<uint, uint> equivalentTerritoryIds = new()
-    {
-        [1075] = 1076, // ASS
-        [1155] = 1156, // AMR
-        [1179] = 1180, // AAI
-        // [1153] = 1154, // P12 for testing
-    };
-
     internal PresetStorage()
     {
-        foreach (var kvp in equivalentTerritoryIds.ToList())
-            equivalentTerritoryIds.Add(kvp.Value, kvp.Key);
+
     }
 
     public PresetLibrary GetPresetLibrary(TerritoryFilter filter)
@@ -64,10 +55,9 @@ internal class PresetStorage
 
     public IEnumerable<(int, FieldMarkerPreset)> ListNativePresets(ushort territoryId = 0)
     {
-        uint contentId = TerritorySheet.GetContentId(territoryId);
-        uint altContentId = 0;
-        if (Plugin.Config.CombineEquivalentDutyPresets && equivalentTerritoryIds.TryGetValue(territoryId, out var altTerritoryId))
-            equivalentTerritoryIds.TryGetValue(altTerritoryId, out altContentId);
+        var contentId = TerritorySheet.GetContentId(territoryId);
+        var altTerritoryId = TerritorySheet.GetAlternativeId(territoryId) ?? 0;
+        var altContentId = TerritorySheet.GetContentId(altTerritoryId);
 
         for (int i = 0; i < MaxEntries; i++)
         {
@@ -98,9 +88,7 @@ internal class PresetStorage
 
     public IEnumerable<(int, WaymarkPreset)> ListSavedPresets(ushort territoryId = 0)
     {
-        uint altTerritoryId = 0;
-        if (Plugin.Config.CombineEquivalentDutyPresets)
-            equivalentTerritoryIds.TryGetValue(territoryId, out altTerritoryId);
+        var altTerritoryId = TerritorySheet.GetAlternativeId(territoryId);
 
         var presets = Plugin.Config.SavedPresets;
         for (int i = 0; i < presets.Count; i++)
@@ -137,17 +125,7 @@ internal class PresetStorage
 
     public void MovePreset(int sourceIndex, int targetIndex)
     {
-        var preset = Plugin.Config.SavedPresets[sourceIndex];
-        if (sourceIndex < targetIndex)
-        {
-            Plugin.Config.SavedPresets.Insert(targetIndex + 1, preset);
-            Plugin.Config.SavedPresets.RemoveAt(sourceIndex);
-        }
-        else if (targetIndex < sourceIndex)
-        {
-            Plugin.Config.SavedPresets.RemoveAt(sourceIndex);
-            Plugin.Config.SavedPresets.Insert(targetIndex, preset);
-        }
+        Plugin.Config.SavedPresets.Move(sourceIndex, targetIndex);
         SaveConfig();
     }
 
@@ -163,7 +141,8 @@ internal class PresetStorage
         if (CommunityPresets.TerritoryToPreset.TryGetValue(territoryId, out var communityPresets))
             presets = presets.Concat(communityPresets);
 
-        if (Plugin.Config.CombineEquivalentDutyPresets && equivalentTerritoryIds.TryGetValue(territoryId, out var altTerritoryId))
+        var altTerritoryId = TerritorySheet.GetAlternativeId(territoryId);
+        if (altTerritoryId != null)
             if (CommunityPresets.TerritoryToPreset.TryGetValue((ushort)altTerritoryId, out var altCommunityPresets))
             {
                 altCommunityPresets.ForEach(preset =>
@@ -173,7 +152,6 @@ internal class PresetStorage
                 });
                 presets = presets.Concat(altCommunityPresets);
             }
-
         return presets;
     }
 }

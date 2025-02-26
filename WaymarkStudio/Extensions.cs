@@ -19,6 +19,21 @@ internal static class Extensions
                                        entry => entry.Value);
     }
 
+    public static void Move<T>(this IList<T> list, int sourceIndex, int targetIndex)
+    {
+        var item = list[sourceIndex];
+        if (sourceIndex < targetIndex)
+        {
+            list.Insert(targetIndex + 1, item);
+            list.RemoveAt(sourceIndex);
+        }
+        else if (targetIndex < sourceIndex)
+        {
+            list.RemoveAt(sourceIndex);
+            list.Insert(targetIndex, item);
+        }
+    }
+
     internal static Vector2 XZ(this Vector3 v)
     {
         return new Vector2(v.X, v.Z);
@@ -56,15 +71,22 @@ internal static class Extensions
         return point;
     }
 
-    public static MarkerPresetPlacement ToMarkerPresetPlacement(this FieldMarkerPreset preset)
+    public static MarkerPresetPlacement ToMarkerPresetPlacement(this WaymarkPreset preset)
     {
         MarkerPresetPlacement placementStruct = new();
-        for (int i = 0; i < 8; i++)
+        foreach (Waymark w in Enum.GetValues<Waymark>())
         {
-            placementStruct.Active[i] = preset.IsMarkerActive(i);
-            placementStruct.X[i] = preset.Markers[i].X;
-            placementStruct.Y[i] = preset.Markers[i].Y;
-            placementStruct.Z[i] = preset.Markers[i].Z;
+            var i = (int)w;
+            // TODO necessary?
+            placementStruct.Active[i] = false;
+            if (preset.MarkerPositions.TryGetValue(w, out var position))
+            {
+                var point = position.ToGamePresetPoint();
+                placementStruct.Active[i] = true;
+                placementStruct.X[i] = point.X;
+                placementStruct.Y[i] = point.Y;
+                placementStruct.Z[i] = point.Z;
+            }
         }
         return placementStruct;
     }

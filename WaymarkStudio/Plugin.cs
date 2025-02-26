@@ -5,6 +5,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
+using WaymarkStudio.Triggers;
 using WaymarkStudio.Windows;
 
 
@@ -26,18 +27,19 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
     [PluginService] internal static IGameInteropProvider Hooker { get; private set; } = null!;
-
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
 
     internal static FieldMarkerAddon FieldMarkerAddon { get; private set; } = null!;
     internal static Configuration Config { get; private set; } = null!;
     internal static PresetStorage Storage { get; private set; } = null!;
+    internal static TriggerManager Triggers { get; private set; } = null!;
     internal static WaymarkManager WaymarkManager { get; private set; } = null!;
     internal static PctOverlay Overlay { get; private set; } = null!;
     internal readonly WindowSystem WindowSystem = new(Tag);
     internal static ConfigWindow ConfigWindow { get; private set; } = null!;
     internal static LibraryWindow LibraryWindow { get; private set; } = null!;
     internal static StudioWindow StudioWindow { get; private set; } = null!;
+    internal static TriggerEditorWindow TriggerEditorWindow { get; private set; } = null!;
 
     private const string CommandName = "/wms";
 
@@ -46,16 +48,19 @@ public sealed class Plugin : IDalamudPlugin
         Config = Interface.GetPluginConfig() as Configuration ?? new Configuration();
 
         FieldMarkerAddon = new();
-        ConfigWindow = new();
-        LibraryWindow = new();
-        StudioWindow = new();
         WaymarkManager = new();
         Overlay = new();
         Storage = new();
+        Triggers = new();
 
+        ConfigWindow = new();
         WindowSystem.AddWindow(ConfigWindow);
+        LibraryWindow = new();
         WindowSystem.AddWindow(LibraryWindow);
+        StudioWindow = new();
         WindowSystem.AddWindow(StudioWindow);
+        TriggerEditorWindow = new();
+        WindowSystem.AddWindow(TriggerEditorWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -67,6 +72,7 @@ public sealed class Plugin : IDalamudPlugin
         Interface.UiBuilder.Draw += DrawUI;
         Interface.UiBuilder.OpenConfigUi += ToggleConfigUI;
         Interface.UiBuilder.OpenMainUi += ToggleMainUI;
+        Framework.Update += Update;
     }
 
     public void Dispose()
@@ -82,6 +88,12 @@ public sealed class Plugin : IDalamudPlugin
         Interface.UiBuilder.Draw -= DrawUI;
         Interface.UiBuilder.OpenConfigUi -= ToggleConfigUI;
         Interface.UiBuilder.OpenMainUi -= ToggleMainUI;
+        Framework.Update -= Update;
+    }
+
+    internal void Update(IFramework framework)
+    {
+        Triggers.Update();
     }
 
     private void OnCommand(string command, string args)
@@ -91,7 +103,11 @@ public sealed class Plugin : IDalamudPlugin
     private void OnTerritoryChange(ushort id)
     {
         if (DataManager.GetExcelSheet<TerritoryType>().TryGetRow(id, out var territory))
+        {
             WaymarkManager.OnTerritoryChange(territory);
+        }
+        Triggers.OnTerritoryChange();
+        TriggerEditorWindow.IsOpen = false;
     }
     private void DrawUI() => WindowSystem.Draw();
     public static void ToggleConfigUI() => ConfigWindow.Toggle();

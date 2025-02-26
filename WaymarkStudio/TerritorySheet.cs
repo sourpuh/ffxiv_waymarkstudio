@@ -13,6 +13,13 @@ internal static class TerritorySheet
 {
     private static Dictionary<Expansion, ExpansionInfo> ExpansionInfos;
     private static Dictionary<ContentType, ContentTypeInfo> ContentTypeInfos;
+    private static Dictionary<uint, uint> EquivalentTerritoryIds = new()
+    {
+        [1075] = 1076, // ASS
+        [1155] = 1156, // AMR
+        [1179] = 1180, // AAI
+        // [1153] = 1154, // P12 for testing
+    };
 
     struct TerritoryInfo
     {
@@ -21,11 +28,14 @@ internal static class TerritorySheet
         internal Expansion expansion;
         internal ContentType contentType;
     }
-    private static Dictionary<uint, TerritoryInfo> territoryIdToInfo;
+    private static Dictionary<uint, TerritoryInfo> TerritoryIdToInfo;
 
     static TerritorySheet()
     {
-        territoryIdToInfo = Plugin.DataManager.GetExcelSheet<TerritoryType>()
+        foreach (var kvp in EquivalentTerritoryIds.ToList())
+            EquivalentTerritoryIds.Add(kvp.Value, kvp.Key);
+
+        TerritoryIdToInfo = Plugin.DataManager.GetExcelSheet<TerritoryType>()
             .ToDictionary(x => x.RowId,
             x => new TerritoryInfo()
             {
@@ -74,12 +84,12 @@ internal static class TerritorySheet
 
     internal static string GetTerritoryName(uint territoryId)
     {
-        return territoryIdToInfo[territoryId].name;
+        return TerritoryIdToInfo[territoryId].name;
     }
 
     internal static Expansion GetExpansion(uint territoryId)
     {
-        return territoryIdToInfo[territoryId].expansion;
+        return TerritoryIdToInfo[territoryId].expansion;
     }
     internal static ExpansionInfo GetExpansionInfo(Expansion expansion)
     {
@@ -100,7 +110,7 @@ internal static class TerritorySheet
 
     internal static ContentType GetContentType(uint territoryId)
     {
-        return territoryIdToInfo[territoryId].contentType;
+        return TerritoryIdToInfo[territoryId].contentType;
     }
 
     internal static string GetContentName(uint contentId)
@@ -112,8 +122,15 @@ internal static class TerritorySheet
 
     internal static ushort GetContentId(uint territoryId)
     {
-        if (territoryIdToInfo.TryGetValue(territoryId, out var value))
+        if (TerritoryIdToInfo.TryGetValue(territoryId, out var value))
             return (ushort)value.contentId;
         return 0;
+    }
+
+    internal static uint? GetAlternativeId(uint territoryId)
+    {
+        if (Plugin.Config.CombineEquivalentDutyPresets && EquivalentTerritoryIds.TryGetValue(territoryId, out var altTerritoryId))
+            return altTerritoryId;
+        return null;
     }
 }
