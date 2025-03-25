@@ -1,18 +1,19 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Dalamud.NET.Sdk/12.0.2">
   <PropertyGroup>
     <Authors>sourpuh</Authors>
     <Version>0.0.0.0</Version>
     <Description>A library for drawing 3D overlays in Dalamud plugins</Description>
     <PackageProjectUrl>https://github.com/sourpuh/ffxiv_pictomancy</PackageProjectUrl>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <Use_DalamudPackager>false</Use_DalamudPackager>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <PropertyGroup>

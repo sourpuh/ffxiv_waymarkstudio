@@ -5,7 +5,7 @@ VisualStudioVersion = 17.10.35004.147
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WaymarkStudio", "WaymarkStudio\WaymarkStudio.csproj", "{386FDF11-4561-4D90-B189-6D2B31E4E35D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pictomancy", "ffxiv_pictomancy\Pictomancy\Pictomancy.csproj", "{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pictomancy", "ffxiv_pictomancy\Pictomancy\Pictomancy.csproj", "{455D5AE2-5048-4831-BA40-10C4767F4BC8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,14 +23,14 @@ Global
 		{386FDF11-4561-4D90-B189-6D2B31E4E35D}.Release|Any CPU.Build.0 = Release|x64
 		{386FDF11-4561-4D90-B189-6D2B31E4E35D}.Release|x64.ActiveCfg = Release|x64
 		{386FDF11-4561-4D90-B189-6D2B31E4E35D}.Release|x64.Build.0 = Release|x64
-		{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}.Debug|x64.Build.0 = Debug|Any CPU
-		{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}.Release|x64.ActiveCfg = Release|Any CPU
-		{9E8A4874-2CEB-4FA5-AE64-14B564DFF184}.Release|x64.Build.0 = Release|Any CPU
+		{455D5AE2-5048-4831-BA40-10C4767F4BC8}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{455D5AE2-5048-4831-BA40-10C4767F4BC8}.Debug|Any CPU.Build.0 = Debug|x64
+		{455D5AE2-5048-4831-BA40-10C4767F4BC8}.Debug|x64.ActiveCfg = Debug|x64
+		{455D5AE2-5048-4831-BA40-10C4767F4BC8}.Debug|x64.Build.0 = Debug|x64
+		{455D5AE2-5048-4831-BA40-10C4767F4BC8}.Release|Any CPU.ActiveCfg = Release|x64
+		{455D5AE2-5048-4831-BA40-10C4767F4BC8}.Release|Any CPU.Build.0 = Release|x64
+		{455D5AE2-5048-4831-BA40-10C4767F4BC8}.Release|x64.ActiveCfg = Release|x64
+		{455D5AE2-5048-4831-BA40-10C4767F4BC8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

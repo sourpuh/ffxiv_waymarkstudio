@@ -85,10 +85,10 @@ internal class AddonClipper
 
     private unsafe void ClipPartyList()
     {
-        var addon = GetVisibleAddonOrNull("_PartyList", 23);
+        var addon = GetVisibleAddonOrNull("_PartyList", 24);
         if (addon == null) return;
 
-        for (int i = 6; i < 23; i++)
+        for (int i = 6; i <= 23; i++)
         {
             AtkResNode* slotNode = addon->UldManager.NodeList[i];
             if (slotNode is null) continue;
