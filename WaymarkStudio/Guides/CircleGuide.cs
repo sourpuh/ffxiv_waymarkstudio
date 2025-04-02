@@ -3,9 +3,9 @@ using System;
 using System.Numerics;
 
 namespace WaymarkStudio.Guides;
-public class CircleGuide(int radius = 1, int spokes = 0, int rings = 1, int rotationDegrees = 0) : Guide
+public class CircleGuide(float radius = 1, int spokes = 0, int rings = 1, int rotationDegrees = 0) : Guide
 {
-    internal int Radius = radius;
+    internal float Radius = radius;
     internal int Spokes = spokes;
     internal int Rings = rings;
     internal int RotationDegrees = rotationDegrees;
@@ -13,7 +13,7 @@ public class CircleGuide(int radius = 1, int spokes = 0, int rings = 1, int rota
 
     public override void Draw(PctDrawList drawList)
     {
-        var radiusStep = (float)Radius / Rings;
+        var radiusStep = Radius / Rings;
         for (var i = 1; i <= Rings; i++)
         {
             drawList.AddCircle(

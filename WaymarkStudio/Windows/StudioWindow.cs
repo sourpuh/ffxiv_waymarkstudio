@@ -223,7 +223,7 @@ internal class StudioWindow : BaseWindow
             ImGui.TextUnformatted("Radius:");
             ImGui.SetNextItemWidth(120f);
             ImGui.SameLine();
-            ImGui.SliderInt("##radius", ref circleGuide.Radius, 1, 20);
+            IntySliderFloat("##radius", ref circleGuide.Radius, 1, 20);
 
             ImGui.TextUnformatted("Spokes:");
             ImGui.SetNextItemWidth(120f);
@@ -245,12 +245,12 @@ internal class StudioWindow : BaseWindow
             ImGui.TextUnformatted("Width:");
             ImGui.SetNextItemWidth(120f);
             ImGui.SameLine();
-            ImGui.SliderInt("##width", ref rectangleGuide.HalfWidth, 1, 20);
+            IntySliderFloat("##width", ref rectangleGuide.HalfWidth, 1, 20);
 
             ImGui.TextUnformatted("Depth:");
             ImGui.SetNextItemWidth(120f);
             ImGui.SameLine();
-            ImGui.SliderInt("##depth", ref rectangleGuide.HalfDepth, 1, 20);
+            IntySliderFloat("##depth", ref rectangleGuide.HalfDepth, 1, 20);
 
             ImGui.TextUnformatted("Grid Size:");
             ImGui.SetNextItemWidth(120f);
@@ -262,6 +262,12 @@ internal class StudioWindow : BaseWindow
             ImGui.SameLine();
             ImguiRotationInput(ref rectangleGuide.RotationDegrees);
         }
+    }
+
+    internal void IntySliderFloat(string id, ref float val, int min, int max)
+    {
+        string fmt = (val - (int)val) > 0.05f ? "%.1f" : "%.0f";
+        ImGui.SliderFloat(id, ref val, min, max, fmt);
     }
 
     internal void DrawMarkerInfo()

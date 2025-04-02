@@ -3,10 +3,10 @@ using System;
 using System.Numerics;
 
 namespace WaymarkStudio.Guides;
-public class RectangleGuide(int halfWidth = 1, int halfDepth = 1, int gridSize = 5, int rotationDegrees = 0) : Guide
+public class RectangleGuide(float halfWidth = 1, float halfDepth = 1, int gridSize = 5, int rotationDegrees = 0) : Guide
 {
-    internal int HalfWidth = halfWidth;
-    internal int HalfDepth = halfDepth;
+    internal float HalfWidth = halfWidth;
+    internal float HalfDepth = halfDepth;
     internal int GridSize = gridSize;
     internal int RotationDegrees = rotationDegrees;
     internal float RotationRadians => RotationDegrees * MathF.PI / 180f;
