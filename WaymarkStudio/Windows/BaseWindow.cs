@@ -149,13 +149,16 @@ public abstract class BaseWindow : Window
                                 Plugin.Config.Save();
                                 closePopup = true;
                             }
-                            using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
-                                if (!readOnly &&
-                                    ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
-                                {
-                                    ImGui.SetClipboardText(preset.Export());
-                                    closePopup = true;
-                                }
+                        }
+                        using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
+                            if (!readOnly &&
+                                ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
+                            {
+                                ImGui.SetClipboardText(preset.Export());
+                                closePopup = true;
+                            }
+                        if (isSameTerritory)
+                        {
                             using (ImRaii.Disabled(!canPlaceWaymark))
                                 if (ImGuiComponents.IconButtonWithText(preset.GetIcon(), "Place Preset", size: size, defaultColor: new()))
                                 {
