@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using WaymarkStudio.Compat.WaymarkPresetPlugin;
 
 namespace WaymarkStudio;
 
@@ -17,10 +18,12 @@ internal class PresetStorage
     const uint MaxEntries = 30;
     private TerritoryFilter lastFilter;
     private PresetLibrary? cachedLibrary;
+    private PresetLibrary? cachedWPPLibrary;
+    private WPPConfiguration wppConfig;
 
     internal PresetStorage()
     {
-
+        //wppConfig = WPPConfiguration.Load(Plugin.Interface);
     }
 
     public PresetLibrary GetPresetLibrary(TerritoryFilter filter)
@@ -153,5 +156,18 @@ internal class PresetStorage
                 presets = presets.Concat(altCommunityPresets);
             }
         return presets;
+    }
+    public IEnumerable<(int, WaymarkPreset)> ListWPPPresets(ushort territoryId = 0)
+    {
+        if (wppConfig != null)
+        {
+            int i = 0;
+            foreach (var wppPreset in wppConfig.PresetLibrary.Presets)
+            {
+                var preset = wppPreset.ToPreset();
+                if (preset.TerritoryId == territoryId)
+                    yield return (i++, preset);
+            }
+        }
     }
 }

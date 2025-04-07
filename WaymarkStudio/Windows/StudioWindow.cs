@@ -338,7 +338,7 @@ internal class StudioWindow : BaseWindow
         {
             ImGui.Text($"Native Presets");
             DrawPresetList("nativeListView",
-                Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId).Select(x => (x.Item1, x.Item2.ToPreset($"Slot {x.Item1 + 1}"))),
+                nativePresets.Select(x => (x.Item1, x.Item2.ToPreset($"Slot {x.Item1 + 1}"))),
                 readOnly: true);
         }
         var communityPresets = Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId);
@@ -346,9 +346,18 @@ internal class StudioWindow : BaseWindow
         {
             ImGui.Text($"Community Presets");
             DrawPresetList("communityListView",
-                Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId),
+                communityPresets,
                 readOnly: true);
         }
+
+        //var waymarkPresetPluginPresets = Plugin.Storage.ListWPPPresets(Plugin.WaymarkManager.territoryId);
+        //if (waymarkPresetPluginPresets.Any())
+        //{
+        //    ImGui.Text($"Waymark Preset Plugin Presets");
+        //    DrawPresetList("wppListView",
+        //        waymarkPresetPluginPresets,
+        //        readOnly: true);
+        //}
     }
 
     internal void DrawTriggerList()

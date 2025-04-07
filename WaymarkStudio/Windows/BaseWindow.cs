@@ -7,6 +7,7 @@ using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using WaymarkStudio.Compat.WaymarkPresetPlugin;
 using WaymarkStudio.FFLogs;
 namespace WaymarkStudio.Windows;
 public abstract class BaseWindow : Window
@@ -228,6 +229,26 @@ public abstract class BaseWindow : Window
                 var preset = WaymarkPreset.Import(clipboard);
                 Plugin.Storage.SavePreset(preset);
                 ImGui.SetClipboardText("");
+                Plugin.Chat.Print($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.", Plugin.Tag, 45);
+            }
+            MyGui.HoverTooltip("Import From clipboard");
+        }
+        else if (clipboard.StartsWith("{"))
+        {
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton("import_preset", FontAwesomeIcon.FileImport))
+            {
+                try
+                {
+                    var preset = WPPImporter.Import(clipboard);
+                    Plugin.Storage.SavePreset(preset);
+                    ImGui.SetClipboardText("");
+                    Plugin.Chat.Print($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.", Plugin.Tag, 45);
+                }
+                catch (Exception ex)
+                {
+                    Plugin.Chat.PrintError($"Waymark preset import failed. Check if your clipboard contains a valid JSON preset and try again. Message: \"{ex.Message}\"", Plugin.Tag);
+                }
             }
             MyGui.HoverTooltip("Import From clipboard");
         }
