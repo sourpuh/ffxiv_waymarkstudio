@@ -58,32 +58,15 @@ internal class FFLogsClient
         uint startTime = fight.StartTime;
         uint territoryId = fight.ZoneId;
 
-        using (HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://www.fflogs.com/reports/replaysegment/{reportId}/{boss}/{startTime}/{startTime}"))
+        using (HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://www.fflogs.com/reports/replaysegment/{reportId}/{boss}/0/{startTime}"))
         {
             requestMessage.Headers.Referrer = new($"https://www.fflogs.com/reports/{reportId}");
 
             var response = await httpClient.SendAsync(requestMessage);
             response.EnsureSuccessStatusCode();
             var replaySegment = await response.Content.ReadFromJsonAsync<ReplaySegment>();
-            return PresetFromFight(fight, replaySegment.WorldMarkers);
+            return replaySegment.GetPreset(fight);
         }
-    }
-
-    private WaymarkPreset PresetFromFight(Fight fight, List<WorldMarker> WorldMarkers)
-    {
-        var territoryId = (ushort)fight.ZoneId;
-        WaymarkPreset preset = new(
-            name: $"FFLogs Fight {fight.Id}",
-            territoryId: territoryId,
-            contentFinderConditionId: TerritorySheet.GetContentId(territoryId)
-            );
-
-        foreach (var marker in WorldMarkers)
-            preset.MarkerPositions.TryAdd((Waymark)marker.Icon - 1, new Vector3(marker.X, 0, marker.Y) / 100f);
-
-        preset.PendingHeightAdjustment = 0xFF;
-
-        return preset;
     }
 
     public class Fight
@@ -91,7 +74,7 @@ internal class FFLogsClient
         public uint Id { get; set; }
         public uint Boss { get; set; }
         public uint ZoneId { get; set; }
-        public string ZoneName { get; set; }
+        public string ZoneName { get; set; } = "";
         [JsonPropertyName("start_time")]
         public uint StartTime { get; set; }
     }
@@ -106,9 +89,57 @@ internal class FFLogsClient
         public int Y { get; set; }
         public uint Icon { get; set; }
         public uint MapId { get; set; }
+
+        public Waymark Waymark => (Waymark)Icon - 1;
+        public Vector3 Position => new Vector3(X, 0, Y) / 100f;
+    }
+    public class Event
+    {
+        public string Type { get; set; } = "";
+        public int X { get; set; }
+        public int Y { get; set; }
+        public uint Icon { get; set; }
+        public uint MapId { get; set; }
+        public int Timestamp { get; set; }
+
+        public bool IsWorldMarkerPlaced => Type == "worldmarkerplaced";
+        public bool IsWorldMarkerRemoved => Type == "worldmarkerremoved";
+
+        public Waymark Waymark => (Waymark)Icon - 1;
+        public Vector3 Position => new Vector3(X, 0, Y) / 100f;
+
+        public WorldMarker WorldMarker => new WorldMarker()
+        {
+            X = X,
+            Y = Y,
+            Icon = Icon,
+            MapId = MapId,
+        };
     }
     public class ReplaySegment
     {
-        public List<WorldMarker>? WorldMarkers { get; set; }
+        public List<WorldMarker> WorldMarkers { get; set; } = new List<WorldMarker>();
+        public List<Event> Events { get; set; } = new List<Event>();
+
+        public WaymarkPreset GetPreset(Fight fight)
+        {
+            var territoryId = (ushort)fight.ZoneId;
+            WaymarkPreset preset = new(
+                name: $"FFLogs Fight {fight.Id}",
+                territoryId: territoryId,
+                contentFinderConditionId: TerritorySheet.GetContentId(territoryId)
+                );
+
+            foreach (var marker in WorldMarkers)
+                preset.MarkerPositions[marker.Waymark] = marker.Position;
+            foreach (var event_ in Events)
+                if (event_.IsWorldMarkerPlaced)
+                    preset.MarkerPositions[event_.Waymark] = event_.Position;
+                else if (event_.IsWorldMarkerRemoved)
+                    preset.MarkerPositions.Remove(event_.Waymark);
+            preset.MarkPendingHeightAdjustment();
+
+            return preset;
+        }
     }
 }

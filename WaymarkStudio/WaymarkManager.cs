@@ -94,7 +94,7 @@ internal class WaymarkManager
 
     public bool IsPlayerWithinTraceDistance(WaymarkPreset preset)
     {
-        return preset.MaxDistanceTo(Plugin.ClientState.LocalPlayer.Position) < 200;
+        return preset.DistanceToNearestNonAdjustedMarker(Plugin.ClientState.LocalPlayer.Position) < 200;
     }
 
     public void SetHoverPreview(WaymarkPreset preset)
@@ -280,7 +280,7 @@ internal class WaymarkManager
         return PlacementUnsafeReason.Safe;
     }
 
-    public void AdjustPresetHeight(WaymarkPreset preset, float castHeight = 100000f)
+    public void AdjustPresetHeight(WaymarkPreset preset, float castHeight = 20f)
     {
         if (preset.TerritoryId != territoryId) return;
         if (!Plugin.WaymarkManager.IsPlayerWithinTraceDistance(preset)) return;
@@ -289,6 +289,7 @@ internal class WaymarkManager
             if (preset.PendingHeightAdjustment.IsSet(w)
                 && preset.MarkerPositions.TryGetValue(w, out Vector3 p))
             {
+                p.Y = Plugin.ClientState.LocalPlayer.Position.Y;
                 if (Raycaster.CheckAndSnapY(ref p, castHeight: castHeight))
                 {
                     preset.MarkerPositions[w] = p.Round();

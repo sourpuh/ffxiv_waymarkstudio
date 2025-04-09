@@ -99,11 +99,11 @@ public abstract class BaseWindow : Window
                         if (preset.PendingHeightAdjustment.IsAnySet())
                         {
                             Plugin.WaymarkManager.AdjustPresetHeight(preset);
-                            if (preset.PendingHeightAdjustment.IsAnySet())
-                                return;
-                            Plugin.Config.Save();
+                            if (!preset.PendingHeightAdjustment.IsAnySet())
+                                Plugin.Config.Save();
                         }
-                        Plugin.WaymarkManager.SetHoverPreview(preset);
+                        if (!preset.PendingHeightAdjustment.IsAnySet())
+                            Plugin.WaymarkManager.SetHoverPreview(preset);
                     }
                     if (MyGui.OnStopHover())
                     {
@@ -309,9 +309,14 @@ public abstract class BaseWindow : Window
                     var preset = import.Task.Result;
                     Plugin.Storage.SavePreset(preset);
                 }
-                if (import.Task.IsFaulted)
+                else if (import.Task.IsFaulted)
                 {
                     Plugin.Chat.PrintError(import.Task.Exception.Message, Plugin.Tag);
+                    Plugin.Log.Error(import.Task.Exception.ToString());
+                }
+                else
+                {
+                    ImGui.Text("Import in progress. Please wait.");
                 }
             }
 

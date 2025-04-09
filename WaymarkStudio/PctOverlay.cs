@@ -52,7 +52,8 @@ internal class PctOverlay
 
             if (debugHeight)
             {
-                var castHeight = 100000f;
+                var castHeight = 20f;
+                pa.Y = Plugin.ClientState.LocalPlayer.Position.Y;
                 if (Raycaster.CheckAndSnapY(ref pa, castHeight: castHeight))
                 {
                     drawList.PathLineTo(p + new Vector3(0, castHeight / 2, 0));

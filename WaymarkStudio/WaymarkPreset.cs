@@ -34,9 +34,9 @@ public class WaymarkPreset
         Time = time ?? new(DateTimeOffset.Now.UtcDateTime);
     }
 
-    public float MaxDistanceTo(Vector3 position)
+    public float DistanceToNearestNonAdjustedMarker(Vector3 position)
     {
-        return MarkerPositions.Values.Select(x => (position - x).Length()).Max();
+        return MarkerPositions.Where(x => PendingHeightAdjustment.IsSet(x.Key)).Select(x => (position.XZ() - x.Value.XZ()).Length()).Min();
     }
 
     public virtual FontAwesomeIcon GetIcon()
@@ -143,5 +143,11 @@ public class WaymarkPreset
     internal static WaymarkPreset Import(string s)
     {
         return Deserialize(Convert.FromBase64String(s.Substring(presetb64Prefix.Length)));
+    }
+
+    internal void MarkPendingHeightAdjustment()
+    {
+        foreach (Waymark w in MarkerPositions.Keys)
+            PendingHeightAdjustment.Set(w, true);
     }
 }

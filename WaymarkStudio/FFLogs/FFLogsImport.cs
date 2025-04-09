@@ -41,7 +41,7 @@ internal class FFLogsImport
 
     private async Task<WaymarkPreset> ResultAsync()
     {
-        (var reportId, var urlFightIndex) = ParseUrl(URL);
+        (var reportId, var urlFightIndex, var position) = ParseUrl(URL);
         if (urlFightIndex >= 0)
         {
             UserSelectedFightIndex = urlFightIndex;
@@ -58,6 +58,10 @@ internal class FFLogsImport
 
         UserSelectedFightIndex = Math.Clamp(UserSelectedFightIndex, 0, fights.Count - 1);
         var userSelectedFight = fights[UserSelectedFightIndex];
+        if (position >= 0)
+        {
+            userSelectedFight.StartTime = (uint)position;
+        }
         isQueryRunning = true;
         var preset = await Client.LoadFFLogsMarkers(reportId, userSelectedFight);
         isQueryRunning = false;
@@ -73,7 +77,7 @@ internal class FFLogsImport
         continueSignal.Release();
     }
 
-    internal static (string reportId, int fightIndex) ParseUrl(string ffLogsUrl)
+    internal static (string reportId, int fightIndex, int position) ParseUrl(string ffLogsUrl)
     {
         if (ffLogsUrl == null || ffLogsUrl.Length == 0)
             throw new ArgumentException("Invalid URI: No URI was provided.");
@@ -97,6 +101,12 @@ internal class FFLogsImport
             else
                 fightIndex = int.Parse(fightStr) - 1;
         }
-        return (reportId, fightIndex);
+
+        var positionStr = query.Get("position");
+        var position = -1;
+        if (positionStr != null)
+            position = int.Parse(positionStr);
+
+        return (reportId, fightIndex, position);
     }
 }
