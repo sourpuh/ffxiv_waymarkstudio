@@ -5,6 +5,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
+using System.Linq;
 using WaymarkStudio.Triggers;
 using WaymarkStudio.Windows;
 
@@ -113,4 +114,5 @@ public sealed class Plugin : IDalamudPlugin
     public static void ToggleConfigUI() => ConfigWindow.Toggle();
     public static void ToggleLibraryUI() => LibraryWindow.Toggle();
     public static void ToggleMainUI() => StudioWindow.Toggle();
+    public static bool IsWPPInstalled() => Interface.InstalledPlugins.Where(x => x.InternalName == "WaymarkPresetPlugin" && x.IsLoaded).Any();
 }

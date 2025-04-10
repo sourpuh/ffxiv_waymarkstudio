@@ -126,9 +126,8 @@ internal class FFLogsClient
             var territoryId = (ushort)fight.ZoneId;
             WaymarkPreset preset = new(
                 name: $"FFLogs Fight {fight.Id}",
-                territoryId: territoryId,
-                contentFinderConditionId: TerritorySheet.GetContentId(territoryId)
-                );
+                territoryId: territoryId
+            );
 
             foreach (var marker in WorldMarkers)
                 preset.MarkerPositions[marker.Waymark] = marker.Position;

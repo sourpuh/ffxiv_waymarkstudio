@@ -1,6 +1,5 @@
 using Dalamud.Interface;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -17,6 +16,9 @@ public class WaymarkPreset
 
     public string Name;
     public ushort TerritoryId;
+    [JsonIgnore]
+    [Obsolete]
+    // Delete once a new b64 export is defined.
     public ushort ContentFinderConditionId;
     public DateTimeOffset Time { get; set; } = new(DateTimeOffset.Now.UtcDateTime);
 
@@ -25,13 +27,13 @@ public class WaymarkPreset
     public WaymarkMask PendingHeightAdjustment;
 
     [JsonConstructor]
-    public WaymarkPreset(string name = "", ushort territoryId = 0, ushort contentFinderConditionId = 0, IDictionary<Waymark, Vector3>? markerPositions = null, DateTimeOffset? time = null)
+    public WaymarkPreset(string name = "", ushort territoryId = 0, IDictionary<Waymark, Vector3>? markerPositions = null, DateTimeOffset? time = null, WaymarkMask pendingHeightAdjustment = default)
     {
         Name = name;
         TerritoryId = territoryId;
-        ContentFinderConditionId = contentFinderConditionId;
         MarkerPositions = markerPositions ?? new Dictionary<Waymark, Vector3>();
         Time = time ?? new(DateTimeOffset.Now.UtcDateTime);
+        PendingHeightAdjustment = pendingHeightAdjustment;
     }
 
     public float DistanceToNearestNonAdjustedMarker(Vector3 position)
@@ -62,17 +64,15 @@ public class WaymarkPreset
             preset.Markers[index] = active ? MarkerPositions[w].ToGamePresetPoint() : default;
         }
 
-        preset.ContentFinderConditionId = ContentFinderConditionId;
+        preset.ContentFinderConditionId = TerritorySheet.GetContentId(TerritoryId);
         preset.Timestamp = (int)Time.ToUnixTimeSeconds();
 
         return preset;
     }
 
-    internal static ushort TerritoryIdForContendId(ushort contentId)
+    internal bool IsCompatibleTerritory(ushort territoryId)
     {
-        var contentSheet = Plugin.DataManager.GetExcelSheet<ContentFinderCondition>();
-        var row = contentSheet.GetRow(contentId);
-        return (ushort)row.TerritoryType.Value.RowId;
+        return TerritoryId == territoryId || Plugin.Config.CombineEquivalentDutyPresets && TerritoryId == TerritorySheet.GetAlternativeId(territoryId);
     }
 
     internal byte[] Serialize()
@@ -82,7 +82,7 @@ public class WaymarkPreset
             using (var writer = new BinaryWriter(memoryStream))
             {
                 writer.Write(TerritoryId);
-                writer.Write(ContentFinderConditionId);
+                writer.Write((ushort)0);
                 // write empty active mask to advance the offset
                 WaymarkMask active = default;
                 writer.Write(active);
@@ -119,7 +119,7 @@ public class WaymarkPreset
             using (var reader = new BinaryReader(memoryStream))
             {
                 preset.TerritoryId = reader.ReadUInt16();
-                preset.ContentFinderConditionId = reader.ReadUInt16();
+                _ = reader.ReadUInt16();
                 WaymarkMask active = reader.ReadByte();
                 foreach (Waymark w in Enum.GetValues<Waymark>())
                 {
@@ -149,5 +149,25 @@ public class WaymarkPreset
     {
         foreach (Waymark w in MarkerPositions.Keys)
             PendingHeightAdjustment.Set(w, true);
+    }
+
+    public bool Equals(WaymarkPreset other)
+    {
+        return other.Name == Name
+            && other.Time == Time
+            && IsEquivalent(other);
+    }
+
+    public bool IsEquivalent(WaymarkPreset other)
+    {
+        return
+            other.IsCompatibleTerritory(TerritoryId)
+            && other.PendingHeightAdjustment == PendingHeightAdjustment
+            && other.MarkerPositions.DeepEquals(MarkerPositions);
+    }
+
+    public WaymarkPreset Clone()
+    {
+        return new(Name, TerritoryId, MarkerPositions.Clone(), Time, PendingHeightAdjustment);
     }
 }

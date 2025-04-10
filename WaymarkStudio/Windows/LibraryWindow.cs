@@ -1,8 +1,12 @@
+using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using System;
+using System.Collections.Immutable;
 using System.Numerics;
 
 namespace WaymarkStudio.Windows;
+
+using LibraryView = ImmutableSortedDictionary<ushort, ImmutableList<(int, WaymarkPreset)>>;
 
 internal class LibraryWindow : BaseWindow
 {
@@ -10,7 +14,7 @@ internal class LibraryWindow : BaseWindow
     private readonly Vector2 filterIconButtonSize = new(24);
     private TerritoryFilter filter = new();
 
-    internal LibraryWindow() : base("Waymark Studio Library")
+    internal LibraryWindow() : base("Waymark Studio Library", ImGuiWindowFlags.NoScrollbar)
     {
         Size = new(370, 500);
         SizeCondition = ImGuiCond.Once;
@@ -40,9 +44,38 @@ internal class LibraryWindow : BaseWindow
             ImGui.SameLine();
         }
         ImGui.NewLine();
+        using (var bar = ImRaii.TabBar("PresetBar"))
+        {
+            if (bar)
+            {
+                using (var tab = ImRaii.TabItem("WMS"))
+                {
+                    if (tab)
+                        DrawLibrary(Plugin.Storage.Library.Get(filter));
+                }
+                if (Plugin.IsWPPInstalled())
+                    using (var tab = ImRaii.TabItem("WPP"))
+                    {
+                        if (tab)
+                            DrawLibrary(Plugin.Storage.WPPLibrary.Get(filter), readOnly: true);
+                    }
+                using (var tab = ImRaii.TabItem("Native"))
+                {
+                    if (tab)
+                        DrawLibrary(Plugin.Storage.NativeLibrary.Get(filter), readOnly: true);
+                }
+                using (var tab = ImRaii.TabItem("Community"))
+                {
+                    if (tab)
+                        DrawLibrary(Plugin.Storage.CommunityLibrary.Get(filter), readOnly: true);
+                }
+            }
+        }
+    }
 
-        var library = Plugin.Storage.GetPresetLibrary(filter);
-        if (ImGui.BeginTable("saved_presets", 1, ImGuiTableFlags.BordersOuter))
+    private void DrawLibrary(LibraryView library, bool readOnly = false)
+    {
+        if (ImGui.BeginTable("saved_presets", 1, ImGuiTableFlags.BordersOuter | ImGuiTableFlags.ScrollY))
         {
             if (library.IsEmpty)
             {
@@ -56,14 +89,14 @@ internal class LibraryWindow : BaseWindow
                 TerritoryHeader(territoryId);
 
                 ImGui.Indent();
-                DrawPresetList("" + territoryId, presetList);
+                DrawPresetList("" + territoryId, presetList, readOnly: readOnly);
                 ImGui.Unindent();
             }
             ImGui.EndTable();
         }
     }
 
-    private void TerritoryHeader(uint territoryId)
+    private void TerritoryHeader(ushort territoryId)
     {
         ImGui.TableNextRow();
         ImGui.TableNextColumn();

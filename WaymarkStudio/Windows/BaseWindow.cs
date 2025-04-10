@@ -34,7 +34,7 @@ public abstract class BaseWindow : Window
     {
         if (preset.PendingHeightAdjustment.IsAnySet())
         {
-            if (preset.TerritoryId != Plugin.WaymarkManager.territoryId)
+            if (preset.IsCompatibleTerritory(Plugin.WaymarkManager.territoryId))
                 ImGui.Text("(Enter area to complete import)");
             else if (!Plugin.WaymarkManager.IsPlayerWithinTraceDistance(preset))
                 ImGui.Text("(Get closer to complete import)");
@@ -58,12 +58,13 @@ public abstract class BaseWindow : Window
     {
         if (MyGui.BeginList(id, dragdroppable: !readOnly))
         {
+            var altId = TerritorySheet.GetAlternativeId(Plugin.WaymarkManager.territoryId);
             foreach ((var index, var preset) in presetList)
             {
                 bool confirmDelete = false;
                 if (MyGui.NextRow(index, preset.Name))
                 {
-                    var isSameTerritory = preset.TerritoryId == Plugin.WaymarkManager.territoryId;
+                    var isSameTerritory = preset.IsCompatibleTerritory(Plugin.WaymarkManager.territoryId);
                     var canPlaceWaymark = Plugin.WaymarkManager.IsSafeToPlaceWaymarks() && isSameTerritory;
 
                     Vector4 buttonColor = new(1, 1, 1, 0.1f);
@@ -151,9 +152,14 @@ public abstract class BaseWindow : Window
                                 closePopup = true;
                             }
                         }
+                        if (!Plugin.Storage.ContainsEquivalentPreset(preset)
+                            && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.CartArrowDown, "Clone to WMS library", size: size, defaultColor: new()))
+                        {
+                            Plugin.Storage.SavePreset(preset.Clone());
+                            closePopup = true;
+                        }
                         using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
-                            if (!readOnly &&
-                                ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
+                            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
                             {
                                 ImGui.SetClipboardText(preset.Export());
                                 closePopup = true;

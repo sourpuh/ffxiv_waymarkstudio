@@ -13,7 +13,7 @@ internal static class TerritorySheet
 {
     private static Dictionary<Expansion, ExpansionInfo> ExpansionInfos;
     private static Dictionary<ContentType, ContentTypeInfo> ContentTypeInfos;
-    private static Dictionary<uint, uint> EquivalentTerritoryIds = new()
+    private static Dictionary<ushort, ushort> EquivalentTerritoryIds = new()
     {
         [1075] = 1076, // ASS
         [1155] = 1156, // AMR
@@ -82,12 +82,12 @@ internal static class TerritorySheet
         return contentType;
     }
 
-    internal static string GetTerritoryName(uint territoryId)
+    internal static string GetTerritoryName(ushort territoryId)
     {
         return TerritoryIdToInfo[territoryId].name;
     }
 
-    internal static Expansion GetExpansion(uint territoryId)
+    internal static Expansion GetExpansion(ushort territoryId)
     {
         return TerritoryIdToInfo[territoryId].expansion;
     }
@@ -95,7 +95,7 @@ internal static class TerritorySheet
     {
         return ExpansionInfos[expansion];
     }
-    internal static uint GetExpansionIcon(uint territoryId)
+    internal static uint GetExpansionIcon(ushort territoryId)
     {
         return GetExpansionInfo(GetExpansion(territoryId)).icon;
     }
@@ -103,31 +103,31 @@ internal static class TerritorySheet
     {
         return ContentTypeInfos[contentType];
     }
-    internal static uint GetContentTypeIcon(uint territoryId)
+    internal static uint GetContentTypeIcon(ushort territoryId)
     {
         return GetContentTypeInfo(GetContentType(territoryId)).icon;
     }
 
-    internal static ContentType GetContentType(uint territoryId)
+    internal static ContentType GetContentType(ushort territoryId)
     {
         return TerritoryIdToInfo[territoryId].contentType;
     }
 
-    internal static string GetContentName(uint contentId)
+    internal static string GetContentName(ushort contentId)
     {
         if (Plugin.DataManager.GetExcelSheet<ContentFinderCondition>().TryGetRow(contentId, out var content))
             return content.Name.ToString();
         return "";
     }
 
-    internal static ushort GetContentId(uint territoryId)
+    internal static ushort GetContentId(ushort territoryId)
     {
         if (TerritoryIdToInfo.TryGetValue(territoryId, out var value))
             return (ushort)value.contentId;
         return 0;
     }
 
-    internal static uint? GetAlternativeId(uint territoryId)
+    internal static ushort? GetAlternativeId(ushort territoryId)
     {
         if (Plugin.Config.CombineEquivalentDutyPresets && EquivalentTerritoryIds.TryGetValue(territoryId, out var altTerritoryId))
             return altTerritoryId;

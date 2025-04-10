@@ -79,7 +79,7 @@ internal class TriggerEditorWindow : Window
         ImGui.SameLine();
         ImGui.SliderFloat("##trigger_radius", ref trigger.Radius, 1, 20);
 
-        var presets = Plugin.Storage.ListSavedPresets(Plugin.WaymarkManager.territoryId).Select(x => x.Item2).ToList();
+        var presets = Plugin.Storage.Library.ListPresets(Plugin.WaymarkManager.territoryId).Select(x => x.Item2).ToList();
         if (selectedPresetIndex == -1)
         {
             var attachedPreset = Plugin.Triggers.ActiveTriggers.Where(x => x.Item1 == originalTrigger).FirstOrDefault().Item2;

@@ -67,7 +67,7 @@ public partial class MyGui
             ImGui.Image(wrap.ImGuiHandle, size, new Vector2(borderClip), Vector2.One - new Vector2(borderClip));
     }
 
-    public static void ExpansionIcon(uint territoryId, Vector2 size)
+    public static void ExpansionIcon(ushort territoryId, Vector2 size)
     {
         var expansion = TerritorySheet.GetExpansion(territoryId);
         var expinfo = TerritorySheet.GetExpansionInfo(expansion);
@@ -75,7 +75,7 @@ public partial class MyGui
         HoverTooltip(expinfo.name);
     }
 
-    public static void ContentTypeIcon(uint territoryId, Vector2 size)
+    public static void ContentTypeIcon(ushort territoryId, Vector2 size)
     {
         var ct = TerritorySheet.GetContentType(territoryId);
         var ctinfo = TerritorySheet.GetContentTypeInfo(ct);

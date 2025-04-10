@@ -33,7 +33,7 @@ public class WPPWaymarkPreset
         AddWaymarkPosition(markerPositions, Four);
 
         var territoryId = Extensions.TerritoryIdForContendId(MapID);
-        WaymarkPreset preset = new(Name, territoryId, MapID, markerPositions, Time);
+        WaymarkPreset preset = new(Name, territoryId, markerPositions, Time);
         return preset;
     }
 

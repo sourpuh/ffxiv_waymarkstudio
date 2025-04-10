@@ -19,6 +19,12 @@ internal static class Extensions
                                        entry => entry.Value);
     }
 
+    public static bool DeepEquals<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, IDictionary<TKey, TValue> otherDictionary)
+    {
+        return dictionary.Equals(otherDictionary)
+            || dictionary.OrderBy(kv => kv.Key).SequenceEqual(otherDictionary.OrderBy(kv => kv.Key));
+    }
+
     public static void Move<T>(this IList<T> list, int sourceIndex, int targetIndex)
     {
         var item = list[sourceIndex];
@@ -122,7 +128,7 @@ internal static class Extensions
     public static WaymarkPreset ToPreset(this FieldMarkerPreset preset, string name = "")
     {
         if (preset.ContentFinderConditionId == 0) return new(name);
-        WaymarkPreset p = new(name, TerritoryIdForContendId(preset.ContentFinderConditionId), preset.ContentFinderConditionId, null, DateTimeOffset.FromUnixTimeSeconds(preset.Timestamp));
+        WaymarkPreset p = new(name, TerritoryIdForContendId(preset.ContentFinderConditionId), null, DateTimeOffset.FromUnixTimeSeconds(preset.Timestamp));
         foreach (Waymark w in Enum.GetValues<Waymark>())
         {
             int index = (int)w;

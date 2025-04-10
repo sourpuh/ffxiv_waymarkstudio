@@ -8,7 +8,10 @@ public struct WaymarkMask
     [JsonProperty]
     private byte mask;
 
-    public WaymarkMask(byte mask) { this.mask = mask; }
+    public WaymarkMask(byte mask)
+    {
+        this.mask = mask;
+    }
 
     public static implicit operator WaymarkMask(byte mask)
     {
@@ -39,5 +42,8 @@ public struct WaymarkMask
     {
         Set((int)waymark, v);
     }
-    public bool IsAnySet() { return mask != 0; }
+    public bool IsAnySet()
+    {
+        return mask != 0;
+    }
 }

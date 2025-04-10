@@ -44,8 +44,8 @@ internal class WaymarkManager
     private readonly PlacePresetDelegate PlacePreset;
 #pragma warning restore IDE1006 // Naming Styles
 
-    internal WaymarkPreset DraftPreset { get { return new(mapName, territoryId, contentFinderId, new Dictionary<Waymark, Vector3>(placeholders)); } }
-    internal WaymarkPreset WaymarkPreset { get { return new(mapName, territoryId, contentFinderId, new Dictionary<Waymark, Vector3>(Waymarks)); } }
+    internal WaymarkPreset DraftPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(placeholders)); } }
+    internal WaymarkPreset WaymarkPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(Waymarks)); } }
 
     internal IReadOnlyDictionary<Waymark, Vector3> Placeholders => placeholders;
     internal IReadOnlyDictionary<Waymark, Vector3> HoverPreviews => hoverPreviews;
@@ -99,7 +99,7 @@ internal class WaymarkManager
 
     public void SetHoverPreview(WaymarkPreset preset)
     {
-        if (preset.TerritoryId != territoryId) return;
+        if (!preset.IsCompatibleTerritory(territoryId)) return;
         hoverPreviews = (IReadOnlyDictionary<Waymark, Vector3>)preset.MarkerPositions;
     }
 
@@ -198,7 +198,7 @@ internal class WaymarkManager
 
     public void SetPlaceholderPreset(WaymarkPreset preset)
     {
-        if (preset.TerritoryId != territoryId) return;
+        if (!preset.IsCompatibleTerritory(territoryId)) return;
         placeholders = new(preset.MarkerPositions);
     }
 
@@ -282,7 +282,7 @@ internal class WaymarkManager
 
     public void AdjustPresetHeight(WaymarkPreset preset, float castHeight = 20f)
     {
-        if (preset.TerritoryId != territoryId) return;
+        if (!preset.IsCompatibleTerritory(territoryId)) return;
         if (!Plugin.WaymarkManager.IsPlayerWithinTraceDistance(preset)) return;
         foreach (Waymark w in Enum.GetValues<Waymark>())
         {
@@ -302,7 +302,7 @@ internal class WaymarkManager
     public void SafePlacePreset(WaymarkPreset preset, bool clearPlaceholder = true, bool mergeExisting = false)
     {
         if (preset.MarkerPositions.Count == 0) return;
-        if (preset.TerritoryId != territoryId) return;
+        if (!preset.IsCompatibleTerritory(territoryId)) return;
         if (preset.PendingHeightAdjustment.IsAnySet()) return;
         if (IsPossibleToNativePlace())
         {

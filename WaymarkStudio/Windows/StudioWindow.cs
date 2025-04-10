@@ -9,7 +9,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using WaymarkStudio.Guides;
-using WaymarkStudio.Triggers;
 
 namespace WaymarkStudio.Windows;
 
@@ -17,10 +16,8 @@ internal class StudioWindow : BaseWindow
 {
     private readonly Vector2 waymarkIconButtonSize = new(30);
     private readonly Vector2 territoryInfoSize = new(20);
-    private CircleTrigger? trigger;
     private Vector2 windowPosition;
     private Vector2 windowSize;
-    private int selectedPresetIndex = -1;
     internal StudioWindow() : base("Waymark Studio")
     {
         Size = new(520, 480);
@@ -332,16 +329,16 @@ internal class StudioWindow : BaseWindow
         ImguiFFLogsImportButton();
         ClipboardImportButton();
 
-        DrawPresetList("mainListView", Plugin.Storage.ListSavedPresets(Plugin.WaymarkManager.territoryId));
-        var nativePresets = Plugin.Storage.ListNativePresets(Plugin.WaymarkManager.territoryId);
+        DrawPresetList("mainListView", Plugin.Storage.Library.ListPresets(Plugin.WaymarkManager.territoryId));
+        var nativePresets = Plugin.Storage.NativeLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
         if (nativePresets.Any())
         {
             ImGui.Text($"Native Presets");
             DrawPresetList("nativeListView",
-                nativePresets.Select(x => (x.Item1, x.Item2.ToPreset($"Slot {x.Item1 + 1}"))),
+                nativePresets.Select(x => (x.Item1, x.Item2)),
                 readOnly: true);
         }
-        var communityPresets = Plugin.Storage.ListCommunityPresets(Plugin.WaymarkManager.territoryId);
+        var communityPresets = Plugin.Storage.CommunityLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
         if (communityPresets.Any())
         {
             ImGui.Text($"Community Presets");
@@ -350,14 +347,17 @@ internal class StudioWindow : BaseWindow
                 readOnly: true);
         }
 
-        //var waymarkPresetPluginPresets = Plugin.Storage.ListWPPPresets(Plugin.WaymarkManager.territoryId);
-        //if (waymarkPresetPluginPresets.Any())
-        //{
-        //    ImGui.Text($"Waymark Preset Plugin Presets");
-        //    DrawPresetList("wppListView",
-        //        waymarkPresetPluginPresets,
-        //        readOnly: true);
-        //}
+        if (Plugin.IsWPPInstalled())
+        {
+            var waymarkPresetPluginPresets = Plugin.Storage.WPPLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
+            if (waymarkPresetPluginPresets.Any())
+            {
+                ImGui.Text($"Waymark Preset Plugin Presets");
+                DrawPresetList("wppListView",
+                    waymarkPresetPluginPresets,
+                    readOnly: true);
+            }
+        }
     }
 
     internal void DrawTriggerList()

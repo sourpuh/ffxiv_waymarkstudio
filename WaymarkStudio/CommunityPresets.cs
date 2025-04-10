@@ -9,16 +9,17 @@ namespace WaymarkStudio;
  */
 internal class CommunityPresets
 {
-    internal static Dictionary<ushort, List<(int, WaymarkPreset)>> TerritoryToPreset;
+    internal static List<WaymarkPreset> Presets;
     static CommunityPresets()
     {
-        int i = 0;
-        TerritoryToPreset = presets
+        Presets = presets
             .Select(WaymarkPreset.Import)
-            .Select(w => { w.Time = DateTimeOffset.MinValue; return (i++, w); })
-            .GroupBy(preset => preset.Item2.TerritoryId)
-            .ToDictionary(group => group.Key, group => group.ToList());
-
+            .Select(w =>
+                {
+                    w.Time = DateTimeOffset.MinValue;
+                    return w;
+                })
+            .ToList();
         presets = null;
     }
     private static List<string> presets = [

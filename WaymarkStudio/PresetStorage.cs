@@ -2,13 +2,10 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.Interop;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using WaymarkStudio.Compat.WaymarkPresetPlugin;
 
 namespace WaymarkStudio;
-
-using PresetLibrary = ImmutableSortedDictionary<ushort, List<(int, WaymarkPreset)>>;
 
 /**
  * This should handle storage management for plugin and native presets.
@@ -17,24 +14,18 @@ internal class PresetStorage
 {
     const uint MaxEntries = 30;
     private TerritoryFilter lastFilter;
-    private PresetLibrary? cachedLibrary;
-    private PresetLibrary? cachedWPPLibrary;
-    private WPPConfiguration wppConfig;
+    public PresetLibrary Library;
+    public PresetLibrary WPPLibrary;
+    public PresetLibrary NativeLibrary;
+    public PresetLibrary CommunityLibrary;
+    private WPPConfiguration? wppConfig;
 
     internal PresetStorage()
     {
-        //wppConfig = WPPConfiguration.Load(Plugin.Interface);
-    }
-
-    public PresetLibrary GetPresetLibrary(TerritoryFilter filter)
-    {
-        if (cachedLibrary == null || filter != lastFilter)
-            cachedLibrary = ListSavedPresets()
-            .Where(preset => !filter.IsTerritoryFiltered(preset.Item2.TerritoryId))
-            .GroupBy(preset => preset.Item2.TerritoryId, v => v)
-            .ToImmutableSortedDictionary(g => g.Key, g => g.ToList());
-        lastFilter = filter;
-        return cachedLibrary;
+        Library = new(() => ListSavedPresets());
+        WPPLibrary = new(() => ListWPPPresets());
+        NativeLibrary = new(() => ListNativePresets());
+        CommunityLibrary = new(() => ListCommunityPresets());
     }
 
     public int CountPresetsForTerritoryId(uint territoryId)
@@ -56,24 +47,70 @@ internal class PresetStorage
         return FieldMarkerModule.Instance()->Presets[(int)index];
     }
 
-    public IEnumerable<(int, FieldMarkerPreset)> ListNativePresets(ushort territoryId = 0)
+    public bool ContainsEquivalentPreset(WaymarkPreset preset)
     {
-        var contentId = TerritorySheet.GetContentId(territoryId);
-        var altTerritoryId = TerritorySheet.GetAlternativeId(territoryId) ?? 0;
-        var altContentId = TerritorySheet.GetContentId(altTerritoryId);
+        return Plugin.Config.SavedPresets.Where(x => x.IsEquivalent(preset)).Any();
+    }
 
+    public void SavePreset(WaymarkPreset preset)
+    {
+        Library.InvalidateCache();
+        Plugin.Config.SavedPresets.Add(preset);
+        SaveConfig();
+    }
+
+    public void DeleteSavedPreset(int index)
+    {
+        Library.InvalidateCache();
+        Plugin.Config.SavedPresets.RemoveAt(index);
+        SaveConfig();
+    }
+
+    public void MovePreset(int sourceIndex, int targetIndex)
+    {
+        Plugin.Config.SavedPresets.Move(sourceIndex, targetIndex);
+        SaveConfig();
+    }
+
+    private void SaveConfig()
+    {
+        Library.InvalidateCache();
+        Plugin.Config.Save();
+    }
+
+    private IEnumerable<(int, WaymarkPreset)> ListSavedPresets()
+    {
+        var presets = Plugin.Config.SavedPresets;
+        for (int i = 0; i < presets.Count; i++)
+        {
+            yield return (i, presets[i]);
+        }
+    }
+
+    private IEnumerable<(int, WaymarkPreset)> ListCommunityPresets()
+    {
+        int i = 0;
+        return CommunityPresets.Presets.Select(x => (i++, x));
+    }
+
+    private IEnumerable<(int, WaymarkPreset)> ListWPPPresets()
+    {
+        if (wppConfig == null) wppConfig = WPPConfiguration.Load(Plugin.Interface);
+        if (wppConfig != null)
+        {
+            int i = 0;
+            foreach (var wppPreset in wppConfig.PresetLibrary.Presets)
+            {
+                yield return (i++, wppPreset.ToPreset());
+            }
+        }
+    }
+    private IEnumerable<(int, WaymarkPreset)> ListNativePresets()
+    {
         for (int i = 0; i < MaxEntries; i++)
         {
             var nativePreset = GetNativePreset((uint)i);
-
-            var isAlt = altContentId > 0 && nativePreset.ContentFinderConditionId == altContentId;
-            if (isAlt)
-                nativePreset.ContentFinderConditionId = (ushort)altContentId;
-
-            if (territoryId == 0
-                || contentId > 0 && nativePreset.ContentFinderConditionId == contentId
-                || isAlt)
-                yield return (i, nativePreset);
+            yield return (i, nativePreset.ToPreset($"Slot {i}"));
         }
     }
 
@@ -87,87 +124,5 @@ internal class PresetStorage
         var pointer = FieldMarkerModule.Instance()->Presets.GetPointer(slotNum);
         *pointer = preset;
         return true;
-    }
-
-    public IEnumerable<(int, WaymarkPreset)> ListSavedPresets(ushort territoryId = 0)
-    {
-        var altTerritoryId = TerritorySheet.GetAlternativeId(territoryId);
-
-        var presets = Plugin.Config.SavedPresets;
-        for (int i = 0; i < presets.Count; i++)
-        {
-            var preset = presets[i];
-
-            var isAlt = altTerritoryId > 0 && preset.TerritoryId == altTerritoryId;
-            if (isAlt)
-            {
-                preset.TerritoryId = territoryId;
-                preset.ContentFinderConditionId = TerritorySheet.GetContentId(territoryId);
-            }
-
-            if (territoryId == 0
-                || preset.TerritoryId == territoryId
-                || isAlt)
-                yield return (i, preset);
-        }
-    }
-
-    public void SavePreset(WaymarkPreset preset)
-    {
-        cachedLibrary = null;
-        Plugin.Config.SavedPresets.Add(preset);
-        SaveConfig();
-    }
-
-    public void DeleteSavedPreset(int index)
-    {
-        cachedLibrary = null;
-        Plugin.Config.SavedPresets.RemoveAt(index);
-        SaveConfig();
-    }
-
-    public void MovePreset(int sourceIndex, int targetIndex)
-    {
-        Plugin.Config.SavedPresets.Move(sourceIndex, targetIndex);
-        SaveConfig();
-    }
-
-    private void SaveConfig()
-    {
-        cachedLibrary = null;
-        Plugin.Config.Save();
-    }
-
-    public IEnumerable<(int, WaymarkPreset)> ListCommunityPresets(ushort territoryId = 0)
-    {
-        var presets = Enumerable.Empty<(int, WaymarkPreset)>();
-        if (CommunityPresets.TerritoryToPreset.TryGetValue(territoryId, out var communityPresets))
-            presets = presets.Concat(communityPresets);
-
-        var altTerritoryId = TerritorySheet.GetAlternativeId(territoryId);
-        if (altTerritoryId != null)
-            if (CommunityPresets.TerritoryToPreset.TryGetValue((ushort)altTerritoryId, out var altCommunityPresets))
-            {
-                altCommunityPresets.ForEach(preset =>
-                {
-                    preset.Item2.TerritoryId = territoryId;
-                    preset.Item2.ContentFinderConditionId = TerritorySheet.GetContentId(territoryId);
-                });
-                presets = presets.Concat(altCommunityPresets);
-            }
-        return presets;
-    }
-    public IEnumerable<(int, WaymarkPreset)> ListWPPPresets(ushort territoryId = 0)
-    {
-        if (wppConfig != null)
-        {
-            int i = 0;
-            foreach (var wppPreset in wppConfig.PresetLibrary.Presets)
-            {
-                var preset = wppPreset.ToPreset();
-                if (preset.TerritoryId == territoryId)
-                    yield return (i++, preset);
-            }
-        }
     }
 }

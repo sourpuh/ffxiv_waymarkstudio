@@ -21,7 +21,7 @@ internal record struct TerritoryFilter
             SelectedContentType = ct;
     }
 
-    internal bool IsTerritoryFiltered(uint territoryId)
+    internal bool IsTerritoryFiltered(ushort territoryId)
     {
         if (territoryId == 0) return true;
 
