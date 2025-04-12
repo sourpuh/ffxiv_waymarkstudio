@@ -97,14 +97,6 @@ internal static class Extensions
         return placementStruct;
     }
 
-    internal static ushort TerritoryIdForContendId(ushort contentId)
-    {
-        var contentSheet = Plugin.DataManager.GetExcelSheet<ContentFinderCondition>();
-        if (contentSheet.TryGetRow(contentId, out var row))
-            return (ushort)row.TerritoryType.Value.RowId;
-        return 0;
-    }
-
     public static string GetName(this TerritoryType territory)
     {
         var mapName = territory.PlaceName.Value.Name.ExtractText();
@@ -128,7 +120,7 @@ internal static class Extensions
     public static WaymarkPreset ToPreset(this FieldMarkerPreset preset, string name = "")
     {
         if (preset.ContentFinderConditionId == 0) return new(name);
-        WaymarkPreset p = new(name, TerritoryIdForContendId(preset.ContentFinderConditionId), null, DateTimeOffset.FromUnixTimeSeconds(preset.Timestamp));
+        WaymarkPreset p = new(name, TerritorySheet.TerritoryIdForContentId(preset.ContentFinderConditionId), null, DateTimeOffset.FromUnixTimeSeconds(preset.Timestamp));
         foreach (Waymark w in Enum.GetValues<Waymark>())
         {
             int index = (int)w;

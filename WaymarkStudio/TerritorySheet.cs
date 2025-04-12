@@ -24,11 +24,11 @@ internal static class TerritorySheet
     struct TerritoryInfo
     {
         internal string name;
-        internal uint contentId;
+        internal ushort contentId;
         internal Expansion expansion;
         internal ContentType contentType;
     }
-    private static Dictionary<uint, TerritoryInfo> TerritoryIdToInfo;
+    private static Dictionary<ushort, TerritoryInfo> TerritoryIdToInfo;
 
     static TerritorySheet()
     {
@@ -36,11 +36,11 @@ internal static class TerritorySheet
             EquivalentTerritoryIds.Add(kvp.Value, kvp.Key);
 
         TerritoryIdToInfo = Plugin.DataManager.GetExcelSheet<TerritoryType>()
-            .ToDictionary(x => x.RowId,
+            .ToDictionary(x => (ushort)x.RowId,
             x => new TerritoryInfo()
             {
                 name = x.GetName(),
-                contentId = x.GetContentId(),
+                contentId = (ushort)x.GetContentId(),
                 expansion = (Expansion)x.ExVersion.RowId,
                 contentType = GetContentType(x),
             });
@@ -132,5 +132,11 @@ internal static class TerritorySheet
         if (Plugin.Config.CombineEquivalentDutyPresets && EquivalentTerritoryIds.TryGetValue(territoryId, out var altTerritoryId))
             return altTerritoryId;
         return null;
+    }
+
+    internal static ushort TerritoryIdForContentId(ushort contentId)
+    {
+        var kv = TerritoryIdToInfo.Where(x => x.Value.contentId == contentId).LastOrDefault();
+        return kv.Key;
     }
 }

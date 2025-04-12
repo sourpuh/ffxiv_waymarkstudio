@@ -58,7 +58,6 @@ public abstract class BaseWindow : Window
     {
         if (MyGui.BeginList(id, dragdroppable: !readOnly))
         {
-            var altId = TerritorySheet.GetAlternativeId(Plugin.WaymarkManager.territoryId);
             foreach ((var index, var preset) in presetList)
             {
                 bool confirmDelete = false;

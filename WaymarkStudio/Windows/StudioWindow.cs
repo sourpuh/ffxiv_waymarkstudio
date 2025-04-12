@@ -335,7 +335,7 @@ internal class StudioWindow : BaseWindow
         {
             ImGui.Text($"Native Presets");
             DrawPresetList("nativeListView",
-                nativePresets.Select(x => (x.Item1, x.Item2)),
+                nativePresets,
                 readOnly: true);
         }
         var communityPresets = Plugin.Storage.CommunityLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
@@ -346,7 +346,6 @@ internal class StudioWindow : BaseWindow
                 communityPresets,
                 readOnly: true);
         }
-
         if (Plugin.IsWPPInstalled())
         {
             var waymarkPresetPluginPresets = Plugin.Storage.WPPLibrary.ListPresets(Plugin.WaymarkManager.territoryId);

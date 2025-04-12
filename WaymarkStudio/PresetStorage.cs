@@ -110,10 +110,13 @@ internal class PresetStorage
         for (int i = 0; i < MaxEntries; i++)
         {
             var nativePreset = GetNativePreset((uint)i);
+            if (nativePreset.ActiveMarkers == 0) continue;
             yield return (i, nativePreset.ToPreset($"Slot {i}"));
         }
     }
 
+    // Don't use without testing
+    [Obsolete]
     public unsafe bool SetNativePreset(int slotNum, FieldMarkerPreset preset)
     {
         if (slotNum >= MaxEntries)

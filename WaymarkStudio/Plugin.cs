@@ -50,7 +50,6 @@ public sealed class Plugin : IDalamudPlugin
 
         FieldMarkerAddon = new();
         WaymarkManager = new();
-        Overlay = new();
         Storage = new();
         Triggers = new();
 
@@ -67,6 +66,8 @@ public sealed class Plugin : IDalamudPlugin
         {
             HelpMessage = "Open/close main window"
         });
+
+        Overlay = new();
 
         OnTerritoryChange(ClientState.TerritoryType);
         ClientState.TerritoryChanged += OnTerritoryChange;
