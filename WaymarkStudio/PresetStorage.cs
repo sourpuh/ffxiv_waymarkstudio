@@ -111,7 +111,7 @@ internal class PresetStorage
         {
             var nativePreset = GetNativePreset((uint)i);
             if (nativePreset.ActiveMarkers == 0) continue;
-            yield return (i, nativePreset.ToPreset($"Slot {i}"));
+            yield return (i, nativePreset.ToPreset($"Slot {i + 1}"));
         }
     }
 
@@ -127,5 +127,11 @@ internal class PresetStorage
         var pointer = FieldMarkerModule.Instance()->Presets.GetPointer(slotNum);
         *pointer = preset;
         return true;
+    }
+
+    public unsafe void Update()
+    {
+        if (FieldMarkerModule.Instance()->GetHasChanges())
+            NativeLibrary.InvalidateCache();
     }
 }

@@ -96,6 +96,7 @@ public sealed class Plugin : IDalamudPlugin
     internal void Update(IFramework framework)
     {
         Triggers.Update();
+        Storage.Update();
     }
 
     private void OnCommand(string command, string args)
