@@ -117,4 +117,5 @@ public sealed class Plugin : IDalamudPlugin
     public static void ToggleLibraryUI() => LibraryWindow.Toggle();
     public static void ToggleMainUI() => StudioWindow.Toggle();
     public static bool IsWPPInstalled() => Interface.InstalledPlugins.Where(x => x.InternalName == "WaymarkPresetPlugin" && x.IsLoaded).Any();
+    public static bool IsMMInstalled() => Interface.InstalledPlugins.Where(x => x.InternalName == "MemoryMarker" && x.IsLoaded).Any();
 }

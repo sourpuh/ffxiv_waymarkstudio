@@ -3,6 +3,7 @@ using FFXIVClientStructs.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using WaymarkStudio.Compat.MemoryMarker;
 using WaymarkStudio.Compat.WaymarkPresetPlugin;
 
 namespace WaymarkStudio;
@@ -16,14 +17,15 @@ internal class PresetStorage
     private TerritoryFilter lastFilter;
     public PresetLibrary Library;
     public PresetLibrary WPPLibrary;
+    public PresetLibrary MMLibrary;
     public PresetLibrary NativeLibrary;
     public PresetLibrary CommunityLibrary;
-    private WPPConfiguration? wppConfig;
 
     internal PresetStorage()
     {
         Library = new(() => ListSavedPresets());
         WPPLibrary = new(() => ListWPPPresets());
+        MMLibrary = new(() => ListMMPresets());
         NativeLibrary = new(() => ListNativePresets());
         CommunityLibrary = new(() => ListCommunityPresets());
     }
@@ -95,7 +97,7 @@ internal class PresetStorage
 
     private IEnumerable<(int, WaymarkPreset)> ListWPPPresets()
     {
-        if (wppConfig == null) wppConfig = WPPConfiguration.Load(Plugin.Interface);
+        var wppConfig = WPPConfiguration.Load(Plugin.Interface);
         if (wppConfig != null)
         {
             int i = 0;
@@ -105,6 +107,30 @@ internal class PresetStorage
             }
         }
     }
+
+    private IEnumerable<(int, WaymarkPreset)> ListMMPresets()
+    {
+        var mmConfig = MMConfiguration.Load(Plugin.Interface);
+        if (mmConfig != null)
+        {
+            int i = 0;
+            foreach (var territoryIdToPreset in mmConfig.FieldMarkerData)
+            {
+                var presets = territoryIdToPreset.Value.MarkerData;
+                for (int j = 0; j < presets.Count; j++)
+                {
+                    var preset = presets[j];
+                    if (preset != null
+                        && territoryIdToPreset.Key == TerritorySheet.TerritoryIdForContentId(preset.Marker.ContentFinderConditionId))
+                    {
+                        var name = preset.Name.Length == 0 ? $"Slot {j + 1}" : preset.Name;
+                        yield return (i++, preset.Marker.ToPreset(name));
+                    }
+                }
+            }
+        }
+    }
+
     private IEnumerable<(int, WaymarkPreset)> ListNativePresets()
     {
         for (int i = 0; i < MaxEntries; i++)
@@ -132,6 +158,9 @@ internal class PresetStorage
     public unsafe void Update()
     {
         if (FieldMarkerModule.Instance()->GetHasChanges())
+        {
             NativeLibrary.InvalidateCache();
+            MMLibrary.InvalidateCache();
+        }
     }
 }

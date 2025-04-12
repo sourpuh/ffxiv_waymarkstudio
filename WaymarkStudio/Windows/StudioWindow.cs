@@ -318,6 +318,9 @@ internal class StudioWindow : BaseWindow
             Plugin.ToggleLibraryUI();
         }
         MyGui.HoverTooltip("Preset Library");
+        ImGui.SameLine();
+        ImguiFFLogsImportButton();
+        ClipboardImportButton();
     }
 
     internal void DrawSavedPresets()
@@ -325,18 +328,28 @@ internal class StudioWindow : BaseWindow
         DrawTriggerList();
 
         ImGui.Text("Saved Presets");
-        ImGui.SameLine();
-        ImguiFFLogsImportButton();
-        ClipboardImportButton();
-
         DrawPresetList("mainListView", Plugin.Storage.Library.ListPresets(Plugin.WaymarkManager.territoryId));
-        var nativePresets = Plugin.Storage.NativeLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
-        if (nativePresets.Any())
+        if (Plugin.IsMMInstalled())
         {
-            ImGui.Text($"Native Presets");
-            DrawPresetList("nativeListView",
-                nativePresets,
-                readOnly: true);
+            var mmPresets = Plugin.Storage.MMLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
+            if (mmPresets.Any())
+            {
+                ImGui.Text($"MemoryMarker Presets");
+                DrawPresetList("nativeListView",
+                    mmPresets,
+                    readOnly: true);
+            }
+        }
+        else
+        {
+            var nativePresets = Plugin.Storage.NativeLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
+            if (nativePresets.Any())
+            {
+                ImGui.Text($"Native Presets");
+                DrawPresetList("nativeListView",
+                    nativePresets,
+                    readOnly: true);
+            }
         }
         var communityPresets = Plugin.Storage.CommunityLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
         if (communityPresets.Any())

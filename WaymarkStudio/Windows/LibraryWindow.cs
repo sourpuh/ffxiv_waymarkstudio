@@ -59,11 +59,18 @@ internal class LibraryWindow : BaseWindow
                         if (tab)
                             DrawLibrary(Plugin.Storage.WPPLibrary.Get(filter), readOnly: true);
                     }
-                using (var tab = ImRaii.TabItem("Native"))
-                {
-                    if (tab)
-                        DrawLibrary(Plugin.Storage.NativeLibrary.Get(filter), readOnly: true);
-                }
+                if (Plugin.IsMMInstalled())
+                    using (var tab = ImRaii.TabItem("MemoryMarker"))
+                    {
+                        if (tab)
+                            DrawLibrary(Plugin.Storage.MMLibrary.Get(filter), readOnly: true);
+                    }
+                else
+                    using (var tab = ImRaii.TabItem("Native"))
+                    {
+                        if (tab)
+                            DrawLibrary(Plugin.Storage.NativeLibrary.Get(filter), readOnly: true);
+                    }
                 using (var tab = ImRaii.TabItem("Community"))
                 {
                     if (tab)
