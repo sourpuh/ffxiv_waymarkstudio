@@ -1,8 +1,8 @@
-# Waymark Studio
+<h1><img align="center" height=100 src="./ReadmeImages/icon.png" alt="Thanks Leonhart for the Icon!">  Waymark Studio</h1>
 
 Waymark Studio (WMS) is a total replacement for the in-game waymark editor and Waymark Preset plugin. Waymark Studio provides a suite of tools to make placing and loading waymark presets simple, fast, and accurate.
 
-<img align="right" height=350 src="/ReadmeImages/window.png">
+<img align="right" height=350 src="./ReadmeImages/window.png">
 
 Features include:
 1. Set up visual guides to place waymarks on a grid
@@ -30,13 +30,13 @@ Draft markers are only visible to you, show the precise size of a marker, and ca
 Once you place your draft markers as desired, you can convert them to real waymarks or save them as a preset with a single button press.
 By default, WMS will place real waymarks if possible and fallback to draft markers, but it can be configured to always place draft markers by unchecking "Place real markers if possible".
 
-<img height=200 src="/ReadmeImages/circle_guide_withclockspots.png">
+<img height=200 src="./ReadmeImages/circle_guide_withclockspots.png">
 
 ## Guides
 Guides are customizable line grids that you can place on the arena to help you place waymarks at precise positions; they are only visible to you. WMS provides two types of guides (circular and rectangular) to operate on typical FFXIV boss arena shapes. WMS has shortcuts to place draft waymarks at clockspots on the guide.
 
-<img height=350 src="/ReadmeImages/circle_guide.png">
-<img height=350 src="/ReadmeImages/square_guide.png">
+<img height=350 src="./ReadmeImages/circle_guide.png">
+<img height=350 src="./ReadmeImages/square_guide.png">
 
 ## Export and Import
 To export a preset, right click the preset and copy it to your clipboard for sharing. It should look something like `wms08wInAT9VAMmqAtauAgD/AQgAxKkC464CADacXwDZBJNeAKsDD084UyAtIEdvZCBLZWZrYQ==` in your clipboard.
@@ -66,7 +66,7 @@ To use triggers:
 1. Save the trigger. Once it is saved, it will appear in the studio window above your presets.
 1. Every time you walk into the trigger, it will load the attached preset.
 
-<img height=350 src="/ReadmeImages/trigger.png">
+<img height=350 src="./ReadmeImages/trigger.png">
 
 ## Installation
 1. Open Dalamud settings using your preferred method, such as the `/xlsettings` chat command.
