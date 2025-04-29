@@ -42,3 +42,23 @@ using (var drawList = PictoService.Draw())
     drawList.AddCircle(worldPosition, radius, outlineColor);
 }
 ```
+
+Drawing with VFX:
+```c#
+PctDrawHints hints = new(drawWithVfx: true);
+using (var drawList = PictoService.Draw(hints: hints))
+{
+    if (drawList == null)
+        return;
+    using (drawList.PushDrawContext($"{gameobject.EntityId}"))
+    {
+        // Draw a circle around a GameObject's hitbox
+        Vector3 worldPosition = gameObject.Position;
+        float radius = gameObject.HitboxRadius;
+        drawList.AddCircleFilled(worldPosition, radius, fillColor);
+        drawList.AddCircle(worldPosition, radius, outlineColor);
+    }
+}
+```
+
+To draw with VFX, either use `VfxRenderer` directly, or use a drawlist with the hint enabled and `PushDrawContext` for each unique element you're drawing. The ID used for `PushDrawContext` should be consistent across frames and unique for each display object. If the ID is specified in consecutive frames, the VFX is updated to match the new parameters. If the ID is not specified in consecutive frames, the VFX is destroyed.

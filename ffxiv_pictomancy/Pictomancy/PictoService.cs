@@ -1,10 +1,12 @@
-﻿using Dalamud.Game.ClientState.Conditions;
+﻿using Dalamud.Game;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using Pictomancy.DXDraw;
+using Pictomancy.VfxDraw;
 
 namespace Pictomancy;
 #nullable disable
@@ -15,8 +17,11 @@ public class PictoService
     [PluginService] public static IGameGui GameGui { get; private set; }
     [PluginService] public static ICondition Condition { get; private set; }
     [PluginService] public static IPluginLog Log { get; private set; }
+    [PluginService] public static ISigScanner SigScanner { get; private set; } = null!;
+    [PluginService] internal static IFramework Framework { get; private set; } = null!;
 
-    private static DXRenderer _renderer;
+    private static DXRenderer _dxRenderer;
+    public static VfxRenderer _vfxRenderer;
     private static AddonClipper _addonClipper;
 
     internal static PctDrawList DrawList;
@@ -25,8 +30,23 @@ public class PictoService
     public static void Initialize(IDalamudPluginInterface pluginInterface)
     {
         pluginInterface.Create<PictoService>();
-        _renderer = new();
+        _vfxRenderer = new();
+        _dxRenderer = new();
         _addonClipper = new();
+        VfxFunctions.Initialize();
+        Framework.Update += Update;
+    }
+
+    public static void Dispose()
+    {
+        _dxRenderer.Dispose();
+        _vfxRenderer.Dispose();
+        Framework.Update -= Update;
+    }
+
+    internal static void Update(IFramework framework)
+    {
+        _vfxRenderer.Update();
     }
 
     /// <summary>
@@ -58,14 +78,9 @@ public class PictoService
 
         return DrawList = new PctDrawList(
             imguidrawlist ?? ImGui.GetBackgroundDrawList(),
-            _renderer,
+            _dxRenderer,
             _addonClipper
         );
-    }
-
-    public static void Dispose()
-    {
-        _renderer.Dispose();
     }
 
     private static bool IsInCutscene()
