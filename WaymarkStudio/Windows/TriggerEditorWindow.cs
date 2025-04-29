@@ -35,6 +35,7 @@ internal class TriggerEditorWindow : Window
         if (trigger != null)
         {
             this.trigger = new(trigger);
+            this.trigger.Editing = true;
         }
         selectedPresetIndex = -1;
         startingPosition = null;
@@ -45,6 +46,7 @@ internal class TriggerEditorWindow : Window
         if (trigger == null && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.LocationCrosshairs, "Place Trigger"))
         {
             trigger = new("New trigger", Plugin.WaymarkManager.territoryId);
+            trigger.Editing = true;
             Plugin.Overlay.StartMouseWorldPosSelecting("trigger");
         }
 
@@ -103,6 +105,7 @@ internal class TriggerEditorWindow : Window
 
                 var preset = selectedPresetIndex >= 0 ? presets[selectedPresetIndex] : null;
                 Plugin.Triggers.SaveTrigger(trigger, preset);
+                trigger.Editing = false;
                 trigger = null;
                 IsOpen = false;
                 return;
@@ -110,6 +113,7 @@ internal class TriggerEditorWindow : Window
         ImGui.SameLine();
         if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Times, "Cancel"))
         {
+            trigger.Editing = false;
             trigger = null;
             IsOpen = false;
             return;
