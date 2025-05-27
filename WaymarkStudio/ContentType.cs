@@ -10,5 +10,6 @@ public enum ContentType
     SavetheQueen = 29,
     VCDungeonFinder = 30,
     ChaoticAllianceRaid = 37,
+    OccultCrescent = 38,
     Other = 69,
 }

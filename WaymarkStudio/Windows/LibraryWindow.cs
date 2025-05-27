@@ -16,7 +16,7 @@ internal class LibraryWindow : BaseWindow
 
     internal LibraryWindow() : base("Waymark Studio Library", ImGuiWindowFlags.NoScrollbar)
     {
-        Size = new(370, 500);
+        Size = new(400, 500);
         SizeCondition = ImGuiCond.Once;
         SizeConstraints = new WindowSizeConstraints
         {
