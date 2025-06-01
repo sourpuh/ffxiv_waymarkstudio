@@ -129,8 +129,8 @@ internal class CommunityPresets
         "wms06wT+A//AmgwAwJ0LwJcNAMCaDMCaDADAlw3AnQsAwJoMwJ0LAMCdC8CXDQDAnQvAlw0AwJcNwJ0LAMCXDQhTdGFuZGFyZA==",
         "wms07QQABP+g/gr/tBiPTuC2Df+0GI9O4LYN/7QYsOoBoP4K/7QYsOoB8I0LAPCNC5CnDQDwjQuQpw0AkKcN8I0LAJCnDQhTdGFuZGFyZA==",
         "wms07wQCBP/AmgwA0O4KsMYNAMCaDMCaDACwxg3Q7goAwJoM+qALAPqgC4SUDQD6oAuElA0AhJQN+qALAISUDQhTdGFuZGFyZA==",
-        "wms05AQAAHfg1VbP2zrwpC3AuVXP2zrQiCygnVTP2zrwpC2gnVTP2zrwni/AuVXP2zqQuzDg1VbP2zrwni8MRGVtb24gVGFibGV0",
-        "wms05AQAAP//02G/92qA/yn/2V+/92qA+Sv/02G/92qA8y3/zWO/92qA+SvhhGO/92qcyCqbo2C/92qcyCqbo2C/92riqS3hhGO/92riqS0TVHJpcGxldHMgQ2xvY2tzcG90cw==",
+        "wms05AQAAHew61TP2zqA7S/AuVXP2zrAqDHQh1bP2zqA7S/Qh1bP2zrg1izAuVXP2zqgmyuw61TP2zrg1iwRQUJCQSBEZW1vbiBUYWJsZXQ=",
+        "wms05AQAAP//02G/92qQ0CmXgmC/92qapyqPq1+/92qA+SubgmC/92rkyi3/02G/92rwoS7rpWO/92ruyi3v/GO/92qA+SvnpWO/92qYpyoQQUJCQSBHb2JsaW4gVHJpbw==",
         "wms05AQAAP/PkSn/xGbAixH/hyf/xGaQlRPPkSn/xGbgnhWfmyv/xGaQlRO3zSr/xGam2RHl1Sf/xGam2RHl1Sf/xGb40BS3zSr/xGb40BQYTWFyYmxlIERyYWdvbiBDbG9ja3Nwb3Rz",
         "wms05AQAAM/AuVW/jTrvqVXkp1i/jTqH91PAuVW/jTqv/U76yVK/jTqF+FPcvla/jTrT3FHOs1S/jTrX21EITWFnaXRhdXI=",
   ];
