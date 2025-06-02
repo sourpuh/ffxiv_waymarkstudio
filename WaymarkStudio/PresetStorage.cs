@@ -91,8 +91,13 @@ internal class PresetStorage
 
     private IEnumerable<(int, WaymarkPreset)> ListCommunityPresets()
     {
+        if (!GitHubLoader.Presets.IsCompletedSuccessfully)
+        {
+            return Enumerable.Empty<(int, WaymarkPreset)>();
+        }
+
         int i = 0;
-        return CommunityPresets.Presets.Select(x => (i++, x));
+        return GitHubLoader.Presets.Result.Select(x => (i++, x));
     }
 
     private IEnumerable<(int, WaymarkPreset)> ListWPPPresets()
