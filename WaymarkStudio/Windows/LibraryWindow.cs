@@ -53,29 +53,30 @@ internal class LibraryWindow : BaseWindow
                     if (tab)
                         DrawLibrary(Plugin.Storage.Library.Get(filter));
                 }
-                if (Plugin.IsWPPInstalled())
+                if (Plugin.IsWPPInstalled() && Plugin.Config.IsLibraryVisible(PresetStorage.WPP))
                     using (var tab = ImRaii.TabItem("WPP"))
                     {
                         if (tab)
                             DrawLibrary(Plugin.Storage.WPPLibrary.Get(filter), readOnly: true);
                     }
-                if (Plugin.IsMMInstalled())
+                if (Plugin.IsMMInstalled() && Plugin.Config.IsLibraryVisible(PresetStorage.MM))
                     using (var tab = ImRaii.TabItem("MemoryMarker"))
                     {
                         if (tab)
                             DrawLibrary(Plugin.Storage.MMLibrary.Get(filter), readOnly: true);
                     }
-                else
+                if (Plugin.Config.IsLibraryVisible(PresetStorage.Native))
                     using (var tab = ImRaii.TabItem("Native"))
                     {
                         if (tab)
                             DrawLibrary(Plugin.Storage.NativeLibrary.Get(filter), readOnly: true);
                     }
-                using (var tab = ImRaii.TabItem("Community"))
-                {
-                    if (tab)
-                        DrawLibrary(Plugin.Storage.CommunityLibrary.Get(filter), readOnly: true);
-                }
+                if (Plugin.Config.IsLibraryVisible(PresetStorage.Community))
+                    using (var tab = ImRaii.TabItem("Community"))
+                    {
+                        if (tab)
+                            DrawLibrary(Plugin.Storage.CommunityLibrary.Get(filter), readOnly: true);
+                    }
             }
         }
     }

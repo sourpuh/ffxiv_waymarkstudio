@@ -26,6 +26,28 @@ public class Configuration : IPluginConfiguration
     public bool ReplaceNativeUi = true;
     public bool ClearNativeWhenPlacing = false;
     public bool DisableWorldPresetSafetyChecks = false;
+    public Dictionary<string, LibraryConfig> LibraryConfiguration = new();
+
+    public class LibraryConfig
+    {
+        public bool Visible = true;
+    }
+
+    public bool IsLibraryVisible(string library)
+    {
+        return LibraryConfiguration.GetValueOrDefault(library)?.Visible ?? true;
+    }
+
+    public void SetLibraryVisibilty(string library, bool visible)
+    {
+        if (!LibraryConfiguration.TryGetValue(library, out var value))
+        {
+            value = new();
+            LibraryConfiguration.Add(library, value);
+        }
+        value.Visible = visible;
+    }
+
     public List<WaymarkPreset> SavedPresets { get; set; } = [];
 
     [JsonIgnore]

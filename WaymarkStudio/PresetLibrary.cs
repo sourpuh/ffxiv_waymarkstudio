@@ -10,17 +10,21 @@ using LibraryView = ImmutableSortedDictionary<ushort, ImmutableList<(int, Waymar
 internal class PresetLibrary
 {
     private Func<IEnumerable<(int, WaymarkPreset)>> getter;
+    private Func<bool> visibility;
     private TerritoryFilter lastFilter;
     private LibraryView? cachedFullView;
     private LibraryView? cachedFilteredView;
 
-    public PresetLibrary(Func<IEnumerable<(int, WaymarkPreset)>> getter)
+    public PresetLibrary(Func<IEnumerable<(int, WaymarkPreset)>> getter, Func<bool> visibility)
     {
         this.getter = getter;
+        this.visibility = visibility;
     }
 
     public LibraryView Get(TerritoryFilter filter = default)
     {
+        if (!visibility()) return LibraryView.Empty;
+
         if (filter == default)
         {
             if (cachedFullView == null)

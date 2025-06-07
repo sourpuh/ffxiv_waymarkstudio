@@ -13,6 +13,11 @@ namespace WaymarkStudio;
  */
 internal class PresetStorage
 {
+    internal const string WPP = "Waymark Preset Plugin Presets";
+    internal const string MM = "Memory Marker Presets";
+    internal const string Native = "Native Presets";
+    internal const string Community = "Community Presets";
+
     const uint MaxEntries = 30;
     private TerritoryFilter lastFilter;
     public PresetLibrary Library;
@@ -23,11 +28,11 @@ internal class PresetStorage
 
     internal PresetStorage()
     {
-        Library = new(() => ListSavedPresets());
-        WPPLibrary = new(() => ListWPPPresets());
-        MMLibrary = new(() => ListMMPresets());
-        NativeLibrary = new(() => ListNativePresets());
-        CommunityLibrary = new(() => ListCommunityPresets());
+        Library = new(ListSavedPresets, () => true);
+        WPPLibrary = new(ListWPPPresets, () => Plugin.Config.IsLibraryVisible(WPP));
+        MMLibrary = new(ListMMPresets, () => Plugin.Config.IsLibraryVisible(MM));
+        NativeLibrary = new(ListNativePresets, () => Plugin.Config.IsLibraryVisible(Native));
+        CommunityLibrary = new(ListCommunityPresets, () => Plugin.Config.IsLibraryVisible(Community));
     }
 
     public int CountPresetsForTerritoryId(uint territoryId)

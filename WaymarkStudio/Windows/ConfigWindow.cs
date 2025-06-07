@@ -1,5 +1,8 @@
+using Dalamud.Interface.Components;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
+using Dalamud.Interface.Utility.Raii;
 
 namespace WaymarkStudio.Windows;
 
@@ -24,9 +27,43 @@ public class ConfigWindow : Window
         MyGui.HoverTooltip("Combine Criterion and Criterion Savage presets to use normal presets in savage and vice versa.");
         needSave |= ImGui.Checkbox("Disable World Preset Placement Safety Checks", ref Configuration.DisableWorldPresetSafetyChecks);
         MyGui.HoverTooltip("Disable distance, height, and frequency safety checks when placing presets in the open world / non-instance areas.\nWith this disabled, your preset placement will be obviously impossible; use at your own risk.");
+
+        ImGui.Text("Libraries");
+        using (ImRaii.PushIndent())
+        {
+            foreach (string x in new string[] { PresetStorage.WPP, PresetStorage.MM, PresetStorage.Native, PresetStorage.Community })
+            {
+                bool visible = Plugin.Config.IsLibraryVisible(x);
+                if (VisibilityToggleButton(x, ref visible))
+                {
+                    Plugin.Config.SetLibraryVisibilty(x, visible);
+                }
+            }
+        }
+
         if (needSave)
         {
             Configuration.Save();
         }
+    }
+
+    private bool VisibilityToggleButton(string name, ref bool visible)
+    {
+        bool wasVisible = visible;
+        if (visible)
+        {
+            if (ImGuiComponents.IconButton(name, FontAwesomeIcon.EyeSlash))
+                visible = false;
+            MyGui.HoverTooltip($"Hide {name}");
+        }
+        else
+        {
+            if (ImGuiComponents.IconButton(name, FontAwesomeIcon.Eye))
+                visible = true;
+            MyGui.HoverTooltip($"Show {name}");
+        }
+        ImGui.SameLine();
+        ImGui.Text(name);
+        return visible != wasVisible;
     }
 }
