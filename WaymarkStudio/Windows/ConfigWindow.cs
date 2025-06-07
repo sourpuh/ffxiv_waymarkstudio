@@ -37,6 +37,7 @@ public class ConfigWindow : Window
                 if (VisibilityToggleButton(x, ref visible))
                 {
                     Plugin.Config.SetLibraryVisibilty(x, visible);
+                    needSave = true;
                 }
             }
         }
