@@ -6,6 +6,7 @@
     <PackageProjectUrl>https://github.com/sourpuh/ffxiv_waymarkstudio</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
     <ItemGroup>
       <Content Include="res\circle_card.png">

@@ -7,16 +7,16 @@ public enum Waymark
 
 internal static class Waymarks
 {
-    private static readonly (string name, uint iconId, uint color, uint glowColor)[] Info =
+    private static readonly (string name, uint iconId, uint color, uint glowColor, string vfxPath)[] Info =
     {
-        ("A", 61241, 0xFF6E6EFF, 0xAA6E6EFF),
-        ("B", 61242, 0xFF9CFBF3, 0xAA9CFBF3),
-        ("C", 61243, 0xFFFEEC9B, 0xAAFEEC9B),
-        ("D", 61247, 0xFFFFACD2, 0xAAFFACD2),
-        ("1", 61244, 0xFF6E6EFF, 0xAA6E6EFF),
-        ("2", 61245, 0xFF9CFBF3, 0xAA9CFBF3),
-        ("3", 61246, 0xFFFEEC9B, 0xAAFEEC9B),
-        ("4", 61248, 0xFFFFACD2, 0xAAFFACD2),
+        ("A", 61241, 0xFF6E6EFF, 0xAA6E6EFF, "vfx/common/eff/fld_mark_a0f.avfx"),
+        ("B", 61242, 0xFF9CFBF3, 0xAA9CFBF3, "vfx/common/eff/fld_mark_b0f.avfx"),
+        ("C", 61243, 0xFFFEEC9B, 0xAAFEEC9B, "vfx/common/eff/fld_mark_c0f.avfx"),
+        ("D", 61247, 0xFFFFACD2, 0xAAFFACD2, "vfx/common/eff/fld_mark_d0f.avfx"),
+        ("1", 61244, 0xFF6E6EFF, 0xAA6E6EFF, "vfx/common/eff/fld_mark_10f.avfx"),
+        ("2", 61245, 0xFF9CFBF3, 0xAA9CFBF3, "vfx/common/eff/fld_mark_20f.avfx"),
+        ("3", 61246, 0xFFFEEC9B, 0xAAFEEC9B, "vfx/common/eff/fld_mark_30f.avfx"),
+        ("4", 61248, 0xFFFFACD2, 0xAAFFACD2, "vfx/common/eff/fld_mark_40f.avfx"),
     };
 
     internal static uint GetIconId(Waymark w)
@@ -34,5 +34,28 @@ internal static class Waymarks
     internal static uint GetGlowColor(Waymark w)
     {
         return Info[(int)w].glowColor;
+    }
+    internal static Waymark GetWaymark(string vfxPath)
+    {
+        switch(vfxPath)
+        {
+            case "vfx/common/eff/fld_mark_a0f.avfx":
+                return Waymark.A;
+            case "vfx/common/eff/fld_mark_b0f.avfx":
+                return Waymark.B;
+            case "vfx/common/eff/fld_mark_c0f.avfx":
+                return Waymark.C;
+            case "vfx/common/eff/fld_mark_d0f.avfx":
+                return Waymark.D;
+            case "vfx/common/eff/fld_mark_10f.avfx":
+                return Waymark.One;
+            case "vfx/common/eff/fld_mark_20f.avfx":
+                return Waymark.Two;
+            case "vfx/common/eff/fld_mark_30f.avfx":
+                return Waymark.Three;
+            case "vfx/common/eff/fld_mark_40f.avfx":
+                return Waymark.Four;
+        }
+        return (Waymark)(-1);
     }
 }

@@ -1,6 +1,7 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using System;
@@ -276,6 +277,19 @@ internal class StudioWindow : BaseWindow
         ImGui.Text($"{Plugin.WaymarkManager.mapName}");
         var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
         TextActiveWaymarks(currentMarkers);
+        if (Plugin.WaymarkVfx.WaymarkAlpha <= 0)
+        {
+            ImGui.SameLine();
+            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 6f * ImGuiHelpers.GlobalScale);
+            ImGui.SetWindowFontScale(0.7f);
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.PushStyleColor(ImGuiCol.Text, 0xFF2020FF);
+            ImGui.Text(FontAwesomeIcon.EyeSlash.ToIconString());
+            ImGui.PopStyleColor();
+            ImGui.PopFont();
+            ImGui.SetWindowFontScale(1f);
+            MyGui.HoverTooltip("Waymarks are currently hidden");
+        }
         using (ImRaii.Disabled(currentMarkers.MarkerPositions.Count == 0))
         {
             if (ImGuiComponents.IconButton("save_markers", FontAwesomeIcon.Save))
@@ -283,14 +297,14 @@ internal class StudioWindow : BaseWindow
                 currentMarkers.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(Plugin.WaymarkManager.territoryId) + 1}";
                 Plugin.Storage.SavePreset(currentMarkers);
             }
-            MyGui.HoverTooltip("Save markers to presets");
+            MyGui.HoverTooltip("Save Waymarks to presets");
             ImGui.SameLine();
             if (ImGuiComponents.IconButton("draftify_markers", FontAwesomeIcon.MapMarkerAlt))
             {
                 foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(w, p);
             }
-            MyGui.HoverTooltip("Import markers as draft");
+            MyGui.HoverTooltip("Import Waymarks as draft");
             ImGui.SameLine();
             using (ImRaii.Disabled(!Plugin.WaymarkManager.IsSafeToPlaceWaymarks()))
             {
@@ -299,6 +313,39 @@ internal class StudioWindow : BaseWindow
                     Plugin.WaymarkManager.NativeClearWaymarks();
                 }
                 MyGui.HoverTooltip("Clear Waymarks");
+            }
+        }
+        ImGui.SameLine();
+        {
+            if (Plugin.WaymarkVfx.WaymarkAlpha > 0)
+            {
+                if (ImGuiComponents.IconButton("hide_markers", FontAwesomeIcon.EyeSlash))
+                {
+                    Plugin.WaymarkVfx.WaymarkAlpha = 0;
+                }
+                MyGui.HoverTooltip("Hide Waymarks Locally\nRight click to adjust transparency");
+            }
+            else
+            {
+                if (ImGuiComponents.IconButton("show_markers", FontAwesomeIcon.Eye))
+                {
+                    Plugin.WaymarkVfx.WaymarkAlpha = 1;
+                }
+
+                MyGui.HoverTooltip("Show Waymarks Locally\nRight click to adjust transparency");
+            }
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            {
+                ImGui.OpenPopup("waymark_transparency_popup");
+            }
+            if (ImGui.BeginPopup("waymark_transparency_popup"))
+            {
+                var alpha = Plugin.WaymarkVfx.WaymarkAlpha;
+                if (ImGui.SliderFloat("##alpha", ref alpha, 0, 1))
+                {
+                    Plugin.WaymarkVfx.WaymarkAlpha = alpha;
+                }
+                ImGui.EndPopup();
             }
         }
         ImGui.SameLine();

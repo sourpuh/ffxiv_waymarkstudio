@@ -44,8 +44,9 @@ public class CircleTrigger
             if (pulse > 1) pulse = 2f - pulse;
             alpha = 0.2f + alpha * pulse;
         }
-        uint color = 0xFFFFFFFF.WithAlpha((byte)(alpha * 0xFF));
-        PictoService._vfxRenderer.AddCustomOmen(transientId, "general01bf", Center, new(Radius, 100, Radius), 0, color);
+        var color = Vector4.One;
+        color.W = alpha;
+        PictoService.VfxRenderer.AddOmen(transientId, "general01bf", Center, new(Radius, 100, Radius), 0, color);
     }
 
     public bool Contains(IPlayerCharacter? character)
