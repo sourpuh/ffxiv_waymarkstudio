@@ -11,7 +11,6 @@
 /// <param name="maxAlpha">Max alpha value 0-255.</param>
 /// <param name="alphaBlendMode">Alpha blend mode. Check AlphaBlendMode file for mode descriptions.</param>
 /// <param name="clipNativeUI">Clip native UI if possible.</param>
-/// <param name="drawWithVfx">Draw with native Vfx if possible. This could be buggy; test thoroughly before using.</param>
 ///
 public record struct PctDrawHints(
     bool drawInCutscene = false,
@@ -19,11 +18,10 @@ public record struct PctDrawHints(
     bool autoDraw = true,
     byte maxAlpha = 255,
     AlphaBlendMode alphaBlendMode = AlphaBlendMode.Add,
-    bool clipNativeUI = true,
-    bool drawWithVfx = false)
+    bool clipNativeUI = true)
 {
     // Surely there's a better way to do this?
-    public PctDrawHints() : this(false, false, true, 255, AlphaBlendMode.Add, true, false) { }
+    public PctDrawHints() : this(false, false, true, 255, AlphaBlendMode.Add, true) { }
 
     public bool DrawInCutscene => drawInCutscene;
     public bool DrawWhenFaded => drawWhenFaded;
@@ -31,5 +29,4 @@ public record struct PctDrawHints(
     public float MaxAlphaFraction => maxAlpha / 255f;
     public AlphaBlendMode AlphaBlendMode => alphaBlendMode;
     public bool ClipNativeUI => clipNativeUI;
-    public bool DrawWithVfx => drawWithVfx;
 }

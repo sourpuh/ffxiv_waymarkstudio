@@ -15,8 +15,6 @@ public class PctDrawList : IDisposable
     internal readonly AddonClipper _addonClipper;
     private PctTexture? _texture;
     internal bool Finalized => _texture != null;
-    internal string? currentDrawId = null;
-    internal bool DrawWithVfx => PictoService.Hints.DrawWithVfx && currentDrawId != null;
 
     internal PctDrawList(ImDrawListPtr drawlist, DXRenderer renderer, AddonClipper addonClipper)
     {
@@ -51,26 +49,6 @@ public class PctDrawList : IDisposable
             texture.TextureId,
             ImGuiHelpers.MainViewport.Pos,
             ImGuiHelpers.MainViewport.Pos + texture.Size);
-    }
-
-    private class DrawContext : IDisposable
-    {
-        PctDrawList list;
-        public DrawContext(PctDrawList list)
-        {
-            this.list = list;
-        }
-        public void Dispose()
-        {
-            list.currentDrawId = null;
-        }
-    }
-
-    public IDisposable PushDrawContext(string id)
-    {
-        if (currentDrawId != null) throw new InvalidOperationException("Pop previous context before pushing next");
-        currentDrawId = id;
-        return new DrawContext(this);
     }
 
     /// <summary>
@@ -161,11 +139,6 @@ public class PctDrawList : IDisposable
     {
         Vector3 direction = stop - start;
         Vector3 perpendicular = halfWidth * Vector3.Normalize(Vector3.Cross(direction, Vector3.UnitY));
-        if (DrawWithVfx)
-        {
-            PictoService._vfxRenderer.AddLine(currentDrawId!, start, stop, halfWidth, color);
-            return;
-        }
         AddQuadFilled(start - perpendicular, stop - perpendicular, stop + perpendicular, start + perpendicular, color, outerColor ?? color, outerColor ?? color, color);
     }
 
@@ -238,38 +211,6 @@ public class PctDrawList : IDisposable
 
     public void AddFanFilled(Vector3 origin, float innerRadius, float outerRadius, float minAngle, float maxAngle, uint color, uint? outerColor = null, uint numSegments = 0)
     {
-        if (DrawWithVfx)
-        {
-            bool isCircle = maxAngle - minAngle >= 2 * MathF.PI - 0.000001;
-            if (innerRadius <= 0)
-            {
-                if (isCircle)
-                {
-                    PictoService._vfxRenderer.AddCircle(currentDrawId!, origin, outerRadius, color);
-                    return;
-                }
-                else
-                {
-                    float angle = maxAngle - minAngle;
-                    float rotation = minAngle + angle / 2;
-                    if (PictoService._vfxRenderer.AddCone(currentDrawId!, origin, outerRadius, -rotation, (int)MathF.Round(angle / (MathF.PI * 2) * 360, 0), color))
-                        return;
-                }
-            }
-            else
-            {
-                if (isCircle)
-                {
-                    if (innerRadius > 1 && outerRadius > 50)
-                    {
-                        PictoService._vfxRenderer.AddDonutHole(currentDrawId!, origin, innerRadius, color);
-                        return;
-                    }
-                    else if (PictoService._vfxRenderer.AddDonut(currentDrawId!, origin, innerRadius, outerRadius, color))
-                        return;
-                }
-            }
-        }
         _renderer.DrawFan(origin, innerRadius, outerRadius, minAngle, maxAngle, color, outerColor ?? color, numSegments);
     }
 

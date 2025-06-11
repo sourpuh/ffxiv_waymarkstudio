@@ -9,27 +9,41 @@ public unsafe class Vfx : IDisposable
     internal float rotation;
     internal Vector4 color;
     internal VfxData* data;
+    internal bool pctOwned = false;
 
     public static Vfx Create(string path, Vector3 position, Vector3 size, float rotation, Vector4? color = null)
     {
-        return new(path, position, size, rotation, color ?? Vector4.One);
+        var data = CreateVfxInternal(path, position, size, rotation, color ?? Vector4.One);
+        Vfx vfx = new(data, position, size, rotation, color ?? Vector4.One);
+        vfx.pctOwned = true;
+        return vfx;
     }
 
-    private Vfx(string path, Vector3 position, Vector3 size, float rotation, Vector4 color)
+    public static Vfx Wrap(VfxData* data, Vector3 position, Vector3 size, float rotation, Vector4? color = null)
     {
+        Vfx vfx = new(data, position, size, rotation, color ?? Vector4.One);
+        return vfx;
+    }
+
+    private Vfx(VfxData* data, Vector3 position, Vector3 size, float rotation, Vector4 color)
+    {
+        if (data == null) throw new ArgumentNullException("null vfx data");
+        this.data = data;
         this.position = position;
         this.size = size;
         this.rotation = rotation;
-        data = CreateVfxInternal(path, position, size, rotation, color);
     }
+
+    public bool IsValid => data != null && data->Instance != null;
 
     public void Dispose()
     {
-        VfxFunctions.DestroyVfx(data);
+        if (pctOwned && IsValid)
+            VfxFunctions.DestroyVfx(data);
         data = null;
     }
 
-    private static VfxData* CreateVfxInternal(string path, Vector3 position, Vector3 size, float rotation, Vector4? color = null)
+    private static VfxData* CreateVfxInternal(string path, Vector3 position, Vector3 size, float rotation, Vector4 color)
     {
         var pathBytes = System.Text.Encoding.UTF8.GetBytes(path);
 
@@ -38,17 +52,32 @@ public unsafe class Vfx : IDisposable
 
         fixed (byte* pathPtr = pathBytes)
         {
-            var vfx = VfxFunctions.CreateVfxInternal(pathPtr, &init, 2, 0, position.X, position.Y, position.Z, size.X, size.Y, size.Z, rotation, 1, -1);
-            vfx->Instance->Color = color ?? Vector4.One;
+            var vfx = VfxFunctions.CreateVfx(pathPtr, &init, 2, 0, position.X, position.Y, position.Z, size.X, size.Y, size.Z, rotation, 1, -1);
+            vfx->Instance->Color = color;
 
             return vfx;
         }
     }
 
+    public void UpdatePosition(Vector3 position)
+    {
+        UpdateTransform(position, size, rotation);
+    }
+
+    public void UpdateScale(Vector3 scale)
+    {
+        UpdateTransform(position, scale, rotation);
+    }
+
+    public void UpdateRotation(float rotation)
+    {
+        UpdateTransform(position, size, rotation);
+    }
+
     public void UpdateTransform(Vector3 position, Vector3 size, float rotation)
     {
-        if (this.position == position && this.rotation == rotation && this.size == size)
-            return;
+        if (!IsValid) return;
+        if (this.position == position && this.rotation == rotation && this.size == size) return;
 
         this.position = position;
         this.size = size;
@@ -71,7 +100,7 @@ public unsafe class Vfx : IDisposable
         alignedMatrix->M33 = size.Z;
         alignedMatrix->M34 = 0;
 
-        VfxFunctions.MatrixRotate(alignedMatrix, rotation);
+        VfxFunctions.RotateMatrix(alignedMatrix, rotation);
 
         alignedMatrix->M41 = position.X;
         alignedMatrix->M42 = position.Y;
@@ -82,8 +111,8 @@ public unsafe class Vfx : IDisposable
 
     public void UpdateColor(Vector4 color)
     {
-        if (this.color == color)
-            return;
+        if (!IsValid) return;
+        if (this.color == color) return;
 
         this.color = color;
         VfxFunctions.UpdateVfxColor(data->Instance, color.X, color.Y, color.Z, color.W);

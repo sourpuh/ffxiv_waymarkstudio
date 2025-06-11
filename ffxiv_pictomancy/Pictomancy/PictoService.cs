@@ -20,33 +20,57 @@ public class PictoService
     [PluginService] public static ISigScanner SigScanner { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
 
-    private static DXRenderer _dxRenderer;
-    public static VfxRenderer _vfxRenderer;
-    private static AddonClipper _addonClipper;
+    private static DXRenderer? _dxRenderer;
+    private static AddonClipper? _addonClipper;
+    private static VfxRenderer? _vfxRenderer;
+    public static VfxRenderer VfxRenderer => _vfxRenderer;
 
     internal static PctDrawList DrawList;
     internal static PctDrawHints Hints;
 
     public static void Initialize(IDalamudPluginInterface pluginInterface)
     {
-        pluginInterface.Create<PictoService>();
-        _vfxRenderer = new();
+        InitializeDxRenderer(pluginInterface);
+        InitializeVfxRenderer(pluginInterface);
+    }
+
+    public static void InitializeDxRenderer(IDalamudPluginInterface pluginInterface)
+    {
+        InitializePluginServices(pluginInterface);
         _dxRenderer = new();
         _addonClipper = new();
+    }
+
+    public static void InitializeVfxRenderer(IDalamudPluginInterface pluginInterface)
+    {
+        InitializePluginServices(pluginInterface);
+        _vfxRenderer = new();
         VfxFunctions.Initialize();
         Framework.Update += Update;
     }
 
+    private static bool ServicesInitialized = false;
+    private static void InitializePluginServices(IDalamudPluginInterface pluginInterface)
+    {
+        if (!ServicesInitialized)
+        {
+            pluginInterface.Create<PictoService>();
+            ServicesInitialized = true;
+        }
+    }
+
     public static void Dispose()
     {
-        _dxRenderer.Dispose();
-        _vfxRenderer.Dispose();
+        _dxRenderer?.Dispose();
+        _dxRenderer = null;
+        _vfxRenderer?.Dispose();
+        _vfxRenderer = null;
         Framework.Update -= Update;
     }
 
     internal static void Update(IFramework framework)
     {
-        _vfxRenderer.Update();
+        _vfxRenderer?.Update();
     }
 
     /// <summary>
@@ -72,6 +96,7 @@ public class PictoService
     /// <returns>Returns nullptr if drawing in unavailable.</returns>
     public static PctDrawList? Draw(ImDrawListPtr? imguidrawlist = null, PctDrawHints? hints = null)
     {
+        if (_dxRenderer == null) return null;
         Hints = hints ?? new();
         if (Hints.DrawInCutscene || IsInCutscene()) return null;
         if (Hints.DrawWhenFaded || IsFaded()) return null;
