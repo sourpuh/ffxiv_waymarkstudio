@@ -51,7 +51,7 @@ public sealed class Plugin : IDalamudPlugin
 
         FieldMarkerAddon = new();
         WaymarkManager = new();
-        WaymarkVfx = new();
+        //WaymarkVfx = new();
         Storage = new();
         Triggers = new();
 
@@ -82,7 +82,7 @@ public sealed class Plugin : IDalamudPlugin
     public void Dispose()
     {
         FieldMarkerAddon.Dispose();
-        WaymarkVfx.Dispose();
+        //WaymarkVfx.Dispose();
         WindowSystem.RemoveAllWindows();
 
         Overlay.Dispose();
@@ -100,7 +100,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         Triggers.Update();
         Storage.Update();
-        WaymarkVfx.Update();
+        //WaymarkVfx.Update();
     }
 
     private void OnCommand(string command, string args)
