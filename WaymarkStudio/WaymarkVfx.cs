@@ -57,7 +57,7 @@ internal class WaymarkVfx : IDisposable
         {
             Vector3 position = new(originX, originY, originZ);
             Vector3 size = new(sizeX, sizeY, sizeZ);
-            TrackedVfx.Add(Waymarks.GetWaymark(pathstr), Vfx.Wrap(vfxData, position, size, angle));
+            TrackedVfx[Waymarks.GetWaymark(pathstr)] = Vfx.Wrap(vfxData, position, size, angle);
             vfxData->Instance->Color = new(1, 1, 1, WaymarkAlpha);
         }
         return vfxData;
