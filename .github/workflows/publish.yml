@@ -43,7 +43,7 @@ jobs:
           internal_name: "WaymarkStudio"
           version_number: ${{ env.tag }}
           path: "WaymarkStudio/bin/Release/WaymarkStudio/latest.zip"
-          type: "latest"
+          type: "testing"
           dalamud_version: "12"
         env:
           PUBLISHER_KEY: ${{ secrets.PUBLISHER_KEY }}
