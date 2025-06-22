@@ -54,7 +54,7 @@ public abstract class BaseWindow : Window
         }
     }
 
-    internal void DrawPresetList(string id, IEnumerable<(int, WaymarkPreset)> presetList, bool readOnly = false)
+    internal void DrawPresetList(string id, PresetList presetList, bool readOnly = false)
     {
         if (MyGui.BeginList(id, dragdroppable: !readOnly))
         {

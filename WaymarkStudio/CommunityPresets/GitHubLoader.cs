@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -8,15 +7,16 @@ namespace WaymarkStudio;
 
 internal class GitHubLoader
 {
-    internal static Task<List<WaymarkPreset>> Presets;
+    internal static Task<PresetDirectory> Presets;
     static GitHubLoader()
     {
         Presets = LoadGitHubPresets();
     }
 
-    internal static async Task<List<WaymarkPreset>> LoadGitHubPresets()
+    internal static async Task<PresetDirectory> LoadGitHubPresets()
     {
-        List<WaymarkPreset> presets = new();
+        PresetDirectory rootDirectory = new();
+        PresetDirectory currentDirectory = rootDirectory;
         HttpClient httpClient = new();
         using (HttpRequestMessage requestMessage = new(HttpMethod.Get, "https://github.com/sourpuh/ffxiv_waymarkstudio/wiki/community_presets.md"))
         {
@@ -26,15 +26,24 @@ internal class GitHubLoader
             while (reader.Peek() != -1)
             {
                 var line = reader.ReadLine();
-                if (line != null && line.StartsWith("wms0"))
+                if (line != null)
                 {
-                    var preset = WaymarkPreset.Import(line);
-                    preset.Time = DateTimeOffset.MinValue;
-                    presets.Add(preset);
+                    if (line.StartsWith("#"))
+                    {
+                        currentDirectory = new();
+                        currentDirectory.name = line.Substring(line.LastIndexOf("#")).Trim();
+                        rootDirectory.children.Add(currentDirectory);
+                    }
+                    if (line.StartsWith("wms0"))
+                    {
+                        var preset = WaymarkPreset.Import(line);
+                        preset.Time = DateTimeOffset.MinValue;
+                        currentDirectory.presets.Add(preset);
+                    }
                 }
             }
         }
         Plugin.Storage.CommunityLibrary.InvalidateCache();
-        return presets;
+        return rootDirectory;
     }
 }

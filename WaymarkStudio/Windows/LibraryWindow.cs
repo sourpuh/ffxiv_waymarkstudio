@@ -1,12 +1,9 @@
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using System;
-using System.Collections.Immutable;
 using System.Numerics;
 
 namespace WaymarkStudio.Windows;
-
-using LibraryView = ImmutableSortedDictionary<ushort, ImmutableList<(int, WaymarkPreset)>>;
 
 internal class LibraryWindow : BaseWindow
 {

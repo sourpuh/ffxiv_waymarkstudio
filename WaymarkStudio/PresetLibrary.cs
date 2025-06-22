@@ -5,17 +5,15 @@ using System.Linq;
 
 namespace WaymarkStudio;
 
-using LibraryView = ImmutableSortedDictionary<ushort, ImmutableList<(int, WaymarkPreset)>>;
-
 internal class PresetLibrary
 {
-    private Func<IEnumerable<(int, WaymarkPreset)>> getter;
+    private Func<IEnumerable<WaymarkPreset>> getter;
     private Func<bool> visibility;
     private TerritoryFilter lastFilter;
     private LibraryView? cachedFullView;
     private LibraryView? cachedFilteredView;
 
-    public PresetLibrary(Func<IEnumerable<(int, WaymarkPreset)>> getter, Func<bool> visibility)
+    public PresetLibrary(Func<IEnumerable<WaymarkPreset>> getter, Func<bool> visibility)
     {
         this.getter = getter;
         this.visibility = visibility;
@@ -39,13 +37,15 @@ internal class PresetLibrary
 
     private LibraryView GetInternal(TerritoryFilter? filter = null)
     {
+        var i = 0;
         return getter()
+        .Select(x => (i++, x))
         .Where(preset => filter == null || !filter.Value.IsTerritoryFiltered(preset.Item2.TerritoryId))
         .GroupBy(preset => preset.Item2.TerritoryId, v => v)
-        .ToImmutableSortedDictionary(g => g.Key, g => g.ToImmutableList());
+        .ToImmutableSortedDictionary(g => g.Key, g => g.AsEnumerable());
     }
 
-    public IEnumerable<(int, WaymarkPreset)> ListPresets(ushort territoryId)
+    public PresetList ListPresets(ushort territoryId)
     {
         var library = Get();
         var presets = Enumerable.Empty<(int, WaymarkPreset)>();

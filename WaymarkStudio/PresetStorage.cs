@@ -85,69 +85,62 @@ internal class PresetStorage
         Plugin.Config.Save();
     }
 
-    private IEnumerable<(int, WaymarkPreset)> ListSavedPresets()
+    private IEnumerable<WaymarkPreset> ListSavedPresets()
     {
-        var presets = Plugin.Config.SavedPresets;
-        for (int i = 0; i < presets.Count; i++)
-        {
-            yield return (i, presets[i]);
-        }
+        return Plugin.Config.SavedPresets;
     }
 
-    private IEnumerable<(int, WaymarkPreset)> ListCommunityPresets()
+    private IEnumerable<WaymarkPreset> ListCommunityPresets()
     {
         if (!GitHubLoader.Presets.IsCompletedSuccessfully)
         {
-            return Enumerable.Empty<(int, WaymarkPreset)>();
+            return Enumerable.Empty<WaymarkPreset>();
         }
 
-        int i = 0;
-        return GitHubLoader.Presets.Result.Select(x => (i++, x));
+        return GitHubLoader.Presets.Result.RecursiveListPresets();
     }
 
-    private IEnumerable<(int, WaymarkPreset)> ListWPPPresets()
+    private IEnumerable<WaymarkPreset> ListWPPPresets()
     {
         var wppConfig = WPPConfiguration.Load(Plugin.Interface);
         if (wppConfig != null)
         {
-            int i = 0;
             foreach (var wppPreset in wppConfig.PresetLibrary.Presets)
             {
-                yield return (i++, wppPreset.ToPreset());
+                yield return wppPreset.ToPreset();
             }
         }
     }
 
-    private IEnumerable<(int, WaymarkPreset)> ListMMPresets()
+    private IEnumerable<WaymarkPreset> ListMMPresets()
     {
         var mmConfig = MMConfiguration.Load(Plugin.Interface);
         if (mmConfig != null)
         {
-            int i = 0;
             foreach (var territoryIdToPreset in mmConfig.FieldMarkerData)
             {
                 var presets = territoryIdToPreset.Value.MarkerData;
-                for (int j = 0; j < presets.Count; j++)
+                for (int i = 0; i < presets.Count; i++)
                 {
-                    var preset = presets[j];
+                    var preset = presets[i];
                     if (preset != null
                         && territoryIdToPreset.Key == TerritorySheet.TerritoryIdForContentId(preset.Marker.ContentFinderConditionId))
                     {
-                        var name = preset.Name.Length == 0 ? $"Slot {j + 1}" : preset.Name;
-                        yield return (i++, preset.Marker.ToPreset(name));
+                        var name = preset.Name.Length == 0 ? $"Slot {i + 1}" : preset.Name;
+                        yield return preset.Marker.ToPreset(name);
                     }
                 }
             }
         }
     }
 
-    private IEnumerable<(int, WaymarkPreset)> ListNativePresets()
+    private IEnumerable<WaymarkPreset> ListNativePresets()
     {
         for (int i = 0; i < MaxEntries; i++)
         {
             var nativePreset = GetNativePreset((uint)i);
             if (nativePreset.ActiveMarkers == 0) continue;
-            yield return (i, nativePreset.ToPreset($"Slot {i + 1}"));
+            yield return nativePreset.ToPreset($"Slot {i + 1}");
         }
     }
 

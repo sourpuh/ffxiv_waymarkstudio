@@ -9,7 +9,6 @@ using System.Linq;
 using WaymarkStudio.Triggers;
 using WaymarkStudio.Windows;
 
-
 namespace WaymarkStudio;
 
 public sealed class Plugin : IDalamudPlugin
