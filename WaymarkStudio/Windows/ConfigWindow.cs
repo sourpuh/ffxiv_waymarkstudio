@@ -48,7 +48,10 @@ public class ConfigWindow : Window
             if (Configuration.EnableVfxTesting)
                 Plugin.WaymarkVfx = new();
             else
+            {
+                Plugin.WaymarkVfx?.Dispose();
                 Plugin.WaymarkVfx = null;
+            }
         }
         MyGui.HoverTooltip("VFX tracking allows you to tune VFX visibility. There are no known issues with this feature, but it has caused the game to crash in the past. Use at your own risk; please report any issues.\nNote that waymarks placed before enabling this feature are not tracked and cannot be tuned.");
 

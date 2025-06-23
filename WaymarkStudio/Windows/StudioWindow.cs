@@ -15,7 +15,10 @@ namespace WaymarkStudio.Windows;
 
 internal class StudioWindow : BaseWindow
 {
-    private readonly Vector2 waymarkIconButtonSize = new(30);
+    private readonly Vector2 waymarkIconPlaceButtonSize = new(30);
+    private readonly Vector2 waymarkIconVisButtonSmallSize = new(20);
+    private const float waymarkVisSliderWidth = 100;
+    private const string waymarkVisFmt = "%.2f";
     private readonly Vector2 territoryInfoSize = new(20);
     private Vector2 windowPosition;
     private Vector2 windowSize;
@@ -80,7 +83,7 @@ internal class StudioWindow : BaseWindow
             using (ImRaii.Disabled(!Plugin.Overlay.showGuide))
             {
                 var guide = Plugin.Overlay.guide;
-                if (MyGui.CustomTextureButton("circle_card", waymarkIconButtonSize))
+                if (MyGui.CustomTextureButton("circle_card", waymarkIconPlaceButtonSize))
                 {
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.A, guide.North);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.B, guide.East);
@@ -97,7 +100,7 @@ internal class StudioWindow : BaseWindow
             using (ImRaii.Disabled(!Plugin.Overlay.showGuide))
             {
                 var guide = Plugin.Overlay.guide;
-                if (MyGui.CustomTextureButton("square_intercard", waymarkIconButtonSize))
+                if (MyGui.CustomTextureButton("square_intercard", waymarkIconPlaceButtonSize))
                 {
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.One, guide.NorthWest);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Two, guide.NorthEast);
@@ -108,7 +111,7 @@ internal class StudioWindow : BaseWindow
             }
             using (ImRaii.Disabled(!Plugin.WaymarkManager.HasPlaceholders))
             {
-                if (MyGui.IconButton(61502, waymarkIconButtonSize))
+                if (MyGui.IconButton(61502, waymarkIconPlaceButtonSize))
                 {
                     Plugin.WaymarkManager.ClearPlaceholders();
                 }
@@ -117,7 +120,7 @@ internal class StudioWindow : BaseWindow
             ImGui.SameLine();
             using (ImRaii.Disabled(!Plugin.WaymarkManager.HasWaymarks && !Plugin.WaymarkManager.HasPlaceholders))
             {
-                if (MyGui.IconButton(60026, waymarkIconButtonSize))
+                if (MyGui.IconButton(60026, waymarkIconPlaceButtonSize))
                 {
                     Plugin.WaymarkManager.ClearPlaceholders();
                     Plugin.WaymarkManager.NativeClearWaymarks();
@@ -289,7 +292,7 @@ internal class StudioWindow : BaseWindow
         ImGui.Text($"{Plugin.WaymarkManager.mapName}");
         var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
         TextActiveWaymarks(currentMarkers);
-        if (Plugin.WaymarkVfx?.WaymarkAlpha <= 0)
+        if (Plugin.WaymarkVfx?.IsAnyWaymarkHidden() ?? false)
         {
             ImGui.SameLine();
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 6f * ImGuiHelpers.GlobalScale);
@@ -300,7 +303,7 @@ internal class StudioWindow : BaseWindow
             ImGui.PopStyleColor();
             ImGui.PopFont();
             ImGui.SetWindowFontScale(1f);
-            MyGui.HoverTooltip("Waymarks are currently hidden");
+            MyGui.HoverTooltip("One or more Waymarks are currently hidden");
         }
         using (ImRaii.Disabled(currentMarkers.MarkerPositions.Count == 0))
         {
@@ -334,6 +337,7 @@ internal class StudioWindow : BaseWindow
             {
                 if (ImGuiComponents.IconButton("hide_markers", FontAwesomeIcon.EyeSlash))
                 {
+                    Plugin.WaymarkVfx.ResetAlphaOverrides();
                     Plugin.WaymarkVfx.WaymarkAlpha = 0;
                 }
                 MyGui.HoverTooltip("Hide Waymarks Locally\nRight click to adjust transparency");
@@ -342,6 +346,7 @@ internal class StudioWindow : BaseWindow
             {
                 if (ImGuiComponents.IconButton("show_markers", FontAwesomeIcon.Eye))
                 {
+                    Plugin.WaymarkVfx.ResetAlphaOverrides();
                     Plugin.WaymarkVfx.WaymarkAlpha = 1;
                 }
 
@@ -353,10 +358,15 @@ internal class StudioWindow : BaseWindow
             }
             if (ImGui.BeginPopup("waymark_transparency_popup"))
             {
+                ImGui.SetNextItemWidth(waymarkVisSliderWidth + waymarkIconVisButtonSmallSize.X);
                 var alpha = Plugin.WaymarkVfx.WaymarkAlpha;
-                if (ImGui.SliderFloat("##alpha", ref alpha, 0, 1))
+                if (ImGui.SliderFloat("##alpha", ref alpha, 0, 1, waymarkVisFmt))
                 {
                     Plugin.WaymarkVfx.WaymarkAlpha = alpha;
+                }
+                foreach (Waymark w in Enum.GetValues<Waymark>())
+                {
+                    WaymarkVisibilityEditor(w);
                 }
                 ImGui.EndPopup();
             }
@@ -535,7 +545,7 @@ internal class StudioWindow : BaseWindow
 
     internal void WaymarkButton(Waymark w)
     {
-        if (MyGui.IconButton(Waymarks.GetIconId(w), waymarkIconButtonSize))
+        if (MyGui.IconButton(Waymarks.GetIconId(w), waymarkIconPlaceButtonSize))
         {
             Plugin.Overlay.StartMouseWorldPosSelecting(w);
             if (Plugin.Config.ClearNativeWhenPlacing && Plugin.Config.PlaceRealIfPossible)
@@ -569,6 +579,27 @@ internal class StudioWindow : BaseWindow
                 Plugin.WaymarkManager.NativeClearWaymark(w);
             else
                 Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
+        }
+    }
+    internal void WaymarkVisibilityEditor(Waymark w)
+    {
+        var alpha = Plugin.WaymarkVfx.GetAlphaOverride(w);
+        if (alpha == null)
+            MyGui.Icon(Waymarks.GetIconId(w), waymarkIconVisButtonSmallSize, 0.1f);
+        else
+        {
+            if (MyGui.IconButton(Waymarks.GetIconId(w), waymarkIconVisButtonSmallSize, 0.1f))
+            {
+                Plugin.WaymarkVfx.SetAlphaOverride(w, null);
+            }
+            MyGui.HoverTooltip("Reset Alpha");
+        }
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(waymarkVisSliderWidth);
+        var effective_alpha = Plugin.WaymarkVfx.GetAlphaOverride(w) ?? Plugin.WaymarkVfx.GetEffectiveAlpha(w);
+        if (ImGui.SliderFloat($"##alpha{w}", ref effective_alpha, 0, 1, waymarkVisFmt))
+        {
+            Plugin.WaymarkVfx.SetAlphaOverride(w, effective_alpha);
         }
     }
 

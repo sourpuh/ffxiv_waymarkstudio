@@ -19,13 +19,14 @@ internal class WaymarkVfx : IDisposable
         set
         {
             field = value;
-            foreach (var vfx in TrackedVfx.Values)
+            foreach ((var w, var vfx) in TrackedVfx)
             {
-                vfx.UpdateColor(new(1, 1, 1, field));
+                vfx.UpdateColor(new(1, 1, 1, GetEffectiveAlpha(w)));
             }
         }
     }
     internal unsafe Dictionary<Waymark, Vfx> TrackedVfx = new();
+    internal unsafe Dictionary<Waymark, float> VfxAlpha = new();
 
     public WaymarkVfx()
     {
@@ -35,6 +36,7 @@ internal class WaymarkVfx : IDisposable
     }
     public void Dispose()
     {
+        VfxAlpha.Clear();
         WaymarkAlpha = 1;
         CreateVfxHook.Dispose();
     }
@@ -57,9 +59,48 @@ internal class WaymarkVfx : IDisposable
         {
             Vector3 position = new(originX, originY, originZ);
             Vector3 size = new(sizeX, sizeY, sizeZ);
-            TrackedVfx[Waymarks.GetWaymark(pathstr)] = Vfx.Wrap(vfxData, position, size, angle);
-            vfxData->Instance->Color = new(1, 1, 1, WaymarkAlpha);
+            var waymark = Waymarks.GetWaymark(pathstr);
+            TrackedVfx[waymark] = Vfx.Wrap(vfxData, position, size, angle);
+            vfxData->Instance->Color = new(1, 1, 1, GetEffectiveAlpha(waymark));
         }
         return vfxData;
+    }
+
+    public bool IsAnyWaymarkHidden()
+    {
+        foreach ((var w, var vfx) in TrackedVfx)
+        {
+            if (GetEffectiveAlpha(w) == 0) return true;
+        }
+        return false;
+    }
+
+    public float? GetAlphaOverride(Waymark w)
+    {
+        if (VfxAlpha.TryGetValue(w, out float value))
+            return value;
+        return null;
+    }
+
+    public float GetEffectiveAlpha(Waymark w)
+    {
+        if (VfxAlpha.TryGetValue(w, out float value))
+            return value;
+        return WaymarkAlpha;
+    }
+
+    public void SetAlphaOverride(Waymark w, float? alpha)
+    {
+        if (alpha.HasValue)
+            VfxAlpha[w] = (float)alpha;
+        else
+            VfxAlpha.Remove(w);
+        if (TrackedVfx.TryGetValue(w, out var vfx))
+            vfx.UpdateColor(new(1, 1, 1, GetEffectiveAlpha(w)));
+    }
+
+    public void ResetAlphaOverrides()
+    {
+        VfxAlpha.Clear();
     }
 }
