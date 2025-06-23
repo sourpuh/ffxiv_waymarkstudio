@@ -139,4 +139,9 @@ internal static class TerritorySheet
         var kv = TerritoryIdToInfo.Where(x => x.Value.contentId == contentId).LastOrDefault();
         return kv.Key;
     }
+
+    internal static bool IsValid(ushort territoryId)
+    {
+        return TerritoryIdToInfo.ContainsKey(territoryId);
+    }
 }

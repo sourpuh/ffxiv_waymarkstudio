@@ -61,6 +61,15 @@ internal class PresetStorage
 
     public void SavePreset(WaymarkPreset preset)
     {
+        if (!TerritorySheet.IsValid(preset.TerritoryId))
+        {
+            throw new InvalidOperationException($"Attempted to save illegal Territory ID: {preset.TerritoryId}");
+        }
+        if (preset.MarkerPositions.Count == 0)
+        {
+            throw new InvalidOperationException($"Attempted to save empty preset");
+        }
+
         Library.InvalidateCache();
         Plugin.Config.SavedPresets.Add(preset);
         SaveConfig();
@@ -87,7 +96,7 @@ internal class PresetStorage
 
     private IEnumerable<WaymarkPreset> ListSavedPresets()
     {
-        return Plugin.Config.SavedPresets;
+        return Plugin.Config.SavedPresets.Where(x => TerritorySheet.IsValid(x.TerritoryId) && x.MarkerPositions.Count > 0);
     }
 
     private IEnumerable<WaymarkPreset> ListCommunityPresets()

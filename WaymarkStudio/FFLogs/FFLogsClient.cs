@@ -124,6 +124,12 @@ internal class FFLogsClient
         public WaymarkPreset GetPreset(Fight fight)
         {
             var territoryId = (ushort)fight.ZoneId;
+
+            if (!TerritorySheet.IsValid(territoryId))
+            {
+                throw new InvalidOperationException($"Illegal Territory ID: {territoryId}");
+            }
+
             WaymarkPreset preset = new(
                 name: $"FFLogs Fight {fight.Id}",
                 territoryId: territoryId
@@ -137,6 +143,11 @@ internal class FFLogsClient
                 else if (event_.IsWorldMarkerRemoved)
                     preset.MarkerPositions.Remove(event_.Waymark);
             preset.MarkPendingHeightAdjustment();
+
+            if (preset.MarkerPositions.Count == 0)
+            {
+                throw new InvalidOperationException("Empty waymark list");
+            }
 
             return preset;
         }
