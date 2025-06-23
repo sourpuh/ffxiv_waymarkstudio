@@ -355,7 +355,10 @@ internal class StudioWindow : BaseWindow
         {
             if (ImGuiComponents.IconButton("edit_triggers", FontAwesomeIcon.FlagCheckered))
             {
-                Plugin.TriggerEditorWindow.Open(windowPosition, windowSize);
+                if (!Plugin.TriggerEditorWindow.IsOpen)
+                    Plugin.TriggerEditorWindow.Open(windowPosition, windowSize);
+                else
+                    Plugin.TriggerEditorWindow.IsOpen = false;
             }
             MyGui.HoverTooltip("Trigger Editor");
         }
