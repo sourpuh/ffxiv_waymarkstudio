@@ -82,6 +82,7 @@ internal static class Raycaster
             var d = Vector3.Dot(hit.ComputeNormal(), Vector3.UnitY);
             if (d < threshold) return false;
             worldPos.Y = hit.Point.Y;
+            worldPos = worldPos.Round();
             return true;
         }
         return false;
