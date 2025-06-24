@@ -71,18 +71,15 @@ internal class StudioWindow : BaseWindow
 
     internal void DrawDraftSection()
     {
-        ImGui.Checkbox("Place real marker if possible", ref Plugin.Config.PlaceRealIfPossible);
-        ImGui.Checkbox("Snap to grid", ref Plugin.Config.SnapXZToGrid);
-
         using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
         {
             WaymarkButton(Waymark.A); ImGui.SameLine();
             WaymarkButton(Waymark.B); ImGui.SameLine();
             WaymarkButton(Waymark.C); ImGui.SameLine();
             WaymarkButton(Waymark.D); ImGui.SameLine();
-            using (ImRaii.Disabled(!Plugin.WaymarkManager.showGuide))
+            using (ImRaii.Disabled(!Plugin.Overlay.showGuide))
             {
-                var guide = Plugin.WaymarkManager.guide;
+                var guide = Plugin.Overlay.guide;
                 if (MyGui.CustomTextureButton("circle_card", waymarkIconButtonSize))
                 {
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.A, guide.North);
@@ -90,16 +87,16 @@ internal class StudioWindow : BaseWindow
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.C, guide.South);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.D, guide.West);
                 }
-                MyGui.HoverTooltip("Place Circles on guide cardinals");
+                MyGui.HoverTooltip("Place Circle draft markers on guide cardinals");
             }
 
             WaymarkButton(Waymark.One); ImGui.SameLine();
             WaymarkButton(Waymark.Two); ImGui.SameLine();
             WaymarkButton(Waymark.Three); ImGui.SameLine();
             WaymarkButton(Waymark.Four); ImGui.SameLine();
-            using (ImRaii.Disabled(!Plugin.WaymarkManager.showGuide))
+            using (ImRaii.Disabled(!Plugin.Overlay.showGuide))
             {
-                var guide = Plugin.WaymarkManager.guide;
+                var guide = Plugin.Overlay.guide;
                 if (MyGui.CustomTextureButton("square_intercard", waymarkIconButtonSize))
                 {
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.One, guide.NorthWest);
@@ -107,23 +104,28 @@ internal class StudioWindow : BaseWindow
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Three, guide.SouthEast);
                     Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Four, guide.SouthWest);
                 }
-                MyGui.HoverTooltip("Place Squares on guide intercardinals");
+                MyGui.HoverTooltip("Place Square draft markers on guide intercardinals");
             }
-
-            if (MyGui.IconButton(61502, waymarkIconButtonSize))
+            using (ImRaii.Disabled(!Plugin.WaymarkManager.HasPlaceholders))
             {
-                Plugin.WaymarkManager.ClearPlaceholders();
+                if (MyGui.IconButton(61502, waymarkIconButtonSize))
+                {
+                    Plugin.WaymarkManager.ClearPlaceholders();
+                }
+                MyGui.HoverTooltip("Clear Draft");
             }
-            MyGui.HoverTooltip("Clear Draft");
             ImGui.SameLine();
-            if (MyGui.IconButton(60026, waymarkIconButtonSize))
+            using (ImRaii.Disabled(!Plugin.WaymarkManager.HasWaymarks && !Plugin.WaymarkManager.HasPlaceholders))
             {
-                Plugin.WaymarkManager.ClearPlaceholders();
-                Plugin.WaymarkManager.NativeClearWaymarks();
+                if (MyGui.IconButton(60026, waymarkIconButtonSize))
+                {
+                    Plugin.WaymarkManager.ClearPlaceholders();
+                    Plugin.WaymarkManager.NativeClearWaymarks();
+                }
+                MyGui.HoverTooltip("Clear All");
             }
-            MyGui.HoverTooltip("Clear All");
         }
-        using (ImRaii.Disabled(Plugin.WaymarkManager.placeholders.Count == 0))
+        using (ImRaii.Disabled(!Plugin.WaymarkManager.HasPlaceholders))
         {
             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Save, "Save Draft"))
             {
@@ -133,67 +135,77 @@ internal class StudioWindow : BaseWindow
             }
             MyGui.HoverTooltip("Save current draft to saved presets");
         }
-        using (ImRaii.Disabled(Plugin.WaymarkManager.placeholders.Count == 0
+        using (ImRaii.Disabled(!Plugin.WaymarkManager.HasPlaceholders
             || !Plugin.WaymarkManager.IsSafeToPlaceWaymarks()))
         {
             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkedAlt, "Place Draft"))
             {
                 Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.DraftPreset, mergeExisting: true);
             }
-            MyGui.HoverTooltip("Replace draft markers with real markers");
+            MyGui.HoverTooltip("Replace draft markers with real waymarks");
         }
+        var needSave = false;
+        needSave |= ImGui.Checkbox("Use real waymarks", ref Plugin.Config.PlaceRealIfPossible);
+        MyGui.HoverTooltip("Only place draft markers if real waymarks are unavailable, such as while in combat, duty recorder, or while character is occupied.");
+
+        needSave |= ImGui.Checkbox("Snap to grid", ref Plugin.Config.SnapXZToGrid);
+        MyGui.HoverTooltip("Snap marker, trigger, and guide cursor to the grid.\nIf you have placed a guide, this will also snap cursor to helpful points on the guide.");
+
+        if (needSave)
+            Plugin.Config.Save();
+
     }
 
     internal void DrawGuideSection()
     {
-        if (Plugin.WaymarkManager.showGuide && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.EyeSlash, "Hide Guide"))
+        if (Plugin.Overlay.showGuide && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.EyeSlash, "Hide Guide"))
         {
-            Plugin.WaymarkManager.showGuide = false;
+            Plugin.Overlay.showGuide = false;
         }
-        else if (!Plugin.WaymarkManager.showGuide)
+        else if (!Plugin.Overlay.showGuide)
         {
-            if (Plugin.WaymarkManager.guide.center == Vector3.Zero)
+            if (Plugin.Overlay.guide.center == Vector3.Zero)
             {
                 if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.LocationCrosshairs, "Place Guide"))
                 {
-                    Plugin.WaymarkManager.showGuide = true;
-                    Plugin.Overlay.StartMouseWorldPosSelecting("rectangleGuide");
+                    Plugin.Overlay.showGuide = true;
+                    Plugin.Overlay.StartMouseWorldPosSelecting("guide");
                 }
             }
             else if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Eye, "Show Guide"))
             {
-                Plugin.WaymarkManager.showGuide = true;
+                Plugin.Overlay.showGuide = true;
             }
         }
         ImGui.SameLine();
 
-        using (ImRaii.Disabled(Plugin.WaymarkManager.guide is CircleGuide))
+        using (ImRaii.Disabled(Plugin.Overlay.guide is CircleGuide))
         {
             if (ImGuiComponents.IconButton("circle_guide", FontAwesomeIcon.Bullseye))
             {
-                var oldGuide = Plugin.WaymarkManager.guide;
+                var oldGuide = Plugin.Overlay.guide;
                 if (oldGuide is RectangleGuide oldRectangleGuide)
                 {
                     var newGuide = new CircleGuide(Math.Max(oldRectangleGuide.HalfWidth, oldRectangleGuide.HalfDepth));
                     newGuide.center = oldRectangleGuide.center;
                     newGuide.RotationDegrees = oldRectangleGuide.RotationDegrees;
-                    Plugin.WaymarkManager.guide = newGuide;
+                    Plugin.Overlay.guide = newGuide;
                 }
             }
             MyGui.HoverTooltip("Circle Guide");
         }
         ImGui.SameLine();
-        using (ImRaii.Disabled(Plugin.WaymarkManager.guide is RectangleGuide))
+        using (ImRaii.Disabled(Plugin.Overlay.guide is RectangleGuide))
         {
             if (ImGuiComponents.IconButton("rectangle_guide", FontAwesomeIcon.BorderAll))
             {
-                var oldGuide = Plugin.WaymarkManager.guide;
+                var oldGuide = Plugin.Overlay.guide;
                 if (oldGuide is CircleGuide oldCircleGuide)
                 {
                     var newGuide = new RectangleGuide(oldCircleGuide.Radius, oldCircleGuide.Radius);
                     newGuide.center = oldCircleGuide.center;
                     newGuide.RotationDegrees = oldCircleGuide.RotationDegrees;
-                    Plugin.WaymarkManager.guide = newGuide;
+                    Plugin.Overlay.guide = newGuide;
                 }
             }
             MyGui.HoverTooltip("Rectangle Guide");
@@ -202,21 +214,21 @@ internal class StudioWindow : BaseWindow
         ImGui.TextUnformatted("Position:");
         ImGui.SetNextItemWidth(125f);
         ImGui.SameLine();
-        ImGui.InputFloat3("##position", ref Plugin.WaymarkManager.guide.center, "%.1f");
+        ImGui.InputFloat3("##position", ref Plugin.Overlay.guide.center, "%.1f");
         ImGui.SameLine();
         if (ImGuiComponents.IconButton("start_guide_selection", FontAwesomeIcon.MousePointer))
         {
-            Plugin.WaymarkManager.showGuide = true;
-            Plugin.Overlay.StartMouseWorldPosSelecting("rectangleGuide");
+            Plugin.Overlay.showGuide = true;
+            Plugin.Overlay.StartMouseWorldPosSelecting("guide");
         }
-        switch (Plugin.Overlay.MouseWorldPosSelection("rectangleGuide", ref Plugin.WaymarkManager.guide.center))
+        switch (Plugin.Overlay.MouseWorldPosSelection("guide", ref Plugin.Overlay.guide.center))
         {
             case PctOverlay.SelectionResult.Canceled:
-                Plugin.WaymarkManager.showGuide = false;
+                Plugin.Overlay.showGuide = false;
                 break;
         }
 
-        if (Plugin.WaymarkManager.guide is CircleGuide circleGuide)
+        if (Plugin.Overlay.guide is CircleGuide circleGuide)
         {
             ImGui.TextUnformatted("Radius:");
             ImGui.SetNextItemWidth(120f);
@@ -238,7 +250,7 @@ internal class StudioWindow : BaseWindow
             ImGui.SameLine();
             ImguiRotationInput(ref circleGuide.RotationDegrees);
         }
-        if (Plugin.WaymarkManager.guide is RectangleGuide rectangleGuide)
+        if (Plugin.Overlay.guide is RectangleGuide rectangleGuide)
         {
             ImGui.TextUnformatted("Width:");
             ImGui.SetNextItemWidth(120f);
@@ -528,6 +540,7 @@ internal class StudioWindow : BaseWindow
             if (Plugin.Config.ClearNativeWhenPlacing && Plugin.Config.PlaceRealIfPossible)
                 Plugin.WaymarkManager.NativeClearWaymark(w);
         }
+        MyGui.HoverTooltip($"Begin placing '{Waymarks.GetName(w)}' {(Plugin.Config.PlaceRealIfPossible ? "waymark" : "draft")}\nRight click to clear");
         Vector3 pos = Plugin.WaymarkManager.placeholders.GetValueOrDefault(w);
         switch (Plugin.Overlay.MouseWorldPosSelection(w, ref pos))
         {

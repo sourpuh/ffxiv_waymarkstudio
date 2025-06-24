@@ -1,5 +1,6 @@
 using Pictomancy;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace WaymarkStudio.Guides;
@@ -13,7 +14,7 @@ public class RectangleGuide(float halfWidth = 1, float halfDepth = 1, int gridSi
 
     public override void Draw(PctDrawList drawList)
     {
-        drawList.AddText(North + Vector3.UnitY * 0.1f, 0xFFFFFFFF, "N", 5f);
+        drawList.AddText(PointAtOffset(0, HalfDepth + 0.1f) + Vector3.UnitY * 0.1f, 0xFFFFFFFF, "N", 5f);
 
         drawList.PathLineTo(NorthEast);
         drawList.PathLineTo(SouthEast);
@@ -48,6 +49,11 @@ public class RectangleGuide(float halfWidth = 1, float halfDepth = 1, int gridSi
             drawList.PathLineTo(PointAtOffset(-HalfWidth, -z));
             drawList.PathStroke(0xCCFFFFFF, thickness: 1);
         }
+
+        foreach (var point in SnapPoints)
+        {
+            drawList.AddDot(point, 2, 0xFFFFFFFF);
+        }
     }
 
     private Vector3 PointAtOffset(float x, float z)
@@ -66,4 +72,27 @@ public class RectangleGuide(float halfWidth = 1, float halfDepth = 1, int gridSi
     public override Vector3 SouthWest => PointAtOffset(-HalfWidth, -HalfDepth);
     public override Vector3 West => PointAtOffset(-HalfWidth, 0);
     public override Vector3 NorthWest => PointAtOffset(-HalfWidth, HalfDepth);
+
+    public override IEnumerable<Vector3> SnapPoints
+    {
+        get
+        {
+            HashSet<Vector3> points = new();
+
+            for (float x = 0; x <= HalfWidth + GridSize; x += GridSize)
+            {
+                for (float z = 0; z <= HalfDepth + GridSize; z += GridSize)
+                {
+                    var xt = Math.Min(x, HalfWidth);
+                    var zt = Math.Min(z, HalfDepth);
+                    points.Add(PointAtOffset(xt, zt));
+                    points.Add(PointAtOffset(-xt, zt));
+                    points.Add(PointAtOffset(xt, -zt));
+                    points.Add(PointAtOffset(-xt, -zt));
+                }
+            }
+
+            return points;
+        }
+    }
 }

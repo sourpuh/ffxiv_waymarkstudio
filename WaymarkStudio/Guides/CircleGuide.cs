@@ -1,5 +1,6 @@
 using Pictomancy;
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace WaymarkStudio.Guides;
@@ -14,15 +15,15 @@ public class CircleGuide(float radius = 1, int spokes = 0, int rings = 1, int ro
     public override void Draw(PctDrawList drawList)
     {
         var radiusStep = Radius / Rings;
-        for (var i = 1; i <= Rings; i++)
+        for (var ring = 1; ring <= Rings; ring++)
         {
             drawList.AddCircle(
                 center,
-                radiusStep * i,
-                i == Rings ? 0xFFFFFFFF : 0xCCFFFFFF,
-                thickness: i == Rings ? 2 : 1);
+                radiusStep * ring,
+                ring == Rings ? 0xFFFFFFFF : 0xCCFFFFFF,
+                thickness: ring == Rings ? 2 : 1);
         }
-        drawList.AddText(North + Vector3.UnitY * 0.1f, 0xFFFFFFFF, "N", 5f);
+        drawList.AddText(PointAtDegrees(0, Radius + 0.1f) + Vector3.UnitY * 0.1f, 0xFFFFFFFF, "N", 5f);
         if (Spokes > 0)
         {
             var angleStep = MathF.PI * 2 / Spokes;
@@ -35,21 +36,53 @@ public class CircleGuide(float radius = 1, int spokes = 0, int rings = 1, int ro
                 drawList.PathStroke(0xFFFFFFFF);
             }
         }
+
+        foreach (var point in SnapPoints)
+        {
+            drawList.AddDot(point, 2, 0xFFFFFFFF);
+        }
     }
 
-    private Vector3 PointAtAngle(int degrees)
+    private Vector3 PointAtDegrees(int degrees, float radius)
     {
         var radians = degrees * MathF.PI / 180f;
-        Vector3 offset = new(MathF.Cos(RotationRadians - radians), 0, MathF.Sin(RotationRadians - radians));
-        return center + offset * Radius;
+        return PointAtRadians(radians, radius);
     }
 
-    public override Vector3 North => PointAtAngle(0);
-    public override Vector3 NorthEast => PointAtAngle(-45);
-    public override Vector3 East => PointAtAngle(-90);
-    public override Vector3 SouthEast => PointAtAngle(-135);
-    public override Vector3 South => PointAtAngle(-180);
-    public override Vector3 SouthWest => PointAtAngle(-225);
-    public override Vector3 West => PointAtAngle(-270);
-    public override Vector3 NorthWest => PointAtAngle(-315);
+    private Vector3 PointAtRadians(float radians, float radius)
+    {
+        Vector3 offset = new(MathF.Cos(RotationRadians - radians), 0, MathF.Sin(RotationRadians - radians));
+        return center + offset * radius;
+    }
+
+    public override Vector3 North => PointAtDegrees(0, Radius);
+    public override Vector3 NorthEast => PointAtDegrees(-45, Radius);
+    public override Vector3 East => PointAtDegrees(-90, Radius);
+    public override Vector3 SouthEast => PointAtDegrees(-135, Radius);
+    public override Vector3 South => PointAtDegrees(-180, Radius);
+    public override Vector3 SouthWest => PointAtDegrees(-225, Radius);
+    public override Vector3 West => PointAtDegrees(-270, Radius);
+    public override Vector3 NorthWest => PointAtDegrees(-315, Radius);
+
+    public override IEnumerable<Vector3> SnapPoints
+    {
+        get
+        {
+            List<Vector3> points = new();
+            points.Add(center);
+
+            var spokes = Spokes > 0 ? Spokes : 8;
+
+            var angleStep = MathF.PI * 2 / spokes;
+            for (var step = 0; step < spokes; step++)
+            {
+                var radiusStep = Radius / Rings;
+                for (var ring = 1; ring <= Rings; ring++)
+                {
+                    points.Add(PointAtRadians(step * angleStep, ring * radiusStep));
+                }
+            }
+            return points;
+        }
+    }
 }

@@ -6,7 +6,9 @@ using ImGuiNET;
 using Pictomancy;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
+using WaymarkStudio.Guides;
 
 namespace WaymarkStudio;
 
@@ -18,6 +20,8 @@ internal class PctOverlay
     public object? currentMousePlacementThing;
     // TODO maybe Queue up everything to draw in this list if selection and placeholders should be separate
     internal List<Action<PctDrawList>> list = new();
+    internal bool showGuide = false;
+    internal Guide guide;
 
     Quaternion? rmbStart;
     Quaternion? lmbStart;
@@ -32,6 +36,12 @@ internal class PctOverlay
     {
         PictoService.Dispose();
         Plugin.Interface.UiBuilder.Draw -= OnUpdate;
+    }
+
+    public void OnTerritoryChange()
+    {
+        showGuide = false;
+        guide = new CircleGuide();
     }
 
     private void DrawCircleMarker(PctDrawList drawList, Vector3 worldPos, uint color, uint glowColor)
@@ -102,9 +112,15 @@ internal class PctOverlay
 
     public Vector3 SnapToGrid(Vector3 input)
     {
-        input.X = MathF.Round(input.X);
-        input.Z = MathF.Round(input.Z);
-        return input;
+        Vector3 gridSnapped = new(MathF.Round(input.X), input.Y, MathF.Round(input.Z));
+        if (showGuide && currentMousePlacementThing != "guide")
+        {
+            var snapPoints = guide.SnapPoints;
+            snapPoints = snapPoints.Append(gridSnapped);
+            var closestPoint = snapPoints.MinBy(x => Vector2.DistanceSquared(new(x.X, x.Z), new(input.X, input.Z)));
+            return closestPoint;
+        }
+        return gridSnapped;
     }
 
     internal void StartMouseWorldPosSelecting(object thing)
@@ -154,7 +170,6 @@ internal class PctOverlay
         var mousePos = ImGui.GetIO().MousePos;
         if (Raycaster.ScreenToWorld(mousePos, out worldPos))
         {
-            // TODO this should be in waymark manager so it can snap to guide
             if (Plugin.Config.SnapXZToGrid)
                 worldPos = SnapToGrid(worldPos);
             worldPos = worldPos.Round();
@@ -192,7 +207,7 @@ internal class PctOverlay
                 CanDraw
                 && (Plugin.WaymarkManager.Placeholders.Count > 0
                 || Plugin.WaymarkManager.HoverPreviews.Count > 0
-                || Plugin.WaymarkManager.showGuide
+                || showGuide
                 || list.Count > 0);
             if (!shouldDraw)
             {
@@ -215,8 +230,8 @@ internal class PctOverlay
 
                     DrawMarkers(drawList, Plugin.WaymarkManager.Placeholders);
                     DrawMarkers(drawList, Plugin.WaymarkManager.HoverPreviews);
-                    if (Plugin.WaymarkManager.showGuide)
-                        Plugin.WaymarkManager.guide.Draw(drawList);
+                    if (showGuide)
+                        guide.Draw(drawList);
                 }
             }
             catch (Exception e)

@@ -17,8 +17,6 @@ internal class WaymarkManager
 {
     private static readonly IReadOnlyDictionary<Waymark, Vector3> EmptyWaymarks = new Dictionary<Waymark, Vector3>();
 
-    internal bool showGuide = false;
-    internal Guide guide;
     internal ushort territoryId;
     internal ushort contentFinderId;
     internal ContentType contentType;
@@ -73,10 +71,10 @@ internal class WaymarkManager
         }
         placeholders.Clear();
         hoverPreviews = EmptyWaymarks;
-        showGuide = false;
-        guide = new CircleGuide(radius: 1);
         safePlaceQueue.Clear();
     }
+    internal bool HasWaymarks => Waymarks.Count > 0;
+    internal bool HasPlaceholders => placeholders.Count > 0;
     internal void ClearPlaceholders()
     {
         placeholders.Clear();

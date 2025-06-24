@@ -112,6 +112,7 @@ public sealed class Plugin : IDalamudPlugin
         {
             WaymarkManager.OnTerritoryChange(territory);
         }
+        Overlay.OnTerritoryChange();
         Triggers.OnTerritoryChange();
         TriggerEditorWindow.IsOpen = false;
     }
