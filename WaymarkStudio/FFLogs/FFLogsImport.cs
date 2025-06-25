@@ -41,7 +41,7 @@ internal class FFLogsImport
 
     private async Task<WaymarkPreset> ResultAsync()
     {
-        (var reportId, var urlFightIndex, var position) = ParseUrl(URL);
+        (var reportId, var urlFightIndex, var position, var pull) = ParseUrl(URL);
         if (urlFightIndex >= 0)
         {
             UserSelectedFightIndex = urlFightIndex;
@@ -58,16 +58,17 @@ internal class FFLogsImport
 
         UserSelectedFightIndex = Math.Clamp(UserSelectedFightIndex, 0, fights.Count - 1);
         var userSelectedFight = fights[UserSelectedFightIndex];
-        if (position >= 0)
-        {
-            userSelectedFight.StartTime = (uint)position;
-        }
+        if (pull >= 0)
+            userSelectedFight.EndTime = userSelectedFight.DungeonPulls.First(x => x.Id == pull).StartTime;
+        else if (position > 0)
+            userSelectedFight.EndTime = (uint)(userSelectedFight.StartTime + position);
+        else
+            userSelectedFight.EndTime = userSelectedFight.StartTime + 1;
         isQueryRunning = true;
         var preset = await Client.LoadFFLogsMarkers(reportId, userSelectedFight);
         isQueryRunning = false;
 
-        if (preset.IsCompatibleTerritory(Plugin.WaymarkManager.territoryId))
-            Plugin.Chat.Print($"Successfully imported {preset.Name} for {userSelectedFight.ZoneName}. The import will finalize when you enter the zone and attempt to place it.", Plugin.Tag, 45);
+        Plugin.Chat.Print($"Successfully imported {preset.Name} for {userSelectedFight.ZoneName}. The import will finalize when you enter the zone, approach the waymark location, and attempt to place it.", Plugin.Tag, 45);
 
         return preset;
     }
@@ -77,7 +78,7 @@ internal class FFLogsImport
         continueSignal.Release();
     }
 
-    internal static (string reportId, int fightIndex, int position) ParseUrl(string ffLogsUrl)
+    internal static (string reportId, int fightIndex, int position, int pull) ParseUrl(string ffLogsUrl)
     {
         if (ffLogsUrl == null || ffLogsUrl.Length == 0)
             throw new ArgumentException("Invalid URI: No URI was provided.");
@@ -107,6 +108,11 @@ internal class FFLogsImport
         if (positionStr != null)
             position = int.Parse(positionStr);
 
-        return (reportId, fightIndex, position);
+        var pullStr = query.Get("pull");
+        var pull = -1;
+        if (pullStr != null)
+            pull = int.Parse(pullStr);
+
+        return (reportId, fightIndex, position, pull);
     }
 }

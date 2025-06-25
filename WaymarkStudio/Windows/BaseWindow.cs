@@ -34,7 +34,7 @@ public abstract class BaseWindow : Window
     {
         if (preset.PendingHeightAdjustment.IsAnySet())
         {
-            if (preset.IsCompatibleTerritory(Plugin.WaymarkManager.territoryId))
+            if (!preset.IsCompatibleTerritory(Plugin.WaymarkManager.territoryId))
                 ImGui.Text("(Enter area to complete import)");
             else if (!Plugin.WaymarkManager.IsPlayerWithinTraceDistance(preset))
                 ImGui.Text("(Get closer to complete import)");

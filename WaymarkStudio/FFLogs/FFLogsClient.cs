@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Numerics;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace WaymarkStudio.FFLogs;
 internal class FFLogsClient
@@ -18,27 +17,6 @@ internal class FFLogsClient
         httpClient = new();
     }
 
-    internal (string reportId, int fightIndex) ParseUrl(string fflogsUrl)
-    {
-        if (fflogsUrl == null || fflogsUrl.Length == 0)
-            throw new ArgumentException("Invalid URI: No URI was provided.");
-        var uri = new Uri(fflogsUrl);
-        if (uri.Host != "www.fflogs.com")
-            throw new ArgumentException("Invalid URI: The URI is not a valid FFLogs host.");
-        if (!uri.AbsolutePath.StartsWith("/reports/"))
-            throw new ArgumentException("Invalid URI: The URI is not an FFLogs report.");
-        var reportId = uri.AbsolutePath.Substring("/reports/".Length);
-        if (!Regex.IsMatch(reportId, "^[a-zA-Z0-9]+$"))
-            throw new ArgumentException("Invalid URI: The URI has an invalid report ID.");
-
-        var query = HttpUtility.ParseQueryString(uri.Query);
-        var fightIndexStr = query.Get("fight");
-        var fightIndex = -1;
-        if (fightIndexStr != null)
-            fightIndex = int.Parse(fightIndexStr) - 1;
-        return (reportId, fightIndex);
-    }
-
     internal async Task<List<Fight>> LoadFFLogsFights(string reportId)
     {
         using (HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://www.fflogs.com/reports/fights-and-participants/{reportId}/0"))
@@ -48,6 +26,18 @@ internal class FFLogsClient
             var response = await httpClient.SendAsync(requestMessage);
             response.EnsureSuccessStatusCode();
             var fightsAndParticipants = await response.Content.ReadFromJsonAsync<FightsAndParticipants>();
+
+            foreach (var fight in fightsAndParticipants.Fights)
+            {
+                if (fight.ZoneId == 1000001)
+                {
+                    // FFLogs is returning a bad territory ID for forked tower; this hack corrects for that.
+                    if (fight.ZoneName == "the Occult Crescent: South Horn")
+                    {
+                        fight.ZoneId = 1252;
+                    }
+                }
+            }
             return fightsAndParticipants.Fights;
         }
     }
@@ -56,11 +46,11 @@ internal class FFLogsClient
     {
         uint boss = fight.Boss;
         uint startTime = fight.StartTime;
-        uint territoryId = fight.ZoneId;
+        uint endTime = fight.EndTime;
 
-        using (HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://www.fflogs.com/reports/replaysegment/{reportId}/{boss}/0/{startTime}"))
+        using (HttpRequestMessage requestMessage = new(HttpMethod.Get, $"https://www.fflogs.com/reports/replaysegment/{reportId}/{boss}/{startTime}/{endTime}"))
         {
-            requestMessage.Headers.Referrer = new($"https://www.fflogs.com/reports/{reportId}");
+            requestMessage.Headers.Referrer = new($"https://www.fflogs.com/reports/{reportId}?fight={fight.Id}");
 
             var response = await httpClient.SendAsync(requestMessage);
             response.EnsureSuccessStatusCode();
@@ -68,7 +58,14 @@ internal class FFLogsClient
             return replaySegment.GetPreset(fight);
         }
     }
-
+    public class DungeonPull
+    {
+        public uint Id { get; set; }
+        [JsonPropertyName("start_time")]
+        public uint StartTime { get; set; }
+        [JsonPropertyName("end_time")]
+        public uint EndTime { get; set; }
+    }
     public class Fight
     {
         public uint Id { get; set; }
@@ -77,6 +74,10 @@ internal class FFLogsClient
         public string ZoneName { get; set; } = "";
         [JsonPropertyName("start_time")]
         public uint StartTime { get; set; }
+        [JsonPropertyName("end_time")]
+        public uint EndTime { get; set; }
+        public List<DungeonPull> DungeonPulls { get; set; } = new();
+
     }
     public class FightsAndParticipants
     {
@@ -116,10 +117,15 @@ internal class FFLogsClient
             MapId = MapId,
         };
     }
+    public class Map
+    {
+        public uint MapId { get; set; }
+    }
     public class ReplaySegment
     {
-        public List<WorldMarker> WorldMarkers { get; set; } = new List<WorldMarker>();
-        public List<Event> Events { get; set; } = new List<Event>();
+        public List<WorldMarker> WorldMarkers { get; set; } = new();
+        public List<Event> Events { get; set; } = new();
+        public List<Map> Maps { get; set; } = new();
 
         public WaymarkPreset GetPreset(Fight fight)
         {
@@ -127,7 +133,7 @@ internal class FFLogsClient
 
             if (!TerritorySheet.IsValid(territoryId))
             {
-                throw new InvalidOperationException($"Illegal Territory ID: {territoryId}");
+                throw new InvalidOperationException($"Illegal Territory ID: {fight.ZoneId}");
             }
 
             WaymarkPreset preset = new(
@@ -136,7 +142,8 @@ internal class FFLogsClient
             );
 
             foreach (var marker in WorldMarkers)
-                preset.MarkerPositions[marker.Waymark] = marker.Position;
+                if (Maps.Select(x => x.MapId).Contains(marker.MapId))
+                    preset.MarkerPositions[marker.Waymark] = marker.Position;
             foreach (var event_ in Events)
                 if (event_.IsWorldMarkerPlaced)
                     preset.MarkerPositions[event_.Waymark] = event_.Position;
