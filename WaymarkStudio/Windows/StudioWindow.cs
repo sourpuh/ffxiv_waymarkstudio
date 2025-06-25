@@ -289,7 +289,7 @@ internal class StudioWindow : BaseWindow
         ImGui.Text($"{Plugin.WaymarkManager.mapName}");
         var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
         TextActiveWaymarks(currentMarkers);
-        if (Plugin.WaymarkVfx.WaymarkAlpha <= 0)
+        if (Plugin.WaymarkVfx?.WaymarkAlpha <= 0)
         {
             ImGui.SameLine();
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 6f * ImGuiHelpers.GlobalScale);
@@ -328,6 +328,7 @@ internal class StudioWindow : BaseWindow
             }
         }
         ImGui.SameLine();
+        if (Plugin.WaymarkVfx != null)
         {
             if (Plugin.WaymarkVfx.WaymarkAlpha > 0)
             {
