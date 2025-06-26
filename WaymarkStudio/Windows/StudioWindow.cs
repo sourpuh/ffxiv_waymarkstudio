@@ -46,13 +46,13 @@ internal class StudioWindow : BaseWindow
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
             if (ImGui.CollapsingHeader("Draft", ImGuiTreeNodeFlags.DefaultOpen))
-                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
+                using (ImRaii.Disabled(Plugin.WaymarkManager.WaymarksUnsupported))
                     DrawDraftSection();
 
             ImGui.Spacing();
 
             if (ImGui.CollapsingHeader("Guide", ImGuiTreeNodeFlags.DefaultOpen))
-                using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
+                using (ImRaii.Disabled(Plugin.WaymarkManager.WaymarksUnsupported))
                     DrawGuideSection();
 
             ImGui.Spacing();
@@ -74,7 +74,7 @@ internal class StudioWindow : BaseWindow
 
     internal void DrawDraftSection()
     {
-        using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
+        using (ImRaii.Disabled(Plugin.WaymarkManager.WaymarksUnsupported))
         {
             WaymarkButton(Waymark.A); ImGui.SameLine();
             WaymarkButton(Waymark.B); ImGui.SameLine();
@@ -85,10 +85,10 @@ internal class StudioWindow : BaseWindow
                 var guide = Plugin.Overlay.guide;
                 if (MyGui.CustomTextureButton("circle_card", waymarkIconPlaceButtonSize))
                 {
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.A, guide.North);
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.B, guide.East);
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.C, guide.South);
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.D, guide.West);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.A, guide.North);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.B, guide.East);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.C, guide.South);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.D, guide.West);
                 }
                 MyGui.HoverTooltip("Place Circle draft markers on guide cardinals");
             }
@@ -102,33 +102,33 @@ internal class StudioWindow : BaseWindow
                 var guide = Plugin.Overlay.guide;
                 if (MyGui.CustomTextureButton("square_intercard", waymarkIconPlaceButtonSize))
                 {
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.One, guide.NorthWest);
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Two, guide.NorthEast);
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Three, guide.SouthEast);
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(Waymark.Four, guide.SouthWest);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.One, guide.NorthWest);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Two, guide.NorthEast);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Three, guide.SouthEast);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Four, guide.SouthWest);
                 }
                 MyGui.HoverTooltip("Place Square draft markers on guide intercardinals");
             }
-            using (ImRaii.Disabled(!Plugin.WaymarkManager.HasPlaceholders))
+            using (ImRaii.Disabled(!Plugin.WaymarkManager.HasDraftMarkers))
             {
                 if (MyGui.IconButton(61502, waymarkIconPlaceButtonSize))
                 {
-                    Plugin.WaymarkManager.ClearPlaceholders();
+                    Plugin.WaymarkManager.ClearDraftMarkers();
                 }
                 MyGui.HoverTooltip("Clear Draft");
             }
             ImGui.SameLine();
-            using (ImRaii.Disabled(!Plugin.WaymarkManager.HasWaymarks && !Plugin.WaymarkManager.HasPlaceholders))
+            using (ImRaii.Disabled(!Plugin.WaymarkManager.HasWaymarks && !Plugin.WaymarkManager.HasDraftMarkers))
             {
                 if (MyGui.IconButton(60026, waymarkIconPlaceButtonSize))
                 {
-                    Plugin.WaymarkManager.ClearPlaceholders();
-                    Plugin.WaymarkManager.NativeClearWaymarks();
+                    Plugin.WaymarkManager.ClearDraftMarkers();
+                    Plugin.WaymarkManager.ClearWaymarks();
                 }
                 MyGui.HoverTooltip("Clear All");
             }
         }
-        using (ImRaii.Disabled(!Plugin.WaymarkManager.HasPlaceholders))
+        using (ImRaii.Disabled(!Plugin.WaymarkManager.HasDraftMarkers))
         {
             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Save, "Save Draft"))
             {
@@ -138,12 +138,12 @@ internal class StudioWindow : BaseWindow
             }
             MyGui.HoverTooltip("Save current draft to saved presets");
         }
-        using (ImRaii.Disabled(!Plugin.WaymarkManager.HasPlaceholders
+        using (ImRaii.Disabled(!Plugin.WaymarkManager.HasDraftMarkers
             || !Plugin.WaymarkManager.IsSafeToPlaceWaymarks()))
         {
             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkedAlt, "Place Draft"))
             {
-                Plugin.WaymarkManager.SafePlacePreset(Plugin.WaymarkManager.DraftPreset, mergeExisting: true);
+                Plugin.WaymarkManager.PlacePreset(Plugin.WaymarkManager.MergedDraftPreset);
             }
             MyGui.HoverTooltip("Replace draft markers with real waymarks");
         }
@@ -317,7 +317,7 @@ internal class StudioWindow : BaseWindow
             if (ImGuiComponents.IconButton("draftify_markers", FontAwesomeIcon.MapMarkerAlt))
             {
                 foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
-                    Plugin.WaymarkManager.PlaceWaymarkPlaceholder(w, p);
+                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(w, p);
             }
             MyGui.HoverTooltip("Import Waymarks as draft");
             ImGui.SameLine();
@@ -325,7 +325,7 @@ internal class StudioWindow : BaseWindow
             {
                 if (ImGuiComponents.IconButton("clear_markers", FontAwesomeIcon.Times))
                 {
-                    Plugin.WaymarkManager.NativeClearWaymarks();
+                    Plugin.WaymarkManager.ClearWaymarks();
                 }
                 MyGui.HoverTooltip("Clear Waymarks");
             }
@@ -374,7 +374,7 @@ internal class StudioWindow : BaseWindow
         ImGui.SameLine();
         ImGui.Spacing();
         ImGui.SameLine();
-        using (ImRaii.Disabled(!Plugin.WaymarkManager.IsWaymarksEnabled()))
+        using (ImRaii.Disabled(Plugin.WaymarkManager.WaymarksUnsupported))
         {
             if (ImGuiComponents.IconButton("edit_triggers", FontAwesomeIcon.FlagCheckered))
             {
@@ -549,36 +549,35 @@ internal class StudioWindow : BaseWindow
         {
             Plugin.Overlay.StartMouseWorldPosSelecting(w);
             if (Plugin.Config.ClearNativeWhenPlacing && Plugin.Config.PlaceRealIfPossible)
-                Plugin.WaymarkManager.NativeClearWaymark(w);
+                Plugin.WaymarkManager.ClearWaymark(w);
         }
         MyGui.HoverTooltip($"Begin placing '{Waymarks.GetName(w)}' {(Plugin.Config.PlaceRealIfPossible ? "waymark" : "draft")}\nRight click to clear");
-        Vector3 pos = Plugin.WaymarkManager.placeholders.GetValueOrDefault(w);
+        Vector3 pos = Plugin.WaymarkManager.draftMarkers.GetValueOrDefault(w);
         switch (Plugin.Overlay.MouseWorldPosSelection(w, ref pos))
         {
             case PctOverlay.SelectionResult.Canceled:
-                Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
+                Plugin.WaymarkManager.ClearDraftMarker(w);
                 break;
             case PctOverlay.SelectionResult.Selected:
-                if (Plugin.Config.PlaceRealIfPossible
-                    && Plugin.WaymarkManager.SafePlaceWaymark(w, pos))
+                if (Plugin.Config.PlaceRealIfPossible)
                 {
-                    Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
+                    Plugin.WaymarkManager.PlaceWaymark(w, pos);
                     break;
                 }
                 goto case PctOverlay.SelectionResult.SelectingValid;
             case PctOverlay.SelectionResult.SelectingValid:
-                Plugin.WaymarkManager.PlaceWaymarkPlaceholder(w, pos);
+                Plugin.WaymarkManager.TraceAndPlaceDraftMarker(w, pos);
                 break;
             case PctOverlay.SelectionResult.SelectingInvalid:
-                Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
+                Plugin.WaymarkManager.ClearDraftMarker(w);
                 break;
         }
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
         {
             if (Plugin.Config.PlaceRealIfPossible)
-                Plugin.WaymarkManager.NativeClearWaymark(w);
+                Plugin.WaymarkManager.ClearWaymark(w);
             else
-                Plugin.WaymarkManager.ClearWaymarkPlaceholder(w);
+                Plugin.WaymarkManager.ClearDraftMarker(w);
         }
     }
     internal void WaymarkVisibilityEditor(Waymark w)

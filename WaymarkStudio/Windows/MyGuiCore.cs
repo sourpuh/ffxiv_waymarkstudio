@@ -83,7 +83,7 @@ public partial class MyGui
         HoverTooltip(ctinfo.name);
     }
 
-    private static string GetCustomImagePath(string name)
+    internal static string GetCustomImagePath(string name)
     {
         return Path.Combine(Plugin.Interface.AssemblyLocation.Directory?.FullName!, "res", $"{name}.png");
     }

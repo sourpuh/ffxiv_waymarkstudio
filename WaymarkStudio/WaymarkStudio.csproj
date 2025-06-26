@@ -13,15 +13,11 @@
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
           <Visible>false</Visible>
       </Content>
-      <Content Include="res\circle_intercard.png">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-          <Visible>false</Visible>
-      </Content>
-      <Content Include="res\square_card.png">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-          <Visible>false</Visible>
-      </Content>
       <Content Include="res\square_intercard.png">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+          <Visible>false</Visible>
+      </Content>
+      <Content Include="res\icon.png">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
           <Visible>false</Visible>
       </Content>

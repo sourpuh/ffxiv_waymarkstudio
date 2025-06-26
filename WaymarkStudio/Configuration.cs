@@ -50,6 +50,13 @@ public class Configuration : IPluginConfiguration
         value.Visible = visible;
     }
 
+    public bool NotificationErrorChat = false;
+    public bool NotificationErrorDalamud = true;
+    public bool NotificationErrorToast = false;
+
+    public bool NotificationSuccessChat = true;
+    public bool NotificationSuccessDalamud = false;
+
     public List<WaymarkPreset> SavedPresets { get; set; } = [];
 
     [JsonIgnore]

@@ -1,10 +1,12 @@
 using Dalamud.Game;
 using Dalamud.Game.Command;
+using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
+using System;
 using System.Linq;
 using WaymarkStudio.Triggers;
 using WaymarkStudio.Windows;
@@ -28,6 +30,8 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ISigScanner SigScanner { get; private set; } = null!;
     [PluginService] internal static IGameInteropProvider Hooker { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
+    [PluginService] internal static IToastGui Toasts { get; private set; } = null!;
+    [PluginService] internal static INotificationManager Notifications { get; private set; } = null!;
 
     internal static FieldMarkerAddon FieldMarkerAddon { get; private set; } = null!;
     internal static Configuration Config { get; private set; } = null!;
@@ -46,6 +50,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin()
     {
+        NativeFunctions.Initialize();
         Config = Interface.GetPluginConfig() as Configuration ?? new Configuration();
 
         FieldMarkerAddon = new();
@@ -123,4 +128,54 @@ public sealed class Plugin : IDalamudPlugin
     public static void ToggleMainUI() => StudioWindow.Toggle();
     public static bool IsWPPInstalled() => Interface.InstalledPlugins.Where(x => x.InternalName == "WaymarkPresetPlugin" && x.IsLoaded).Any();
     public static bool IsMMInstalled() => Interface.InstalledPlugins.Where(x => x.InternalName == "MemoryMarker" && x.IsLoaded).Any();
+
+    public static void ReportSuccess(string message, ushort tagColor = 45)
+    {
+        if (Config.NotificationSuccessChat)
+            Chat.Print(message, Tag, tagColor);
+        if (Config.NotificationSuccessDalamud)
+            Notifications.AddNotification(new()
+            {
+                Title = Tag,
+                Content = message,
+                Type = NotificationType.Success,
+                Icon = INotificationIcon.FromFile(MyGui.GetCustomImagePath("icon")),
+                Minimized = false,
+            });
+    }
+
+    public static void ReportError(string message)
+    {
+        Log.Error(message);
+        if (Config.NotificationErrorChat)
+            Chat.PrintError(message, Tag);
+        if (Config.NotificationErrorToast)
+            Toasts.ShowError(message);
+        if (Config.NotificationErrorDalamud)
+            Notifications.AddNotification(new()
+            {
+                Title = Tag,
+                Content = message,
+                Type = NotificationType.Error,
+                Minimized = false,
+            });
+    }
+
+    public static void ReportError(Exception ex)
+    {
+        Log.Error(ex.ToString());
+        var message = ex.RecursiveInnerMessage();
+        if (Config.NotificationErrorChat)
+            Chat.PrintError(message, Tag);
+        if (Config.NotificationErrorToast)
+            Toasts.ShowError(message);
+        if (Config.NotificationErrorDalamud)
+            Notifications.AddNotification(new()
+            {
+                Title = Tag,
+                Content = message,
+                Type = NotificationType.Error,
+                Minimized = false,
+            });
+    }
 }

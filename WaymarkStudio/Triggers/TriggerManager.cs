@@ -101,7 +101,7 @@ internal class TriggerManager
                 if (lastTrigger != trigger)
                 {
                     // Plugin.Chat.Print($"Place trigger {trigger.Name}");
-                    Plugin.WaymarkManager.SafePlacePreset(preset);
+                    Plugin.WaymarkManager.PlacePreset(preset);
                 }
                 lastTrigger = trigger;
                 return;

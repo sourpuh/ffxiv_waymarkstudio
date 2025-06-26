@@ -10,7 +10,7 @@ public class ConfigWindow : Window
 {
     private Configuration Configuration;
 
-    public ConfigWindow() : base("Waymark Studio Config", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+    public ConfigWindow() : base("Waymark Studio Config", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
     {
         Configuration = Plugin.Config;
     }
@@ -28,6 +28,19 @@ public class ConfigWindow : Window
         needSave |= ImGui.Checkbox("Disable World Preset Placement Safety Checks", ref Configuration.DisableWorldPresetSafetyChecks);
         MyGui.HoverTooltip("Disable distance, height, and frequency safety checks when placing presets in the open world / non-instance areas.\nWith this disabled, your preset placement will be obviously impossible; use at your own risk.");
 
+        if (ImGui.Checkbox("[TESTING] Enable waymark VFX tracking", ref Configuration.EnableVfxTesting))
+        {
+            needSave = true;
+            if (Configuration.EnableVfxTesting)
+                Plugin.WaymarkVfx = new();
+            else
+            {
+                Plugin.WaymarkVfx?.Dispose();
+                Plugin.WaymarkVfx = null;
+            }
+        }
+        MyGui.HoverTooltip("VFX tracking allows you to tune VFX visibility. There are no known issues with this feature, but it has caused the game to crash in the past. Use at your own risk; please report any issues.\nNote that waymarks placed before enabling this feature are not tracked and cannot be tuned.");
+
         ImGui.Text("Libraries");
         using (ImRaii.PushIndent())
         {
@@ -42,18 +55,20 @@ public class ConfigWindow : Window
             }
         }
 
-        if (ImGui.Checkbox("[TESTING] Enable waymark VFX tracking", ref Configuration.EnableVfxTesting))
+        ImGui.Text("Error Notifications");
+        using (ImRaii.PushIndent())
         {
-            needSave = true;
-            if (Configuration.EnableVfxTesting)
-                Plugin.WaymarkVfx = new();
-            else
-            {
-                Plugin.WaymarkVfx?.Dispose();
-                Plugin.WaymarkVfx = null;
-            }
+            needSave |= ImGui.Checkbox("Chat##error", ref Configuration.NotificationErrorChat);
+            needSave |= ImGui.Checkbox("Dalamud##error", ref Configuration.ReplaceNativeUi);
+            needSave |= ImGui.Checkbox("Toast##error", ref Configuration.NotificationErrorToast);
         }
-        MyGui.HoverTooltip("VFX tracking allows you to tune VFX visibility. There are no known issues with this feature, but it has caused the game to crash in the past. Use at your own risk; please report any issues.\nNote that waymarks placed before enabling this feature are not tracked and cannot be tuned.");
+
+        ImGui.Text("Success Notifications");
+        using (ImRaii.PushIndent())
+        {
+            needSave |= ImGui.Checkbox("Chat##success", ref Configuration.NotificationSuccessChat);
+            needSave |= ImGui.Checkbox("Dalamud##success", ref Configuration.NotificationSuccessDalamud);
+        }
 
         if (needSave)
         {

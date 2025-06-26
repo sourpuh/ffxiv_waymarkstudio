@@ -236,7 +236,7 @@ internal class PctOverlay
             }
             catch (Exception e)
             {
-                Plugin.Chat.PrintError($"Drawing Failed Please Report! Restart plugin to re-enable drawing. Caught {e}");
+                Plugin.ReportError($"Drawing Failed Please Report! Restart plugin to re-enable drawing. Caught {e}");
                 once = false;
             }
         }

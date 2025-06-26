@@ -68,7 +68,7 @@ internal class FFLogsImport
         var preset = await Client.LoadFFLogsMarkers(reportId, userSelectedFight);
         isQueryRunning = false;
 
-        Plugin.Chat.Print($"Successfully imported {preset.Name} for {userSelectedFight.ZoneName}. The import will finalize when you enter the zone, approach the waymark location, and attempt to place it.", Plugin.Tag, 45);
+        Plugin.ReportSuccess($"Successfully imported {preset.Name} for {userSelectedFight.ZoneName}. The import will finalize when you enter the zone, approach the waymark location, and attempt to place it.");
 
         return preset;
     }

@@ -175,4 +175,11 @@ internal static class Extensions
         int value = reader.Read7BitEncodedInt();
         return (value >>> 1) ^ -(value & 1);
     }
+
+    public static string RecursiveInnerMessage(this Exception e)
+    {
+        if (e.InnerException != null)
+            return RecursiveInnerMessage(e.InnerException);
+        return e.Message;
+    }
 }

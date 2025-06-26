@@ -5,9 +5,8 @@ using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Runtime.InteropServices;
-using WaymarkStudio.Guides;
-using Guide = WaymarkStudio.Guides.Guide;
+using System.Threading;
+using WaymarkStudio.Tasks;
 
 namespace WaymarkStudio;
 /**
@@ -21,42 +20,29 @@ internal class WaymarkManager
     internal ushort contentFinderId;
     internal ContentType contentType;
     internal string mapName;
-    internal Dictionary<Waymark, Vector3> placeholders = new();
+    internal Dictionary<Waymark, Vector3> draftMarkers = new();
     internal IReadOnlyDictionary<Waymark, Vector3> hoverPreviews = EmptyWaymarks;
-    private Queue<(Waymark waymark, Vector3 wPos)> safePlaceQueue = new();
+    internal CancellationTokenSource? taskCancelToken;
 
-#pragma warning disable IDE1006 // Naming Styles
-    private unsafe delegate byte PlaceWaymarkDelegate(MarkingController* markingController, uint marker, Vector3 wPos);
-    private readonly PlaceWaymarkDelegate PlaceWaymark;
-
-    private unsafe delegate byte ClearWaymarkDelegate(MarkingController* markingController, uint marker);
-    private readonly ClearWaymarkDelegate ClearWaymark;
-
-    private unsafe delegate byte ClearWaymarksDelegate(MarkingController* markingController);
-    private readonly ClearWaymarksDelegate ClearWaymarks;
-
-    private unsafe delegate byte WaymarkSafetyDelegate();
-    private readonly WaymarkSafetyDelegate WaymarkSafety;
-
-    private unsafe delegate byte PlacePresetDelegate(MarkingController* markingController, MarkerPresetPlacement* placement);
-    private readonly PlacePresetDelegate PlacePreset;
-#pragma warning restore IDE1006 // Naming Styles
-
-    internal WaymarkPreset DraftPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(placeholders)); } }
+    /// <summary>
+    /// A merging of draft markers and placed waymarks
+    /// </summary>
+    internal WaymarkPreset MergedDraftPreset
+    {
+        get
+        {
+            foreach ((Waymark w, Vector3 p) in Waymarks)
+                if (!draftMarkers.ContainsKey(w))
+                    draftMarkers.Add(w, p);
+            return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(draftMarkers));
+        }
+    }
+    internal WaymarkPreset DraftPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(draftMarkers)); } }
     internal WaymarkPreset WaymarkPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(Waymarks)); } }
 
-    internal IReadOnlyDictionary<Waymark, Vector3> Placeholders => placeholders;
+    internal IReadOnlyDictionary<Waymark, Vector3> Placeholders => draftMarkers;
     internal IReadOnlyDictionary<Waymark, Vector3> HoverPreviews => hoverPreviews;
     internal unsafe IReadOnlyDictionary<Waymark, Vector3> Waymarks => MarkingController.Instance()->ActiveMarkers();
-
-    public WaymarkManager()
-    {
-        PlaceWaymark = Marshal.GetDelegateForFunctionPointer<PlaceWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 EB 58 44 8B 83 ?? ?? ?? ??"));
-        ClearWaymark = Marshal.GetDelegateForFunctionPointer<ClearWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? EB D8 83 FB 09"));
-        ClearWaymarks = Marshal.GetDelegateForFunctionPointer<ClearWaymarksDelegate>(Plugin.SigScanner.ScanText("41 55 48 83 EC 50 4C 8B E9"));
-        WaymarkSafety = Marshal.GetDelegateForFunctionPointer<WaymarkSafetyDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 0D B0 05"));
-        PlacePreset = Marshal.GetDelegateForFunctionPointer<PlacePresetDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 75 1B B0 01"));
-    }
 
     internal void OnTerritoryChange(TerritoryType territory)
     {
@@ -69,29 +55,53 @@ internal class WaymarkManager
             mapName = territory.ContentFinderCondition.Value.Name.ExtractText();
             contentType = (ContentType)territory.ContentFinderCondition.Value.ContentType.RowId;
         }
-        placeholders.Clear();
+        draftMarkers.Clear();
         hoverPreviews = EmptyWaymarks;
-        safePlaceQueue.Clear();
+        taskCancelToken?.Cancel();
     }
+    internal unsafe bool WaymarksUnsupported => NativeFunctions.WaymarkSafety() != 0;
     internal bool HasWaymarks => Waymarks.Count > 0;
-    internal bool HasPlaceholders => placeholders.Count > 0;
-    internal void ClearPlaceholders()
+    internal bool HasDraftMarkers => draftMarkers.Count > 0;
+    internal void ClearDraftMarkers()
     {
-        placeholders.Clear();
+        draftMarkers.Clear();
     }
-    internal unsafe byte NativeClearWaymark(Waymark waymark)
+
+    internal unsafe void ClearWaymark(Waymark waymark)
     {
-        if (!Waymarks.ContainsKey(waymark)) return 0;
-        return ClearWaymark(MarkingController.Instance(), (uint)waymark);
+        taskCancelToken?.Cancel();
+        taskCancelToken = new();
+        ClearWaymarkTask.Start(taskCancelToken, waymark);
     }
-    internal unsafe byte NativeClearWaymarks()
+
+    internal unsafe void ClearWaymarks()
     {
-        if (Waymarks.Count == 0) return 0;
-        return ClearWaymarks(MarkingController.Instance());
+        taskCancelToken?.Cancel();
+        taskCancelToken = new();
+        ClearWaymarksTask.Start(taskCancelToken);
+    }
+
+    public void PlaceWaymark(Waymark waymark, Vector3 wPos)
+    {
+        taskCancelToken?.Cancel();
+        taskCancelToken = new();
+        draftMarkers[waymark] = wPos;
+        PlaceWaymarkTask.Start(taskCancelToken, waymark, wPos, true);
+    }
+
+    public void PlacePreset(WaymarkPreset preset)
+    {
+        taskCancelToken?.Cancel();
+        taskCancelToken = new();
+        SetDraftPreset(preset);
+        ClearHoverPreview();
+        PlaceWaymarkPresetTask.Start(taskCancelToken, preset);
     }
 
     public bool IsPlayerWithinTraceDistance(WaymarkPreset preset)
     {
+        if (Plugin.ClientState.LocalPlayer == null)
+            return false;
         return preset.DistanceToNearestNonAdjustedMarker(Plugin.ClientState.LocalPlayer.Position) < 200;
     }
 
@@ -123,7 +133,7 @@ internal class WaymarkManager
     {
         if (Plugin.ClientState.LocalPlayer == null)
             return PlacementUnsafeReason.NoLocalPlayer;
-        if (!IsWaymarksEnabled())
+        if (WaymarksUnsupported)
             return PlacementUnsafeReason.UnsupportedArea;
         if (Plugin.Condition[ConditionFlag.InCombat])
             return PlacementUnsafeReason.InCombat;
@@ -152,12 +162,13 @@ internal class WaymarkManager
                || Condition[ConditionFlag.BetweenAreas51]
                || Condition[ConditionFlag.InThatPosition]
                || Condition[ConditionFlag.Crafting]
-               || Condition[ConditionFlag.Crafting40]
+               || Condition[ConditionFlag.ExecutingCraftingAction]
                || Condition[ConditionFlag.PreparingToCraft]
                || Condition[ConditionFlag.InThatPosition]
                || Condition[ConditionFlag.Unconscious]
                || Condition[ConditionFlag.MeldingMateria]
                || Condition[ConditionFlag.Gathering]
+               || Condition[ConditionFlag.ExecutingGatheringAction]
                || Condition[ConditionFlag.OperatingSiegeMachine]
                || Condition[ConditionFlag.CarryingItem]
                || Condition[ConditionFlag.CarryingObject]
@@ -187,20 +198,22 @@ internal class WaymarkManager
         var status = GeneralWaymarkPlacementStatus();
         if (status != PlacementUnsafeReason.Safe)
             return status;
-        if (!IsPointGrounded(wPos))
-            return PlacementUnsafeReason.NotGrounded;
+        if (Plugin.Config.DisableWorldPresetSafetyChecks)
+            return PlacementUnsafeReason.Safe;
         if (Vector3.Distance(wPos, Plugin.ClientState.LocalPlayer.Position) > 200)
             return PlacementUnsafeReason.TooFar;
+        if (!IsPointGrounded(wPos))
+            return PlacementUnsafeReason.NotGrounded;
         return PlacementUnsafeReason.Safe;
     }
 
-    public void SetPlaceholderPreset(WaymarkPreset preset)
+    public void SetDraftPreset(WaymarkPreset preset)
     {
         if (!preset.IsCompatibleTerritory(territoryId)) return;
-        placeholders = new(preset.MarkerPositions);
+        draftMarkers = new(preset.MarkerPositions);
     }
 
-    internal void PlaceWaymarkPlaceholder(Waymark waymark, Vector3 wPos, float castHeight = 10)
+    internal void TraceAndPlaceDraftMarker(Waymark waymark, Vector3 wPos, float castHeight = 10)
     {
         Vector3 castOffset = new(0, castHeight / 2, 0);
         Vector3 castOrigin = wPos + castOffset;
@@ -209,46 +222,15 @@ internal class WaymarkManager
             var d = Vector3.Dot(hit.ComputeNormal(), Vector3.UnitY);
             if (d >= 0.7f)
             {
-                placeholders[waymark] = hit.Point.Round();
+                draftMarkers[waymark] = hit.Point.Round();
                 return;
             }
         }
-        ClearWaymarkPlaceholder(waymark);
+        ClearDraftMarker(waymark);
     }
-    internal void ClearWaymarkPlaceholder(Waymark waymark)
+    internal void ClearDraftMarker(Waymark waymark)
     {
-        placeholders.Remove(waymark);
-    }
-
-    public bool SafePlaceWaymark(Waymark waymark, Vector3 wPos)
-    {
-        var reason = WaymarkPlacementStatus(wPos);
-        if (reason is PlacementUnsafeReason.Safe)
-        {
-            var status = UnsafeNativePlaceWaymark(waymark, wPos);
-            if (status == 0) return true;
-
-            // Retry Too frequent
-            if (status == 2)
-            {
-                safePlaceQueue.Enqueue((waymark, wPos));
-                processSafePlaceQueue(clearPlaceholder: false);
-                return true;
-            }
-            if (status != 2)
-                Plugin.Chat.PrintError("Native placement failed with status " + status, Plugin.Tag);
-        }
-
-        return false;
-    }
-    private unsafe byte UnsafeNativePlaceWaymark(Waymark waymark, Vector3 wPos)
-    {
-        return PlaceWaymark(MarkingController.Instance(), (uint)waymark, wPos);
-    }
-
-    internal unsafe bool IsWaymarksEnabled()
-    {
-        return WaymarkSafety() == 0;
+        draftMarkers.Remove(waymark);
     }
 
     internal bool IsPossibleToNativePlace()
@@ -295,96 +277,6 @@ internal class WaymarkManager
                 }
             }
         }
-    }
-
-    public void SafePlacePreset(WaymarkPreset preset, bool clearPlaceholder = true, bool mergeExisting = false)
-    {
-        if (preset.MarkerPositions.Count == 0) return;
-        if (!preset.IsCompatibleTerritory(territoryId)) return;
-        if (preset.PendingHeightAdjustment.IsAnySet()) return;
-        if (IsPossibleToNativePlace())
-        {
-            if (mergeExisting)
-                foreach ((Waymark w, Vector3 p) in Plugin.WaymarkManager.Waymarks)
-                    if (!preset.MarkerPositions.ContainsKey(w))
-                        preset.MarkerPositions.Add(w, p);
-
-            UnsafeNativePlacePreset(preset);
-            if (clearPlaceholder) Plugin.WaymarkManager.ClearPlaceholders();
-        }
-        else
-        {
-            if (!IsSafeToPlaceWaymarks()) return;
-            // TODO calculate which is fewer operations; clear all or clear specific.
-            if (!mergeExisting) NativeClearWaymarks();
-            foreach (Waymark w in Enum.GetValues<Waymark>())
-            {
-                if (preset.MarkerPositions.TryGetValue(w, out var wPos))
-                {
-                    if (Waymarks.TryGetValue(w, out var existingWPos) && wPos == existingWPos)
-                    {
-                        if (clearPlaceholder)
-                            placeholders.Remove(w);
-                        continue;
-                    }
-                    safePlaceQueue.Enqueue((w, wPos));
-                }
-                //else if (!mergeExisting)
-                //    NativeClearWaymark(w);
-            }
-            processSafePlaceQueue(clearPlaceholder);
-        }
-    }
-
-
-    private async void processSafePlaceQueue(bool clearPlaceholder = true)
-    {
-        await Plugin.Framework.Run(async () =>
-        {
-            var territoryId = this.territoryId;
-            int attempts = safePlaceQueue.Count + 2;
-            while (safePlaceQueue.Count > 0 && territoryId == this.territoryId && attempts-- > 0)
-            {
-                (Waymark waymark, Vector3 wPos) = safePlaceQueue.Dequeue();
-
-                var isSafe = Plugin.Config.DisableWorldPresetSafetyChecks || WaymarkPlacementStatus(wPos) is PlacementUnsafeReason.Safe;
-                if (!isSafe) continue;
-
-                var status = UnsafeNativePlaceWaymark(waymark, wPos);
-                if (status == 0)
-                {
-                    if (clearPlaceholder && placeholders.GetValueOrDefault(waymark) == wPos)
-                        placeholders.Remove(waymark);
-                }
-                else if (status == 2 || status == 3)
-                {
-                    // requeue retriable error
-                    await Plugin.Framework.DelayTicks(30);
-                    safePlaceQueue.Enqueue((waymark, wPos));
-                }
-                else
-                {
-                    Plugin.Chat.PrintError("Native placement failed with status " + status, Plugin.Tag);
-                }
-                await Plugin.Framework.DelayTicks(Plugin.Config.WaymarkPlacementFrequency);
-            }
-        });
-    }
-
-    private unsafe bool UnsafeNativePlacePreset(WaymarkPreset preset)
-    {
-        // TODO Does this do anything or does client do it for me?
-        if (Waymarks.Equals(preset.MarkerPositions)) return true;
-        var placementStruct = preset.ToMarkerPresetPlacement();
-        var status = PlacePreset(MarkingController.Instance(), &placementStruct);
-        if (status != 0)
-        {
-            // 7.15 qword_1427C6F00 && (*(_BYTE *)(qword_1427C6F00 + 9) & 8) != 0
-            // 7.05 qword_1427316F0 && (*(_BYTE *)(qword_1427316F0 + 9) & 8) != 0
-            // returns 6 unsupported area?
-            Plugin.Chat.PrintError("Native preset placement failed with status " + status, Plugin.Tag);
-        }
-        return status == 0;
     }
 
     internal enum PlacementUnsafeReason

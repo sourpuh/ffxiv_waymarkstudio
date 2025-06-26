@@ -5,7 +5,6 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using WaymarkStudio.Compat.WaymarkPresetPlugin;
 using WaymarkStudio.FFLogs;
@@ -86,7 +85,7 @@ public abstract class BaseWindow : Window
                         hoveredColor: hoveredColor,
                         activeColor: activeColor)
                         && canPlaceWaymark)
-                        Plugin.WaymarkManager.SafePlacePreset(preset);
+                        Plugin.WaymarkManager.PlacePreset(preset);
 
                     if (ImGui.IsItemHovered())
                     {
@@ -168,12 +167,12 @@ public abstract class BaseWindow : Window
                             using (ImRaii.Disabled(!canPlaceWaymark))
                                 if (ImGuiComponents.IconButtonWithText(preset.GetIcon(), "Place Preset", size: size, defaultColor: new()))
                                 {
-                                    Plugin.WaymarkManager.SafePlacePreset(preset);
+                                    Plugin.WaymarkManager.PlacePreset(preset);
                                     closePopup = true;
                                 }
                             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.MapMarkerAlt, "Load as Draft", size: size, defaultColor: new()))
                             {
-                                Plugin.WaymarkManager.SetPlaceholderPreset(preset);
+                                Plugin.WaymarkManager.SetDraftPreset(preset);
                                 closePopup = true;
                             }
                         }
@@ -234,7 +233,7 @@ public abstract class BaseWindow : Window
                 var preset = WaymarkPreset.Import(clipboard);
                 Plugin.Storage.SavePreset(preset);
                 ImGui.SetClipboardText("");
-                Plugin.Chat.Print($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.", Plugin.Tag, 45);
+                Plugin.ReportSuccess($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.");
             }
             MyGui.HoverTooltip("Import From clipboard");
         }
@@ -248,11 +247,11 @@ public abstract class BaseWindow : Window
                     var preset = WPPImporter.Import(clipboard);
                     Plugin.Storage.SavePreset(preset);
                     ImGui.SetClipboardText("");
-                    Plugin.Chat.Print($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.", Plugin.Tag, 45);
+                    Plugin.ReportSuccess($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.");
                 }
                 catch (Exception ex)
                 {
-                    Plugin.Chat.PrintError($"Waymark preset import failed. Check if your clipboard contains a valid JSON preset and try again. Message: \"{ex.Message}\"", Plugin.Tag);
+                    Plugin.ReportError($"Waymark preset import failed. Check if your clipboard contains a valid JSON preset and try again. Message: \"{ex.Message}\"");
                 }
             }
             MyGui.HoverTooltip("Import From clipboard");
@@ -316,8 +315,7 @@ public abstract class BaseWindow : Window
                 }
                 else if (import.Task.IsFaulted)
                 {
-                    Plugin.Chat.PrintError(import.Task.Exception.Message, Plugin.Tag);
-                    Plugin.Log.Error(import.Task.Exception.ToString());
+                    Plugin.ReportError(import.Task.Exception);
                 }
                 else
                 {
