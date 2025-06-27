@@ -205,7 +205,7 @@ internal class PctOverlay
         {
             var shouldDraw =
                 CanDraw
-                && (Plugin.WaymarkManager.Placeholders.Count > 0
+                && (Plugin.WaymarkManager.DraftMarkers.Count > 0
                 || Plugin.WaymarkManager.HoverPreviews.Count > 0
                 || showGuide
                 || list.Count > 0);
@@ -228,7 +228,7 @@ internal class PctOverlay
                         action(drawList);
                     list.Clear();
 
-                    DrawMarkers(drawList, Plugin.WaymarkManager.Placeholders);
+                    DrawMarkers(drawList, Plugin.WaymarkManager.DraftMarkers);
                     DrawMarkers(drawList, Plugin.WaymarkManager.HoverPreviews);
                     if (showGuide)
                         guide.Draw(drawList);

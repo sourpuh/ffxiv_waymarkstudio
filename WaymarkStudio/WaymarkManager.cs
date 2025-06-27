@@ -40,7 +40,7 @@ internal class WaymarkManager
     internal WaymarkPreset DraftPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(draftMarkers)); } }
     internal WaymarkPreset WaymarkPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(Waymarks)); } }
 
-    internal IReadOnlyDictionary<Waymark, Vector3> Placeholders => draftMarkers;
+    internal IReadOnlyDictionary<Waymark, Vector3> DraftMarkers => draftMarkers;
     internal IReadOnlyDictionary<Waymark, Vector3> HoverPreviews => hoverPreviews;
     internal unsafe IReadOnlyDictionary<Waymark, Vector3> Waymarks => MarkingController.Instance()->ActiveMarkers();
 
@@ -235,7 +235,7 @@ internal class WaymarkManager
 
     internal bool IsPossibleToNativePlace()
     {
-        return NativePresetPlacementStatus() is PlacementUnsafeReason.Safe or PlacementUnsafeReason.NoWaymarksPlaced;
+        return NativePresetPlacementStatus() is PlacementUnsafeReason.Safe;
     }
 
     internal PlacementUnsafeReason NativePresetPlacementStatus()
@@ -253,10 +253,9 @@ internal class WaymarkManager
             or ContentType.VCDungeonFinder
             or ContentType.ChaoticAllianceRaid))
             return PlacementUnsafeReason.UnsupportedContentType;
-        if (contentType is ContentType.SavetheQueen && contentFinderId is not /*DR*/760 or /*DRS*/761)
+        var isDelubrum = contentFinderId is /*DR*/760 or /*DRS*/761;
+        if (contentType is ContentType.SavetheQueen && !isDelubrum)
             return PlacementUnsafeReason.UnsupportedContentType;
-        if (Placeholders.Count == 0)
-            return PlacementUnsafeReason.NoWaymarksPlaced;
         return PlacementUnsafeReason.Safe;
     }
 
@@ -287,7 +286,6 @@ internal class WaymarkManager
         InCombat,
         DutyRecorderPlayback,
         UnsupportedContentType,
-        NoWaymarksPlaced,
         TooFar,
         NotGrounded,
         UnsupportedArea,
