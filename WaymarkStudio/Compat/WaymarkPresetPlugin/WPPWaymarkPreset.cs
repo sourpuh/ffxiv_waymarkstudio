@@ -23,23 +23,23 @@ public class WPPWaymarkPreset
     public WaymarkPreset ToPreset()
     {
         Dictionary<Waymark, Vector3> markerPositions = new();
-        AddWaymarkPosition(markerPositions, A);
-        AddWaymarkPosition(markerPositions, B);
-        AddWaymarkPosition(markerPositions, C);
-        AddWaymarkPosition(markerPositions, D);
-        AddWaymarkPosition(markerPositions, One);
-        AddWaymarkPosition(markerPositions, Two);
-        AddWaymarkPosition(markerPositions, Three);
-        AddWaymarkPosition(markerPositions, Four);
+        AddWaymarkPosition(markerPositions, Waymark.A, A);
+        AddWaymarkPosition(markerPositions, Waymark.B, B);
+        AddWaymarkPosition(markerPositions, Waymark.C, C);
+        AddWaymarkPosition(markerPositions, Waymark.D, D);
+        AddWaymarkPosition(markerPositions, Waymark.One, One);
+        AddWaymarkPosition(markerPositions, Waymark.Two, Two);
+        AddWaymarkPosition(markerPositions, Waymark.Three, Three);
+        AddWaymarkPosition(markerPositions, Waymark.Four, Four);
 
         var territoryId = TerritorySheet.TerritoryIdForContentId(MapID);
         WaymarkPreset preset = new(Name, territoryId, markerPositions, Time);
         return preset;
     }
 
-    private static void AddWaymarkPosition(Dictionary<Waymark, Vector3> markerPositions, WPPWaymark waymark)
+    private static void AddWaymarkPosition(Dictionary<Waymark, Vector3> markerPositions, Waymark waymark, WPPWaymark wppWaymark)
     {
-        if (waymark.Active)
-            markerPositions.Add((Waymark)waymark.ID, waymark.Position);
+        if (wppWaymark.Active)
+            markerPositions.Add(waymark, wppWaymark.Position);
     }
 }
