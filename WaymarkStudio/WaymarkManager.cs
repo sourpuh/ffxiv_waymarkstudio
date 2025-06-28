@@ -69,9 +69,12 @@ internal class WaymarkManager
 
     internal unsafe void ClearWaymark(Waymark waymark)
     {
-        taskCancelToken?.Cancel();
-        taskCancelToken = new();
-        ClearWaymarkTask.Start(taskCancelToken, waymark);
+        if (Plugin.WaymarkManager.IsSafeToPlaceWaymarks())
+        {
+            taskCancelToken?.Cancel();
+            taskCancelToken = new();
+            ClearWaymarkTask.Start(taskCancelToken, waymark);
+        }
     }
 
     internal unsafe void ClearWaymarks()
@@ -81,12 +84,16 @@ internal class WaymarkManager
         ClearWaymarksTask.Start(taskCancelToken);
     }
 
-    public void PlaceWaymark(Waymark waymark, Vector3 wPos)
+    public void PlaceDraftOrWaymark(Waymark waymark, Vector3 wPos)
     {
-        taskCancelToken?.Cancel();
-        taskCancelToken = new();
         draftMarkers[waymark] = wPos;
-        PlaceWaymarkTask.Start(taskCancelToken, waymark, wPos, true);
+
+        if (Plugin.Config.PlaceRealIfPossible)
+        {
+            taskCancelToken?.Cancel();
+            taskCancelToken = new();
+            PlaceWaymarkTask.Start(taskCancelToken, waymark, wPos);
+        }
     }
 
     public void PlacePreset(WaymarkPreset preset)

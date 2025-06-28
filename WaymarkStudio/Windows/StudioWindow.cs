@@ -559,12 +559,8 @@ internal class StudioWindow : BaseWindow
                 Plugin.WaymarkManager.ClearDraftMarker(w);
                 break;
             case PctOverlay.SelectionResult.Selected:
-                if (Plugin.Config.PlaceRealIfPossible)
-                {
-                    Plugin.WaymarkManager.PlaceWaymark(w, pos);
-                    break;
-                }
-                goto case PctOverlay.SelectionResult.SelectingValid;
+                Plugin.WaymarkManager.PlaceDraftOrWaymark(w, pos);
+                break;
             case PctOverlay.SelectionResult.SelectingValid:
                 Plugin.WaymarkManager.TraceAndPlaceDraftMarker(w, pos);
                 break;
@@ -576,8 +572,7 @@ internal class StudioWindow : BaseWindow
         {
             if (Plugin.Config.PlaceRealIfPossible)
                 Plugin.WaymarkManager.ClearWaymark(w);
-            else
-                Plugin.WaymarkManager.ClearDraftMarker(w);
+            Plugin.WaymarkManager.ClearDraftMarker(w);
         }
     }
     internal void WaymarkVisibilityEditor(Waymark w)

@@ -10,7 +10,7 @@ internal abstract class RetriableTaskBase
     protected CancellationTokenSource cancelToken;
 
     internal abstract Task BeginAsyncRetriableOperation();
-    internal abstract void OnTaskComplete();
+    internal abstract void OnTaskSuccess();
 
     internal async Task StartTask(CancellationTokenSource cancelToken, bool rethrow = false)
     {
@@ -43,6 +43,11 @@ internal abstract class RetriableTaskBase
         try
         {
             await task;
+            OnTaskSuccess();
+        }
+        catch (OperationCanceledException)
+        {
+            // Swallow canceled
         }
         catch (Exception ex)
         {
@@ -50,10 +55,6 @@ internal abstract class RetriableTaskBase
                 throw;
             else
                 Plugin.ReportError(ex);
-        }
-        finally
-        {
-            OnTaskComplete();
         }
     }
 

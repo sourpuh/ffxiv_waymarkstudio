@@ -40,7 +40,7 @@ internal class PlaceWaymarkTask : RetriableTaskBase
         return Task.FromException(new InvalidOperationException($"Waymark placement failed status: {status}"));
     }
 
-    internal override void OnTaskComplete()
+    internal override void OnTaskSuccess()
     {
         Plugin.WaymarkManager.ClearDraftMarker(waymark);
     }
