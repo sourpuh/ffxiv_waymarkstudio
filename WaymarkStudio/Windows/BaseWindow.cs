@@ -5,13 +5,20 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Numerics;
 using WaymarkStudio.Compat.WaymarkPresetPlugin;
 using WaymarkStudio.FFLogs;
+using WaymarkStudio.Maps;
 namespace WaymarkStudio.Windows;
 public abstract class BaseWindow : Window
 {
     internal FFLogsImport? import;
+    WaymarkPreset? currTooltipPreset = null;
+    List<MapView> currMapViews = new();
+    static Dictionary<uint, Map> MapCache = new();
 
     public BaseWindow(string name, ImGuiWindowFlags flags = ImGuiWindowFlags.None) : base(name, flags) { }
 
@@ -50,6 +57,31 @@ public abstract class BaseWindow : Window
             ImGui.Text("(Drag to reorder)");
             ImGui.PopStyleColor();
             ImGui.SetWindowFontScale(1f);
+        }
+
+        if (preset != currTooltipPreset)
+        {
+            currMapViews.Clear();
+            currTooltipPreset = preset;
+            var mapIdsToWaymarks = TerritorySheet.GetPresetMapIds(preset);
+            foreach ((var mapId, var waymarks) in mapIdsToWaymarks)
+            {
+                Map? map = null;
+                if (!MapCache.TryGetValue(mapId, out map))
+                {
+                    map = new Map(Plugin.DataManager.GetExcelSheet<Lumina.Excel.Sheets.Map>().GetRowAt((int)mapId));
+                    MapCache.Add(mapId, map);
+                }
+                MapView mapView = new(map);
+
+                var positions = preset.MarkerPositions.Where(x => waymarks.Contains(x.Key)).ToImmutableDictionary();
+                mapView.FocusMarkers(positions);
+                currMapViews.Add(mapView);
+            }
+        }
+        foreach (var mapView in currMapViews)
+        {
+            mapView.Draw();
         }
     }
 

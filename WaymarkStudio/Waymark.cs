@@ -7,16 +7,20 @@ public enum Waymark
 
 internal static class Waymarks
 {
+    internal const float CircleRadius = 1.25f;
+    internal const float SquareHalfWidth = 1.1f;
+    internal const float SquareCornerRadius = 1.55563491861f;
+
     private static readonly (string name, uint iconId, uint color, uint glowColor, string vfxPath)[] Info =
     {
         ("A", 61241, 0xFF6E6EFF, 0xAA6E6EFF, "vfx/common/eff/fld_mark_a0f.avfx"),
         ("B", 61242, 0xFF9CFBF3, 0xAA9CFBF3, "vfx/common/eff/fld_mark_b0f.avfx"),
         ("C", 61243, 0xFFFEEC9B, 0xAAFEEC9B, "vfx/common/eff/fld_mark_c0f.avfx"),
-        ("D", 61247, 0xFFFFACD2, 0xAAFFACD2, "vfx/common/eff/fld_mark_d0f.avfx"),
+        ("D", 61247, 0xFFFF78C8, 0xAAFF78C8, "vfx/common/eff/fld_mark_d0f.avfx"),
         ("1", 61244, 0xFF6E6EFF, 0xAA6E6EFF, "vfx/common/eff/fld_mark_10f.avfx"),
         ("2", 61245, 0xFF9CFBF3, 0xAA9CFBF3, "vfx/common/eff/fld_mark_20f.avfx"),
         ("3", 61246, 0xFFFEEC9B, 0xAAFEEC9B, "vfx/common/eff/fld_mark_30f.avfx"),
-        ("4", 61248, 0xFFFFACD2, 0xAAFFACD2, "vfx/common/eff/fld_mark_40f.avfx"),
+        ("4", 61248, 0xFFFF78C8, 0xAAFF78C8, "vfx/common/eff/fld_mark_40f.avfx"),
     };
 
     internal static uint GetIconId(Waymark w)
@@ -37,7 +41,7 @@ internal static class Waymarks
     }
     internal static Waymark GetWaymark(string vfxPath)
     {
-        switch(vfxPath)
+        switch (vfxPath)
         {
             case "vfx/common/eff/fld_mark_a0f.avfx":
                 return Waymark.A;
@@ -57,5 +61,13 @@ internal static class Waymarks
                 return Waymark.Four;
         }
         return (Waymark)(-1);
+    }
+    internal static bool IsCircle(Waymark w)
+    {
+        return w is Waymark.A or Waymark.B or Waymark.C or Waymark.D;
+    }
+    internal static bool IsSquare(Waymark w)
+    {
+        return w is Waymark.One or Waymark.Two or Waymark.Three or Waymark.Four;
     }
 }

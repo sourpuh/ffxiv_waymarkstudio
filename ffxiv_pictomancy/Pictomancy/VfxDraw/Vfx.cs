@@ -4,6 +4,7 @@ using System.Numerics;
 namespace Pictomancy.VfxDraw;
 public unsafe class Vfx : IDisposable
 {
+    internal string? path;
     internal Vector3 position;
     internal Vector3 size;
     internal float rotation;
@@ -14,20 +15,21 @@ public unsafe class Vfx : IDisposable
     public static Vfx Create(string path, Vector3 position, Vector3 size, float rotation, Vector4? color = null)
     {
         var data = CreateVfxInternal(path, position, size, rotation, color ?? Vector4.One);
-        Vfx vfx = new(data, position, size, rotation, color ?? Vector4.One);
+        Vfx vfx = new(path, data, position, size, rotation, color ?? Vector4.One);
         vfx.pctOwned = true;
         return vfx;
     }
 
     public static Vfx Wrap(VfxData* data, Vector3 position, Vector3 size, float rotation, Vector4? color = null)
     {
-        Vfx vfx = new(data, position, size, rotation, color ?? Vector4.One);
+        Vfx vfx = new(null, data, position, size, rotation, color ?? Vector4.One);
         return vfx;
     }
 
-    private Vfx(VfxData* data, Vector3 position, Vector3 size, float rotation, Vector4 color)
+    private Vfx(string? path, VfxData* data, Vector3 position, Vector3 size, float rotation, Vector4 color)
     {
         if (data == null) throw new ArgumentNullException("null vfx data");
+        this.path = path;
         this.data = data;
         this.position = position;
         this.size = size;
@@ -76,6 +78,7 @@ public unsafe class Vfx : IDisposable
 
     public void UpdateTransform(Vector3 position, Vector3 size, float rotation)
     {
+        MaybeRefreshVfxResourceInstance();
         if (!IsValid) return;
         if (this.position == position && this.rotation == rotation && this.size == size) return;
 
@@ -116,5 +119,13 @@ public unsafe class Vfx : IDisposable
 
         this.color = color;
         VfxFunctions.UpdateVfxColor(data->Instance, color.X, color.Y, color.Z, color.W);
+    }
+
+    private void MaybeRefreshVfxResourceInstance()
+    {
+        if (!IsValid && pctOwned && path != null)
+        {
+            data = CreateVfxInternal(path, position, size, rotation, color);
+        }
     }
 }

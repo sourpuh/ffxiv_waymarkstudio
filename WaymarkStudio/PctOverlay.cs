@@ -46,13 +46,13 @@ internal class PctOverlay
 
     private void DrawCircleMarker(PctDrawList drawList, Vector3 worldPos, uint color, uint glowColor)
     {
-        drawList.AddCircle(worldPos, 1.25f, color);
-        drawList.AddFanFilled(worldPos, 1.25f, 1.75f, 0, MathF.PI * 2, glowColor, glowColor.WithAlpha(0));
+        drawList.AddCircle(worldPos, Waymarks.CircleRadius, color);
+        drawList.AddFanFilled(worldPos, Waymarks.CircleRadius, Waymarks.CircleRadius + 0.5f, 0, MathF.PI * 2, glowColor, glowColor.WithAlpha(0));
     }
     private void DrawSquareMarker(PctDrawList drawList, Vector3 worldPos, uint color, uint glowColor)
     {
-        drawList.AddFan(worldPos, 0, 1.575f, MathF.PI / 4, MathF.PI * 2 + MathF.PI / 4, color, 4);
-        drawList.AddFanFilled(worldPos, 1.575f, 2.1f, MathF.PI / 4, MathF.PI * 2 + MathF.PI / 4, glowColor, glowColor.WithAlpha(0), 4);
+        drawList.AddFan(worldPos, 0, Waymarks.SquareCornerRadius, MathF.PI / 4, MathF.PI * 2 + MathF.PI / 4, color, 4);
+        drawList.AddFanFilled(worldPos, Waymarks.SquareCornerRadius, Waymarks.SquareCornerRadius + 0.5f, MathF.PI / 4, MathF.PI * 2 + MathF.PI / 4, glowColor, glowColor.WithAlpha(0), 4);
     }
     private void DrawMarkers(PctDrawList drawList, IReadOnlyDictionary<Waymark, Vector3> waymarkPositions, bool debugHeight = false)
     {
@@ -72,9 +72,9 @@ internal class PctOverlay
                 }
             }
 
-            if (w is Waymark.One or Waymark.Two or Waymark.Three or Waymark.Four)
+            if (Waymarks.IsSquare(w))
                 DrawSquareMarker(drawList, pa, Waymarks.GetColor(w), Waymarks.GetGlowColor(w));
-            if (w is Waymark.A or Waymark.B or Waymark.C or Waymark.D)
+            if (Waymarks.IsCircle(w))
                 DrawCircleMarker(drawList, pa, Waymarks.GetColor(w), Waymarks.GetGlowColor(w));
         }
     }
