@@ -93,10 +93,33 @@ internal partial class MapView
                         AddSquare(wPos, Waymarks.SquareHalfWidth, Waymarks.GetColor(w));
                     if (Waymarks.IsCircle(w))
                         AddCircle(wPos, Waymarks.CircleRadius, Waymarks.GetColor(w));
-
+                }
+                foreach ((Waymark w, Vector3 wPos) in markers)
+                {
                     var wrap = Plugin.TextureProvider.GetFromGameIcon(Waymarks.GetIconId(w)).GetWrapOrEmpty();
                     if (wrap != null)
-                        ImGui.GetWindowDrawList().AddImage(wrap.ImGuiHandle, W2S(wPos) - WaymarkMapIconHalfSizePx, W2S(wPos) + WaymarkMapIconHalfSizePx);
+                    {
+                        ImGui.GetWindowDrawList().AddImage(
+                            wrap.ImGuiHandle,
+                            W2S(wPos) - WaymarkMapIconHalfSizePx,
+                            W2S(wPos) + WaymarkMapIconHalfSizePx,
+                            Vector2.Zero,
+                            Vector2.One,
+                            0xFF000000);
+                    }
+                }
+                foreach ((Waymark w, Vector3 wPos) in markers)
+                {
+                    var wrap = Plugin.TextureProvider.GetFromGameIcon(Waymarks.GetIconId(w)).GetWrapOrEmpty();
+                    if (wrap != null)
+                    {
+                        ImGui.GetWindowDrawList().AddImage(
+                            wrap.ImGuiHandle,
+                            W2S(wPos) - WaymarkMapIconHalfSizePx,
+                            W2S(wPos) + WaymarkMapIconHalfSizePx,
+                            Vector2.Zero,
+                            Vector2.One);
+                    }
                 }
             }
         }
