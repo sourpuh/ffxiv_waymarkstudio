@@ -3,7 +3,6 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 
@@ -12,16 +11,19 @@ namespace WaymarkStudio;
 [Serializable]
 public class WaymarkPreset
 {
-    internal const string presetb64Prefix = "wms0";
-
     public string Name;
     public ushort TerritoryId;
-    [JsonIgnore]
-    [Obsolete]
-    // Delete once a new b64 export is defined.
-    public ushort ContentFinderConditionId;
     public DateTimeOffset Time { get; set; } = new(DateTimeOffset.Now.UtcDateTime);
 
+    public WaymarkMask PlacedMask {
+        get
+        {
+            WaymarkMask mask = new();
+            foreach (var item in MarkerPositions.Keys)
+                mask.Set(item, true);
+            return mask;
+        }
+    }
     public IDictionary<Waymark, Vector3> MarkerPositions;
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public WaymarkMask PendingHeightAdjustment;
@@ -73,76 +75,6 @@ public class WaymarkPreset
     internal bool IsCompatibleTerritory(ushort territoryId)
     {
         return TerritoryId == territoryId || Plugin.Config.CombineEquivalentDutyPresets && TerritoryId == TerritorySheet.GetAlternativeId(territoryId);
-    }
-
-    internal byte[] Serialize()
-    {
-        using (var memoryStream = new MemoryStream())
-        {
-            using (var writer = new BinaryWriter(memoryStream))
-            {
-                writer.Write(TerritoryId);
-                writer.Write((ushort)0);
-                // write empty active mask to advance the offset
-                WaymarkMask active = default;
-                writer.Write(active);
-                foreach (Waymark w in Enum.GetValues<Waymark>())
-                {
-                    if (MarkerPositions.ContainsKey(w))
-                    {
-                        active.Set(w, true);
-                        var position = MarkerPositions[w].ToGamePresetPoint();
-                        writer.Write7BitEncodedIntSigned(position.X);
-                        writer.Write7BitEncodedIntSigned(position.Y);
-                        writer.Write7BitEncodedIntSigned(position.Z);
-                    }
-                }
-                writer.Write(Name);
-                // rewind and write real active mask
-                writer.Seek(4, SeekOrigin.Begin);
-                writer.Write(active);
-            }
-            return memoryStream.ToArray();
-        }
-    }
-
-    internal string Export()
-    {
-        return presetb64Prefix + Convert.ToBase64String(Serialize());
-    }
-
-    internal static WaymarkPreset Deserialize(byte[] b)
-    {
-        WaymarkPreset preset = new();
-        using (var memoryStream = new MemoryStream(b))
-        {
-            using (var reader = new BinaryReader(memoryStream))
-            {
-                preset.TerritoryId = reader.ReadUInt16();
-                _ = reader.ReadUInt16();
-                WaymarkMask active = reader.ReadByte();
-                foreach (Waymark w in Enum.GetValues<Waymark>())
-                {
-                    if (active.IsSet(w))
-                    {
-                        GamePresetPoint position = new()
-                        {
-                            X = reader.Read7BitEncodedIntSigned(),
-                            Y = reader.Read7BitEncodedIntSigned(),
-                            Z = reader.Read7BitEncodedIntSigned()
-                        };
-                        preset.MarkerPositions.Add(w, position.ToWorldPosition());
-                    }
-                }
-                preset.Name = reader.ReadString();
-            }
-        }
-        return preset;
-    }
-
-    internal static WaymarkPreset Import(string s)
-    {
-        return Deserialize(Convert.FromBase64String(s.Substring(presetb64Prefix.Length)));
     }
 
     internal void MarkPendingHeightAdjustment()

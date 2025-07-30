@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace WaymarkStudio.Compat.WaymarkPresetPlugin;
+namespace WaymarkStudio.Adapters.WaymarkPresetPlugin;
 public class WPPWaymark
 {
     public float X { get; set; }

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace WaymarkStudio.Compat.WaymarkPresetPlugin;
+namespace WaymarkStudio.Adapters.WaymarkPresetPlugin;
 
 [JsonObject(ItemNullValueHandling = NullValueHandling.Ignore)]
 public class WPPWaymarkPreset

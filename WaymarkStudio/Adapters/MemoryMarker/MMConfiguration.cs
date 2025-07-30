@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace WaymarkStudio.Compat.MemoryMarker;
+namespace WaymarkStudio.Adapters.MemoryMarker;
 
 [Serializable]
 internal class MMConfiguration : IPluginConfiguration

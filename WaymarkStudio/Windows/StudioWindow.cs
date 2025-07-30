@@ -32,7 +32,6 @@ internal class StudioWindow : BaseWindow
         };
 
         TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Config"), Icon = FontAwesomeIcon.Cog, IconOffset = new(2, 1.5f), Click = _ => Plugin.ToggleConfigUI() });
-        // TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Library"), Icon = FontAwesomeIcon.Atlas, IconOffset = new(2, 1.5f), Click = _ => Plugin.ToggleLibraryUI() });
         TitleBarButtons.Add(new() { ShowTooltip = () => ImGui.SetTooltip("Waymarks UI"), Icon = FontAwesomeIcon.ArrowUpRightFromSquare, IconOffset = new(2, 1.5f), Click = _ => Plugin.FieldMarkerAddon.Toggle() });
     }
 
@@ -392,8 +391,9 @@ internal class StudioWindow : BaseWindow
         }
         MyGui.HoverTooltip("Preset Library");
         ImGui.SameLine();
+        PresetImportButton();
+        ImGui.SameLine();
         ImguiFFLogsImportButton();
-        ClipboardImportButton();
     }
 
     internal void DrawSavedPresets()
@@ -601,7 +601,7 @@ internal class StudioWindow : BaseWindow
     {
         ImGui.DragInt("##rotation", ref rotationDegrees, 15, -180, 180);
         ImGui.SameLine();
-        if (ImGuiComponents.IconButton("rotate_guide", FontAwesomeIcon.LevelDownAlt))
+        if (ImGuiComponents.IconButton("rotate_guide", FontAwesomeIcon.Share))
         {
             rotationDegrees += 90;
             if (rotationDegrees > 180)

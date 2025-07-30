@@ -3,8 +3,8 @@ using FFXIVClientStructs.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using WaymarkStudio.Compat.MemoryMarker;
-using WaymarkStudio.Compat.WaymarkPresetPlugin;
+using WaymarkStudio.Adapters.MemoryMarker;
+using WaymarkStudio.Adapters.WaymarkPresetPlugin;
 
 namespace WaymarkStudio;
 

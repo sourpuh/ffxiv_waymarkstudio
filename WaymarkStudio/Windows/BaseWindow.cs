@@ -9,12 +9,15 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
-using WaymarkStudio.Compat.WaymarkPresetPlugin;
+using WaymarkStudio.Adapters.WaymarkStudio;
 using WaymarkStudio.FFLogs;
 using WaymarkStudio.Maps;
+using System.Threading.Tasks;
+using WaymarkStudio.Adapters;
 namespace WaymarkStudio.Windows;
 public abstract class BaseWindow : Window
 {
+    internal string importTextboxContent = "";
     internal FFLogsImport? import;
     WaymarkPreset? currTooltipPreset = null;
     List<MapView> currMapViews = new();
@@ -188,10 +191,22 @@ public abstract class BaseWindow : Window
                             Plugin.Storage.SavePreset(preset.Clone());
                             closePopup = true;
                         }
+                        //using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
+                        //{
+                        //    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.ShareAlt, "Share", size: size, defaultColor: new()))
+                        //    {
+                        //        Task.Run(() =>
+                        //        {
+                        //            ImGui.SetClipboardText(PresetExporter.Export(preset));
+                        //            Plugin.ReportSuccess("Preset copied to clipboard for sharing.");
+                        //        });
+                        //        closePopup = true;
+                        //    }
+                        //}
                         using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
                             if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
                             {
-                                ImGui.SetClipboardText(preset.Export());
+                                ImGui.SetClipboardText(Wms0Exporter.Export(preset));
                                 closePopup = true;
                             }
                         if (isSameTerritory)
@@ -254,39 +269,70 @@ public abstract class BaseWindow : Window
         }
     }
 
-    internal void ClipboardImportButton()
+    internal void PresetImportButton()
     {
-        string clipboard = ImGui.GetClipboardText();
-        if (clipboard.StartsWith(WaymarkPreset.presetb64Prefix))
+        bool focusTextInput = false;
+        bool performImport = false;
+        var textToImport = "";
+        var canMaybeImportClipboard = false;
+
+        if (ImGuiComponents.IconButton("import_preset", FontAwesomeIcon.FileImport))
         {
-            ImGui.SameLine();
-            if (ImGuiComponents.IconButton("import_preset", FontAwesomeIcon.FileImport))
+            string clipboard = ImGui.GetClipboardText();
+            canMaybeImportClipboard = PresetImporter.IsTextImportable(clipboard);
+            if (canMaybeImportClipboard)
             {
-                var preset = WaymarkPreset.Import(clipboard);
-                Plugin.Storage.SavePreset(preset);
-                ImGui.SetClipboardText("");
-                Plugin.ReportSuccess($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.");
+                performImport = true;
+                textToImport = clipboard;
             }
-            MyGui.HoverTooltip("Import From clipboard");
+            else
+            {
+                ImGui.OpenPopup("preset_import_popup");
+                importTextboxContent = "Paste preset here";
+                focusTextInput = true;
+            }
         }
-        else if (clipboard.StartsWith("{"))
+        MyGui.HoverTooltip("Import Preset");
+
+        if (ImGui.BeginPopup("preset_import_popup"))
         {
+            if (focusTextInput) ImGui.SetKeyboardFocusHere(0);
+            ImGui.Text("Preset:");
             ImGui.SameLine();
-            if (ImGuiComponents.IconButton("import_preset", FontAwesomeIcon.FileImport))
+            var startImport = ImGui.InputText("##preset_text", ref importTextboxContent, 1000, ImGuiInputTextFlags.EnterReturnsTrue);
+            var canMaybeImport = PresetImporter.IsTextImportable(importTextboxContent);
+            using (ImRaii.Disabled(!canMaybeImport))
             {
-                try
+                if (ImGuiComponents.IconButton("confirm_import", FontAwesomeIcon.Check) || canMaybeImport && startImport)
                 {
-                    var preset = WPPImporter.Import(clipboard);
-                    Plugin.Storage.SavePreset(preset);
-                    ImGui.SetClipboardText("");
-                    Plugin.ReportSuccess($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.");
-                }
-                catch (Exception ex)
-                {
-                    Plugin.ReportError($"Waymark preset import failed. Check if your clipboard contains a valid JSON preset and try again. Message: \"{ex.Message}\"");
+                    performImport = true;
+                    textToImport = importTextboxContent;
                 }
             }
-            MyGui.HoverTooltip("Import From clipboard");
+            ImGui.SameLine();
+            if (ImGuiComponents.IconButton("cancel_import", FontAwesomeIcon.Times))
+            {
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+
+        if (performImport)
+        {
+            WaymarkPreset? preset = null;
+            if (PresetImporter.IsTextImportable(textToImport))
+                preset = PresetImporter.Import(textToImport);
+
+            if (preset != null)
+            {
+                Plugin.Storage.SavePreset(preset);
+                Plugin.ReportSuccess($"Successfully imported {preset.Name} for {TerritorySheet.GetTerritoryName(preset.TerritoryId)}.");
+                ImGui.CloseCurrentPopup();
+                if (ImGui.GetClipboardText() == textToImport)
+                {
+                    ImGui.SetClipboardText("");
+                }
+            }
         }
     }
 

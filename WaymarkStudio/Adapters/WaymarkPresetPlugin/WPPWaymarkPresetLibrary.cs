@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace WaymarkStudio.Compat.WaymarkPresetPlugin;
+namespace WaymarkStudio.Adapters.WaymarkPresetPlugin;
 
 public class WPPWaymarkPresetLibrary
 {

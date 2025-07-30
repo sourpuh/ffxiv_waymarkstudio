@@ -48,7 +48,7 @@ internal static class Extensions
     // The game rounds world positions floats for waymarks to the thousandth decimal.
     internal static float Round(this float value)
     {
-        return (int)(value * 1000) / 1000f;
+        return MathF.Round(value, 3);
     }
 
     internal static Vector3 Round(this Vector3 v)
@@ -174,6 +174,34 @@ internal static class Extensions
     {
         int value = reader.Read7BitEncodedInt();
         return (value >>> 1) ^ -(value & 1);
+    }
+
+    public static void Write(this BinaryWriter writer, Vector3 value)
+    {
+        writer.Write7BitEncodedIntSigned((int)MathF.Round(value.X * 1000));
+        writer.Write7BitEncodedIntSigned((int)MathF.Round(value.Y * 1000));
+        writer.Write7BitEncodedIntSigned((int)MathF.Round(value.Z * 1000));
+    }
+
+    public static Vector3 ReadVector3(this BinaryReader reader)
+    {
+        var x = reader.Read7BitEncodedIntSigned() / 1000f;
+        var y = reader.Read7BitEncodedIntSigned() / 1000f;
+        var z = reader.Read7BitEncodedIntSigned() / 1000f;
+        return new(x, y, z);
+    }
+
+    public static void Write(this BinaryWriter writer, Vector2 value)
+    {
+        writer.Write7BitEncodedIntSigned((int)MathF.Round(value.X * 1000));
+        writer.Write7BitEncodedIntSigned((int)MathF.Round(value.Y * 1000));
+    }
+
+    public static Vector3 ReadXZVector2(this BinaryReader reader)
+    {
+        var x = reader.Read7BitEncodedIntSigned() / 1000f;
+        var z = reader.Read7BitEncodedIntSigned() / 1000f;
+        return new Vector3(x, 0, z);
     }
 
     public static string RecursiveInnerMessage(this Exception e)

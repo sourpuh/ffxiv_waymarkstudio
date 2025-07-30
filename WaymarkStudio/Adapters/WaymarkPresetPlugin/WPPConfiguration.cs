@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 
-namespace WaymarkStudio.Compat.WaymarkPresetPlugin;
+namespace WaymarkStudio.Adapters.WaymarkPresetPlugin;
 
 [Serializable]
 public class WPPConfiguration : IPluginConfiguration
