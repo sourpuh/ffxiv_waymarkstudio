@@ -10,6 +10,7 @@ internal class PlaceWaymarkTask : RetriableTaskBase
 {
     private Waymark waymark;
     private Vector3 position;
+    private bool clearDraft = false;
 
     public static Task Start(CancellationTokenSource cancelToken, Waymark waymark, Vector3 position, bool rethrow = false)
     {
@@ -31,17 +32,19 @@ internal class PlaceWaymarkTask : RetriableTaskBase
     internal override Task BeginAsyncRetriableOperation()
     {
         var reason = Plugin.WaymarkManager.WaymarkPlacementStatus(position);
-        if (reason is not PlacementUnsafeReason.Safe)
+        if (reason is PlacementUnsafeReason.Safe)
+        {
+            var status = PlaceWaymark(waymark, position);
+            if (status == 0)
+            {
+                Plugin.WaymarkManager.ClearDraftMarker(waymark);
+                return Task.CompletedTask;
+            }
+            return Task.FromException(new InvalidOperationException($"Waymark placement failed status: {status}"));
+        }
+        else if (reason is PlacementUnsafeReason.NotGrounded or PlacementUnsafeReason.TooFar)
             return Task.FromException(new InvalidOperationException($"Waymark placement unsafe: {reason}\nYou can disable this check in the config."));
-
-        var status = PlaceWaymark(waymark, position);
-        if (status == 0)
-            return Task.CompletedTask;
-        return Task.FromException(new InvalidOperationException($"Waymark placement failed status: {status}"));
-    }
-
-    internal override void OnTaskSuccess()
-    {
-        Plugin.WaymarkManager.ClearDraftMarker(waymark);
+        // Could not place for some expected reason; swallow the error.
+        return Task.CompletedTask;
     }
 }

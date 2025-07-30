@@ -102,9 +102,4 @@ internal class PlaceWaymarkPresetTask : RetriableTaskBase
     {
         await PlaceWaymarksWithMinimalOperations(preset);
     }
-
-    internal override void OnTaskSuccess()
-    {
-        Plugin.WaymarkManager.ClearDraftMarkers();
-    }
 }

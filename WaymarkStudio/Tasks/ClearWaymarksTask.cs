@@ -25,9 +25,4 @@ internal class ClearWaymarksTask : RetriableTaskBase
             return Task.CompletedTask;
         return Task.FromException(new InvalidOperationException($"Clear all waymarks failed status: {status}"));
     }
-
-    internal override void OnTaskSuccess()
-    {
-        // Do nothing
-    }
 }
