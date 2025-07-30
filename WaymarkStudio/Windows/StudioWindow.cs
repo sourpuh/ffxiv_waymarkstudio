@@ -545,12 +545,24 @@ internal class StudioWindow : BaseWindow
 
     internal void WaymarkButton(Waymark w)
     {
+        var cursorPos = ImGui.GetCursorScreenPos();
         if (MyGui.IconButton(Waymarks.GetIconId(w), waymarkIconPlaceButtonSize))
         {
             Plugin.Overlay.StartMouseWorldPosSelecting(w);
             if (Plugin.Config.ClearNativeWhenPlacing && Plugin.Config.PlaceRealIfPossible)
                 Plugin.WaymarkManager.ClearWaymark(w);
         }
+
+        if (Plugin.WaymarkManager.DraftMarkers.ContainsKey(w) && !w.Equals(Plugin.Overlay.currentMousePlacementThing))
+        {
+            ImGui.SetWindowFontScale(0.7f);
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.GetWindowDrawList().AddText(cursorPos, 0xFF20FFFF, FontAwesomeIcon.Check.ToIconString());
+            ImGui.PopFont();
+            ImGui.SetWindowFontScale(1f);
+            MyGui.HoverTooltip($"'{Waymarks.GetName(w)}' draft is placed");
+        }
+
         MyGui.HoverTooltip($"Begin placing '{Waymarks.GetName(w)}' {(Plugin.Config.PlaceRealIfPossible ? "waymark" : "draft")}\nRight click to clear");
         Vector3 pos = Plugin.WaymarkManager.draftMarkers.GetValueOrDefault(w);
         switch (Plugin.Overlay.MouseWorldPosSelection(w, ref pos))
