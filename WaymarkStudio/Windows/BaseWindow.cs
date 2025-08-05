@@ -191,24 +191,18 @@ public abstract class BaseWindow : Window
                             Plugin.Storage.SavePreset(preset.Clone());
                             closePopup = true;
                         }
-                        //using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
-                        //{
-                        //    if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.ShareAlt, "Share", size: size, defaultColor: new()))
-                        //    {
-                        //        Task.Run(() =>
-                        //        {
-                        //            ImGui.SetClipboardText(PresetExporter.Export(preset));
-                        //            Plugin.ReportSuccess("Preset copied to clipboard for sharing.");
-                        //        });
-                        //        closePopup = true;
-                        //    }
-                        //}
                         using (ImRaii.Disabled(preset.PendingHeightAdjustment.IsAnySet()))
-                            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.FileExport, "Export to clipboard", size: size, defaultColor: new()))
+                        {
+                            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.ShareAlt, "Share", size: size, defaultColor: new()))
                             {
-                                ImGui.SetClipboardText(Wms0Exporter.Export(preset));
+                                Task.Run(() =>
+                                {
+                                    ImGui.SetClipboardText(PresetExporter.Export(preset));
+                                    Plugin.ReportSuccess("Preset copied to clipboard for sharing.");
+                                });
                                 closePopup = true;
                             }
+                        }
                         if (isSameTerritory)
                         {
                             using (ImRaii.Disabled(!canPlaceWaymark))

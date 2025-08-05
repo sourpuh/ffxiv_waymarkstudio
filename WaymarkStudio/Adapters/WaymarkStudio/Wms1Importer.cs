@@ -7,7 +7,7 @@ using System.Numerics;
 namespace WaymarkStudio.Adapters.WaymarkStudio;
 internal static class Wms1Importer
 {
-    const string Presetb64PrefixV1 = "wms1";
+    const string Presetb64PrefixV1 = "wms1.";
 
     internal static bool IsTextImportable(string text)
     {
@@ -16,10 +16,19 @@ internal static class Wms1Importer
 
     internal static WaymarkPreset Import(string text)
     {
-        return Deserialize(Base64UrlEncoder.DecodeBytes(text.Substring(Presetb64PrefixV1.Length)));
+        if(!IsTextImportable(text))
+            throw new ArgumentException($"Unable to import preset: missing wms1 prefix");
+        string[] parts = text.Split('.');
+        if (parts.Length != 3)
+            throw new ArgumentException($"Unable to import preset: unexpected preset part count {parts.Length}");
+        (var preset, var computedChecksum) = Deserialize(Base64UrlEncoder.DecodeBytes(parts[1]));
+        var expectedChecksum = Base64UrlEncoder.DecodeBytes(parts[2]);
+        if (!expectedChecksum.SequenceEqual(computedChecksum))
+            throw new ArgumentException("Unable to import preset: corrupted; checksum does not match");
+        return preset;
     }
 
-    private static WaymarkPreset Deserialize(byte[] b)
+    private static (WaymarkPreset preset, byte[] computedChecksum) Deserialize(byte[] b)
     {
         WaymarkPreset preset = new();
         using var memoryStream = new MemoryStream(b);
@@ -31,17 +40,12 @@ internal static class Wms1Importer
         else if (format == Wms1Exporter.FormatCompressXZOffset)
             DeserializeXZOffset(reader, preset);
         else
-            throw new ArgumentException($"Unsupported preset format '{format}'. Update the plugin and try again.");
+            throw new ArgumentException($"Unable to deserialize preset: unsupported preset format '{format}'. Update the plugin and try again.");
         var dataLength = memoryStream.Position;
-        var expectedChecksum = reader.ReadUInt32();
         memoryStream.Position = 0;
         memoryStream.SetLength(dataLength);
-        var computedChecksum = Crc32.HashToUInt32(memoryStream.ToArray());
-        if (computedChecksum != expectedChecksum)
-        {
-            throw new ArgumentException("Corrupt preset: checksum does not match");
-        }
-        return preset;
+        var computedChecksum = Crc32.Hash(memoryStream.ToArray());
+        return (preset, computedChecksum);
     }
 
     private static void DeserializeDefault(BinaryReader reader, WaymarkPreset preset)
