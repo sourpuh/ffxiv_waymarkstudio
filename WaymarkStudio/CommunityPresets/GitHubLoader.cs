@@ -110,12 +110,6 @@ internal class GitHubLoader
             {
                 var line = await reader.ReadLineAsync() ?? "";
                 writer.WriteLine(line);
-                if (line.StartsWith("#"))
-                {
-                    currentDirectory = new();
-                    currentDirectory.name = line.Substring(line.LastIndexOf("#")).Trim();
-                    rootDirectory.children.Add(currentDirectory);
-                }
                 if (PresetImporter.IsTextImportable(line))
                 {
                     var preset = PresetImporter.Import(line);
