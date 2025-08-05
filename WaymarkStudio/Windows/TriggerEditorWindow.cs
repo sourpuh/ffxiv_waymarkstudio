@@ -2,7 +2,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
 using System.Linq;
 using System.Numerics;
 using WaymarkStudio.Triggers;
@@ -59,7 +58,7 @@ internal class TriggerEditorWindow : Window
         ImGui.TextUnformatted("Position:");
         ImGui.SetNextItemWidth(125f);
         ImGui.SameLine();
-        ImGui.InputFloat3("##position", ref trigger.Center, "%.1f");
+        ImGui.InputFloat3("##position", ref trigger.Center, format: "%.1f");
         ImGui.SameLine();
         if (ImGuiComponents.IconButton("start_trigger_selection", FontAwesomeIcon.MousePointer))
         {

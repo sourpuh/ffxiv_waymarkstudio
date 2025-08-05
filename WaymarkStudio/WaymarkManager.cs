@@ -180,7 +180,7 @@ internal class WaymarkManager
                || Condition[ConditionFlag.CarryingItem]
                || Condition[ConditionFlag.CarryingObject]
                || Condition[ConditionFlag.BeingMoved]
-               || Condition[ConditionFlag.Mounted2]
+               || Condition[ConditionFlag.RidingPillion]
                || Condition[ConditionFlag.Mounting]
                || Condition[ConditionFlag.Mounting71]
                || Condition[ConditionFlag.ParticipatingInCustomMatch]

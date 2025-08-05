@@ -1,7 +1,7 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -164,7 +164,7 @@ public partial class MyGui
             {
                 if (source)
                 {
-                    ImGui.SetDragDropPayload(Dragging, nint.Zero, 0);
+                    ImGui.SetDragDropPayload(Dragging, ReadOnlySpan<byte>.Empty, 0);
                     using (ImRaii.PushFont(UiBuilder.IconFont))
                     {
                         ImGui.TextUnformatted(FontAwesomeIcon.GripLines.ToIconString());

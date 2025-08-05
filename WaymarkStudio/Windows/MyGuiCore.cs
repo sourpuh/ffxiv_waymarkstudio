@@ -1,4 +1,3 @@
-using ImGuiNET;
 using System;
 using System.IO;
 using System.Numerics;
@@ -46,7 +45,7 @@ public partial class MyGui
         Vector4 tintColor = state ? new(1f, 1f, 1f, 1f) : new(0.5f, 0.5f, 0.5f, 0.85f);
         var wrap = Plugin.TextureProvider.GetFromGameIcon(iconId).GetWrapOrEmpty();
         if (wrap != null)
-            return ImGui.ImageButton(wrap.ImGuiHandle, size, new Vector2(borderClip), Vector2.One - new Vector2(borderClip), 1, Vector4.Zero, tintColor);
+            return ImGui.ImageButton(wrap.Handle, size, new Vector2(borderClip), Vector2.One - new Vector2(borderClip), 1, Vector4.Zero, tintColor);
         else
             return ImGui.Button("##" + iconId, size);
     }
@@ -55,7 +54,7 @@ public partial class MyGui
     {
         var wrap = Plugin.TextureProvider.GetFromFile(GetCustomImagePath(name)).GetWrapOrEmpty();
         if (wrap != null)
-            return ImGui.ImageButton(wrap.ImGuiHandle, size, Vector2.Zero, Vector2.One, 1, Vector4.Zero);
+            return ImGui.ImageButton(wrap.Handle, size, Vector2.Zero, Vector2.One, 1, Vector4.Zero);
         else
             return ImGui.Button("##" + name, size);
     }
@@ -64,7 +63,7 @@ public partial class MyGui
     {
         var wrap = Plugin.TextureProvider.GetFromGameIcon(iconId).GetWrapOrEmpty();
         if (wrap != null)
-            ImGui.Image(wrap.ImGuiHandle, size, new Vector2(borderClip), Vector2.One - new Vector2(borderClip));
+            ImGui.Image(wrap.Handle, size, new Vector2(borderClip), Vector2.One - new Vector2(borderClip));
     }
 
     public static void ExpansionIcon(ushort territoryId, Vector2 size)
@@ -90,5 +89,5 @@ public partial class MyGui
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public static unsafe bool IsDropping(string name)
-        => ImGui.AcceptDragDropPayload(name).NativePtr != null;
+        => !ImGui.AcceptDragDropPayload(name).IsNull;
 }

@@ -1,3 +1,5 @@
+global using Dalamud.Bindings.ImGui;
+
 using Dalamud.Game;
 using Dalamud.Game.Command;
 using Dalamud.Interface.ImGuiNotification;

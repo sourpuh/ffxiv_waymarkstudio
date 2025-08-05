@@ -1,6 +1,5 @@
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -83,7 +82,7 @@ internal partial class MapView
                 if (texture == null) return;
 
                 windowPos = ImGui.GetItemRectMin();
-                ImGui.Image(texture.ImGuiHandle, sizePx, UVMin, UVMax);
+                ImGui.Image(texture.Handle, sizePx, UVMin, UVMax);
                 ImGui.GetWindowDrawList().AddText(windowPos + new Vector2(6, 1) * ImGuiHelpers.GlobalScale, 0xFF000000, map.Name);
                 ImGui.GetWindowDrawList().AddText(windowPos + new Vector2(5, 0) * ImGuiHelpers.GlobalScale, 0xFFFFFFFF, map.Name);
 
@@ -100,7 +99,7 @@ internal partial class MapView
                     if (wrap != null)
                     {
                         ImGui.GetWindowDrawList().AddImage(
-                            wrap.ImGuiHandle,
+                            wrap.Handle,
                             W2S(wPos) - WaymarkMapIconHalfSizePx,
                             W2S(wPos) + WaymarkMapIconHalfSizePx,
                             Vector2.Zero,
@@ -114,7 +113,7 @@ internal partial class MapView
                     if (wrap != null)
                     {
                         ImGui.GetWindowDrawList().AddImage(
-                            wrap.ImGuiHandle,
+                            wrap.Handle,
                             W2S(wPos) - WaymarkMapIconHalfSizePx,
                             W2S(wPos) + WaymarkMapIconHalfSizePx,
                             Vector2.Zero,

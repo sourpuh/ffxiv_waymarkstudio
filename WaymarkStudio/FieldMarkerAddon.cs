@@ -42,7 +42,7 @@ public unsafe class FieldMarkerAddon : IDisposable
     }
     public void AddonPostDraw(AddonEvent type, AddonArgs args)
     {
-        var thisPtr = (AddonFieldMarker*)args.Addon;
+        var thisPtr = (AddonFieldMarker*)args.Addon.Address;
         if (thisPtr == null)
             return;
 

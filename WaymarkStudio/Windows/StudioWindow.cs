@@ -3,7 +3,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -216,7 +215,7 @@ internal class StudioWindow : BaseWindow
         ImGui.TextUnformatted("Position:");
         ImGui.SetNextItemWidth(125f);
         ImGui.SameLine();
-        ImGui.InputFloat3("##position", ref Plugin.Overlay.guide.center, "%.1f");
+        ImGui.InputFloat3("##position", ref Plugin.Overlay.guide.center, format: "%.1f");
         ImGui.SameLine();
         if (ImGuiComponents.IconButton("start_guide_selection", FontAwesomeIcon.MousePointer))
         {

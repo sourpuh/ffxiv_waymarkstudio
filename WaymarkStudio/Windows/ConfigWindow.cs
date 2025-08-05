@@ -1,7 +1,6 @@
 using Dalamud.Interface.Components;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
 using Dalamud.Interface.Utility.Raii;
 
 namespace WaymarkStudio.Windows;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/12.0.2">
+<Project Sdk="Dalamud.NET.Sdk/13.0.0">
     <PropertyGroup>
-    <Version>0.0.0.35</Version>
+    <Version>0.0.0.36</Version>
     <Description>The ultimate waymark plugin.</Description>
     <PackageProjectUrl>https://github.com/sourpuh/ffxiv_waymarkstudio</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
