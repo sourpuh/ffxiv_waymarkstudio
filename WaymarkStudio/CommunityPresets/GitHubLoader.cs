@@ -21,11 +21,19 @@ internal class GitHubLoader
         PresetDirectory rootDirectory = new();
         try
         {
-            if (File.Exists(CommunityCacheFilePath))
+            if (await Task.Run(() => File.Exists(CommunityCacheFilePath)))
             {
                 Stopwatch stopwatch = new();
                 stopwatch.Start();
-                rootDirectory = ReadCommunityPresets(new StreamReader(CommunityCacheFilePath));
+                await using var fileStream = new FileStream(
+                    CommunityCacheFilePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    bufferSize: 4096,
+                    useAsync: true);
+                using var streamReader = new StreamReader(fileStream);
+                rootDirectory = await ReadCommunityPresets(streamReader);
                 stopwatch.Stop();
                 Plugin.Log.Info($"Loaded community presets from file in {stopwatch.Elapsed}");
                 if (rootDirectory.presets.Count > 0)
@@ -57,6 +65,8 @@ internal class GitHubLoader
 
     private static async Task RefreshPresetsFromGitHub()
     {
+        // Delay in case the file handle is still in use by the initial loader.
+        await Task.Delay(1000);
         var presets = LoadPresetsFromGitHub();
         await presets;
         Presets = presets;
@@ -71,12 +81,12 @@ internal class GitHubLoader
         stopwatch.Start();
         using (HttpRequestMessage requestMessage = new(HttpMethod.Get, "https://github.com/sourpuh/ffxiv_waymarkstudio/wiki/community_presets.md"))
         {
-            var response = await httpClient.SendAsync(requestMessage);
+            using var response = await httpClient.SendAsync(requestMessage);
             if (response.IsSuccessStatusCode)
             {
                 StreamReader reader = new(await response.Content.ReadAsStreamAsync());
                 using (reader)
-                    rootDirectory = ReadCommunityPresets(reader, true);
+                    rootDirectory = await ReadCommunityPresets(reader, true);
             }
             else
                 Plugin.Log.Error($"Failed to load community presets from GitHub: {response.StatusCode}");
@@ -86,11 +96,11 @@ internal class GitHubLoader
         return rootDirectory;
     }
 
-    private static PresetDirectory ReadCommunityPresets(StreamReader reader, bool writeToFile = false)
+    private static async Task<PresetDirectory> ReadCommunityPresets(StreamReader reader, bool writeToFile = false)
     {
         StreamWriter writer = StreamWriter.Null;
         if (writeToFile)
-            writer = new StreamWriter(CommunityCacheFilePath, false);
+            writer = new StreamWriter(CommunityCacheFilePath, append: false);
 
         PresetDirectory rootDirectory = new();
         PresetDirectory currentDirectory = rootDirectory;
@@ -98,7 +108,7 @@ internal class GitHubLoader
         {
             while (reader.Peek() != -1)
             {
-                var line = reader.ReadLine();
+                var line = await reader.ReadLineAsync() ?? "";
                 writer.WriteLine(line);
                 if (line.StartsWith("#"))
                 {

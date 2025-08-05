@@ -101,11 +101,8 @@ internal class PresetStorage
 
     private IEnumerable<WaymarkPreset> ListCommunityPresets()
     {
-        if (!GitHubLoader.Presets.IsCompletedSuccessfully)
-        {
+        if (!GitHubLoader.Presets.IsCompleted)
             return Enumerable.Empty<WaymarkPreset>();
-        }
-
         return GitHubLoader.Presets.Result.RecursiveListPresets();
     }
 
