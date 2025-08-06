@@ -83,8 +83,11 @@ internal partial class MapView
 
                 windowPos = ImGui.GetItemRectMin();
                 ImGui.Image(texture.Handle, sizePx, UVMin, UVMax);
-                ImGui.GetWindowDrawList().AddText(windowPos + new Vector2(6, 1) * ImGuiHelpers.GlobalScale, 0xFF000000, map.Name);
-                ImGui.GetWindowDrawList().AddText(windowPos + new Vector2(5, 0) * ImGuiHelpers.GlobalScale, 0xFFFFFFFF, map.Name);
+                if (map.Name.Length > 0)
+                {
+                    ImGui.GetWindowDrawList().AddText(windowPos + new Vector2(6, 1) * ImGuiHelpers.GlobalScale, 0xFF000000, map.Name);
+                    ImGui.GetWindowDrawList().AddText(windowPos + new Vector2(5, 0) * ImGuiHelpers.GlobalScale, 0xFFFFFFFF, map.Name);
+                }
 
                 foreach ((Waymark w, Vector3 wPos) in markers)
                 {
