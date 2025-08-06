@@ -23,7 +23,7 @@ internal class StudioWindow : BaseWindow
     private Vector2 windowSize;
     internal StudioWindow() : base("Waymark Studio")
     {
-        Size = new(520, 480);
+        Size = new(535, 480);
         SizeCondition = ImGuiCond.Once;
         SizeConstraints = new WindowSizeConstraints
         {
