@@ -165,11 +165,8 @@ public partial class MyGui
                 if (source)
                 {
                     ImGui.SetDragDropPayload(Dragging, ReadOnlySpan<byte>.Empty, 0);
-                    using (ImRaii.PushFont(UiBuilder.IconFont))
-                    {
-                        ImGui.TextUnformatted(FontAwesomeIcon.GripLines.ToIconString());
-                        ImGui.SameLine();
-                    }
+                    FontIcon(FontAwesomeIcon.GripLines);
+                    ImGui.SameLine();
                     ImGui.TextUnformatted($"{RowName}");
                     if (isValidTarget)
                         ImGui.TextUnformatted($"Move preset here");

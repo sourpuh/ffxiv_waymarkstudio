@@ -1,3 +1,5 @@
+using Dalamud.Interface;
+using Dalamud.Interface.Utility;
 using System;
 using System.IO;
 using System.Numerics;
@@ -38,6 +40,34 @@ public partial class MyGui
             ImGui.PopStyleColor();
         }
         ImGui.SetWindowFontScale(1f);
+    }
+
+    public static void FontIcon(FontAwesomeIcon icon)
+    {
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.Text(icon.ToIconString());
+        ImGui.PopFont();
+    }
+
+    public static void FontIcon(FontAwesomeIcon icon, uint col)
+    {
+        ImGui.PushStyleColor(ImGuiCol.Text, col);
+        FontIcon(icon);
+        ImGui.PopStyleColor();
+    }
+
+    public static void FontIcon(Vector2 pos, FontAwesomeIcon icon)
+    {
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.GetWindowDrawList().AddText(pos, 0xFF20FFFF, icon.ToIconString());
+        ImGui.PopFont();
+    }
+
+    public static void FontIcon(Vector2 pos, FontAwesomeIcon icon, uint col)
+    {
+        ImGui.PushStyleColor(ImGuiCol.Text, col);
+        FontIcon(pos, icon);
+        ImGui.PopStyleColor();
     }
 
     public static bool IconButton(uint iconId, Vector2 size, float borderClip = 0, bool state = true)

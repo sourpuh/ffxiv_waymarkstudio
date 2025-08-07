@@ -2,7 +2,6 @@ using Lumina.Data.Files;
 using Lumina.Data.Parsing.Layer;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using WaymarkStudio.Maps;
 
@@ -28,14 +27,17 @@ internal static class TerritorySheet
         // [1153] = 1154, // P12 for testing
     };
 
-    struct TerritoryInfo
+    internal readonly struct TerritoryInfo
     {
-        internal string name;
-        internal ushort contentId;
-        internal Expansion expansion;
-        internal ContentType contentType;
-        internal string bg;
-        internal uint mapId;
+        internal readonly ushort Id { get; init; }
+        internal readonly string Name { get; init; }
+        internal readonly ushort ContentId { get; init; }
+        internal readonly Expansion Expansion { get; init; }
+        internal readonly ContentType ContentType { get; init; }
+        internal readonly string Bg { get; init; }
+        internal readonly uint MapId { get; init; }
+        internal readonly bool AreWaymarksSupported { get; init; }
+        internal readonly bool ArePresetsSupported { get; init; }
     }
     private static Dictionary<ushort, TerritoryInfo> TerritoryIdToInfo;
     private static Dictionary<string, IEnumerable<MapRange>> BgToMapRangeCache = new();
@@ -46,15 +48,19 @@ internal static class TerritorySheet
             EquivalentTerritoryIds.Add(kvp.Value, kvp.Key);
 
         TerritoryIdToInfo = Plugin.DataManager.GetExcelSheet<TerritoryType>()
+            .Where(x=> !x.TerritoryIntendedUse.Value.DisableFieldMarkers)
             .ToDictionary(x => (ushort)x.RowId,
             x => new TerritoryInfo()
             {
-                name = x.GetName(),
-                contentId = (ushort)x.GetContentId(),
-                expansion = (Expansion)x.ExVersion.RowId,
-                contentType = GetContentType(x),
-                bg = x.Bg.ExtractText(),
-                mapId = x.Map.RowId,
+                Id = (ushort)x.RowId,
+                Name = x.GetName(),
+                ContentId = (ushort)x.GetContentId(),
+                Expansion = (Expansion)x.ExVersion.RowId,
+                ContentType = GetContentType(x),
+                Bg = x.Bg.ExtractText(),
+                MapId = x.Map.RowId,
+                AreWaymarksSupported = !x.TerritoryIntendedUse.Value.DisableFieldMarkers,
+                ArePresetsSupported = x.TerritoryIntendedUse.Value.EnableFieldMarkerPresets,
             });
 
         ExpansionInfos = new();
@@ -103,7 +109,7 @@ internal static class TerritorySheet
 
         // Purge the default map if another map exists with the same set of waymarks.
         // This is necessary because M8S has 2 similar maps for the main ring that show the same set.
-        var defaultMapId = territory.mapId;
+        var defaultMapId = territory.MapId;
         if (mapWaymarks.TryGetValue(defaultMapId, out var defaultMapWaymarks))
         {
             foreach ((var mapId, var waymarks) in mapWaymarks)
@@ -131,7 +137,7 @@ internal static class TerritorySheet
 
     private static IEnumerable<MapRange> GetMapRanges(TerritoryInfo territory)
     {
-        var bg = territory.bg;
+        var bg = territory.Bg;
         IEnumerable<MapRange>? ranges;
         if (!BgToMapRangeCache.TryGetValue(bg, out ranges))
         {
@@ -170,12 +176,12 @@ internal static class TerritorySheet
 
     internal static string GetTerritoryName(ushort territoryId)
     {
-        return TerritoryIdToInfo[territoryId].name;
+        return TerritoryIdToInfo.GetValueOrDefault(territoryId).Name;
     }
 
     internal static Expansion GetExpansion(ushort territoryId)
     {
-        return TerritoryIdToInfo[territoryId].expansion;
+        return TerritoryIdToInfo.GetValueOrDefault(territoryId).Expansion;
     }
     internal static ExpansionInfo GetExpansionInfo(Expansion expansion)
     {
@@ -196,21 +202,12 @@ internal static class TerritorySheet
 
     internal static ContentType GetContentType(ushort territoryId)
     {
-        return TerritoryIdToInfo[territoryId].contentType;
-    }
-
-    internal static string GetContentName(ushort contentId)
-    {
-        if (Plugin.DataManager.GetExcelSheet<ContentFinderCondition>().TryGetRow(contentId, out var content))
-            return content.Name.ToString();
-        return "";
+        return TerritoryIdToInfo.GetValueOrDefault(territoryId).ContentType;
     }
 
     internal static ushort GetContentId(ushort territoryId)
     {
-        if (TerritoryIdToInfo.TryGetValue(territoryId, out var value))
-            return (ushort)value.contentId;
-        return 0;
+        return TerritoryIdToInfo.GetValueOrDefault(territoryId).ContentId;
     }
 
     internal static ushort? GetAlternativeId(ushort territoryId)
@@ -222,12 +219,24 @@ internal static class TerritorySheet
 
     internal static ushort TerritoryIdForContentId(ushort contentId)
     {
-        var kv = TerritoryIdToInfo.Where(x => x.Value.contentId == contentId).LastOrDefault();
+        var kv = TerritoryIdToInfo.Where(x => x.Value.ContentId == contentId).LastOrDefault();
         return kv.Key;
     }
 
     internal static bool IsValid(ushort territoryId)
     {
         return TerritoryIdToInfo.ContainsKey(territoryId);
+    }
+
+    internal static bool GetCanUseNativePresets(ushort territoryId)
+    {
+        if (TerritoryIdToInfo.TryGetValue(territoryId, out var value))
+            return value.ArePresetsSupported;
+        return false;
+    }
+
+    internal static TerritoryInfo GetInfo(ushort territoryId)
+    {
+        return TerritoryIdToInfo.GetValueOrDefault(territoryId);
     }
 }

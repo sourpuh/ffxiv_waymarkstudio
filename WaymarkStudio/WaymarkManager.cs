@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Threading;
 using WaymarkStudio.Tasks;
+using TerritoryInfo = WaymarkStudio.TerritorySheet.TerritoryInfo;
 
 namespace WaymarkStudio;
 /**
@@ -17,9 +18,7 @@ internal class WaymarkManager
     private static readonly IReadOnlyDictionary<Waymark, Vector3> EmptyWaymarks = new Dictionary<Waymark, Vector3>();
 
     internal ushort territoryId;
-    internal ushort contentFinderId;
-    internal ContentType contentType;
-    internal string mapName;
+    internal TerritoryInfo territoryInfo;
     internal Dictionary<Waymark, Vector3> draftMarkers = new();
     internal IReadOnlyDictionary<Waymark, Vector3> hoverPreviews = EmptyWaymarks;
     internal CancellationTokenSource? taskCancelToken;
@@ -34,11 +33,11 @@ internal class WaymarkManager
             foreach ((Waymark w, Vector3 p) in Waymarks)
                 if (!draftMarkers.ContainsKey(w))
                     draftMarkers.Add(w, p);
-            return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(draftMarkers));
+            return new(territoryInfo.Name, territoryId, new Dictionary<Waymark, Vector3>(draftMarkers));
         }
     }
-    internal WaymarkPreset DraftPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(draftMarkers)); } }
-    internal WaymarkPreset WaymarkPreset { get { return new(mapName, territoryId, new Dictionary<Waymark, Vector3>(Waymarks)); } }
+    internal WaymarkPreset DraftPreset { get { return new(territoryInfo.Name, territoryId, new Dictionary<Waymark, Vector3>(draftMarkers)); } }
+    internal WaymarkPreset WaymarkPreset { get { return new(territoryInfo.Name, territoryId, new Dictionary<Waymark, Vector3>(Waymarks)); } }
 
     internal IReadOnlyDictionary<Waymark, Vector3> DraftMarkers => draftMarkers;
     internal IReadOnlyDictionary<Waymark, Vector3> HoverPreviews => hoverPreviews;
@@ -46,20 +45,13 @@ internal class WaymarkManager
 
     internal void OnTerritoryChange(TerritoryType territory)
     {
-        territoryId = (ushort)territory.RowId;
-        mapName = territory.PlaceName.Value.Name.ExtractText();
-        contentFinderId = (ushort)territory.ContentFinderCondition.RowId;
-        contentType = 0;
-        if (contentFinderId != 0)
-        {
-            mapName = territory.ContentFinderCondition.Value.Name.ExtractText();
-            contentType = (ContentType)territory.ContentFinderCondition.Value.ContentType.RowId;
-        }
+        territoryInfo = TerritorySheet.GetInfo((ushort)territory.RowId);
+        territoryId = territoryInfo.Id;
         draftMarkers.Clear();
         hoverPreviews = EmptyWaymarks;
         taskCancelToken?.Cancel();
     }
-    internal unsafe bool WaymarksUnsupported => NativeFunctions.WaymarkSafety() != 0;
+    internal bool WaymarksUnsupported => !territoryInfo.AreWaymarksSupported;
     internal bool HasWaymarks => Waymarks.Count > 0;
     internal bool HasDraftMarkers => draftMarkers.Count > 0;
     internal void ClearDraftMarkers()
@@ -250,18 +242,7 @@ internal class WaymarkManager
         var status = GeneralWaymarkPlacementStatus();
         if (status != PlacementUnsafeReason.Safe)
             return status;
-        if (!(contentType is
-            ContentType.Dungeons
-            or ContentType.Guildhests
-            or ContentType.Trials
-            or ContentType.Raids
-            or ContentType.UltimateRaids
-            or ContentType.SavetheQueen
-            or ContentType.VCDungeonFinder
-            or ContentType.ChaoticAllianceRaid))
-            return PlacementUnsafeReason.UnsupportedContentType;
-        var isDelubrum = contentFinderId is /*DR*/760 or /*DRS*/761;
-        if (contentType is ContentType.SavetheQueen && !isDelubrum)
+        if (!territoryInfo.ArePresetsSupported)
             return PlacementUnsafeReason.UnsupportedContentType;
         return PlacementUnsafeReason.Safe;
     }

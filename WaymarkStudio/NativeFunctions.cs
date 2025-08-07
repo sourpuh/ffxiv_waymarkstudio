@@ -14,9 +14,6 @@ internal static unsafe class NativeFunctions
     internal unsafe delegate byte ClearWaymarksDelegate(MarkingController* markingController);
     internal static ClearWaymarksDelegate ClearWaymarks;
 
-    internal unsafe delegate byte WaymarkSafetyDelegate();
-    internal static WaymarkSafetyDelegate WaymarkSafety;
-
     internal unsafe delegate byte PlacePresetDelegate(MarkingController* markingController, MarkerPresetPlacement* placement);
     internal static PlacePresetDelegate PlacePreset;
     public static void Initialize()
@@ -24,7 +21,6 @@ internal static unsafe class NativeFunctions
         PlaceWaymark = Marshal.GetDelegateForFunctionPointer<PlaceWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 EB 5C"));
         ClearWaymark = Marshal.GetDelegateForFunctionPointer<ClearWaymarkDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? EB D8 83 FB 09"));
         ClearWaymarks = Marshal.GetDelegateForFunctionPointer<ClearWaymarksDelegate>(Plugin.SigScanner.ScanText("41 55 48 83 EC 50 4C 8B E9"));
-        WaymarkSafety = Marshal.GetDelegateForFunctionPointer<WaymarkSafetyDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 74 0D B0 05"));
         PlacePreset = Marshal.GetDelegateForFunctionPointer<PlacePresetDelegate>(Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 84 C0 75 1B B0 01"));
     }
 }

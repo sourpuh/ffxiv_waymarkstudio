@@ -9,6 +9,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Numerics;
 using WaymarkStudio.Guides;
+using static WaymarkStudio.TerritorySheet;
 
 namespace WaymarkStudio.Windows;
 
@@ -63,7 +64,7 @@ internal class StudioWindow : BaseWindow
 
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
-            DrawMarkerInfo();
+            DrawMarkerInfo(Plugin.WaymarkManager.territoryInfo);
             ImGui.Separator();
             DrawSavedPresets();
             ImGui.EndTable();
@@ -281,13 +282,19 @@ internal class StudioWindow : BaseWindow
         ImGui.SliderFloat(id, ref val, min, max, fmt);
     }
 
-    internal void DrawMarkerInfo()
+    internal void DrawMarkerInfo(TerritoryInfo info)
     {
-        MyGui.ExpansionIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
+        MyGui.ExpansionIcon(info.Id, territoryInfoSize);
         ImGui.SameLine();
-        MyGui.ContentTypeIcon(Plugin.WaymarkManager.territoryId, territoryInfoSize);
+        MyGui.ContentTypeIcon(info.Id, territoryInfoSize);
         ImGui.SameLine();
-        ImGui.Text($"{Plugin.WaymarkManager.mapName}");
+        ImGui.Text(info.Name);
+        if (!info.AreWaymarksSupported)
+        {
+            ImGui.SameLine();
+            MyGui.FontIcon(FontAwesomeIcon.ExclamationTriangle, 0xFF00FFFF);
+            MyGui.HoverTooltip("Waymarks not allowed in current area");
+        }
         var currentMarkers = Plugin.WaymarkManager.WaymarkPreset;
         TextActiveWaymarks(currentMarkers);
         if (Plugin.WaymarkVfx?.IsAnyWaymarkHidden() ?? false)
@@ -295,11 +302,7 @@ internal class StudioWindow : BaseWindow
             ImGui.SameLine();
             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 6f * ImGuiHelpers.GlobalScale);
             ImGui.SetWindowFontScale(0.7f);
-            ImGui.PushFont(UiBuilder.IconFont);
-            ImGui.PushStyleColor(ImGuiCol.Text, 0xFF2020FF);
-            ImGui.Text(FontAwesomeIcon.EyeSlash.ToIconString());
-            ImGui.PopStyleColor();
-            ImGui.PopFont();
+            MyGui.FontIcon(FontAwesomeIcon.EyeSlash, 0xFF2020FF);
             ImGui.SetWindowFontScale(1f);
             MyGui.HoverTooltip("One or more Waymarks are currently hidden");
         }
@@ -307,7 +310,7 @@ internal class StudioWindow : BaseWindow
         {
             if (ImGuiComponents.IconButton("save_markers", FontAwesomeIcon.Save))
             {
-                currentMarkers.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(Plugin.WaymarkManager.territoryId) + 1}";
+                currentMarkers.Name += $" {Plugin.Storage.CountPresetsForTerritoryId(info.Id) + 1}";
                 Plugin.Storage.SavePreset(currentMarkers);
             }
             MyGui.HoverTooltip("Save Waymarks to presets");
@@ -555,9 +558,7 @@ internal class StudioWindow : BaseWindow
         if (Plugin.WaymarkManager.DraftMarkers.ContainsKey(w) && !w.Equals(Plugin.Overlay.currentMousePlacementThing))
         {
             ImGui.SetWindowFontScale(0.7f);
-            ImGui.PushFont(UiBuilder.IconFont);
-            ImGui.GetWindowDrawList().AddText(cursorPos, 0xFF20FFFF, FontAwesomeIcon.Check.ToIconString());
-            ImGui.PopFont();
+            MyGui.FontIcon(cursorPos, FontAwesomeIcon.Check, 0xFF20FFFF);
             ImGui.SetWindowFontScale(1f);
             MyGui.HoverTooltip($"'{Waymarks.GetName(w)}' draft is placed");
         }

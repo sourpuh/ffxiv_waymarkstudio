@@ -10,7 +10,6 @@ internal class PlaceWaymarkTask : RetriableTaskBase
 {
     private Waymark waymark;
     private Vector3 position;
-    private bool clearDraft = false;
 
     public static Task Start(CancellationTokenSource cancelToken, Waymark waymark, Vector3 position, bool rethrow = false)
     {
