@@ -54,6 +54,8 @@ To import a preset from FFLogs:
 ## Community Presets
 WMS contains a set of community presets from https://github.com/Em-Six/FFXIVWaymarkPresets/wiki. If you have a preset that you want to include in community presets, follow the support process to suggest the preset.
 
+To view available presets, visit https://github.com/sourpuh/ffxiv_waymarkstudio/wiki/community_presets or open the plugin's libarary window and open the "Community" tab.
+
 ## Triggers
 Triggers are cylindrical regions that automatically load presets when you enter them. Triggers were designed for criterion dungeons so you can place a trigger before each boss to automatically load their presets when you need them.
 
