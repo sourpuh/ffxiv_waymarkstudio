@@ -38,15 +38,15 @@ Guides are customizable line grids that you can place on the arena to help you p
 <img height=350 src="./ReadmeImages/circle_guide.png">
 <img height=350 src="./ReadmeImages/square_guide.png">
 
-## Export and Import
-To export a preset, right click the preset and copy it to your clipboard for sharing. It should look something like `wms08wInAT9VAMmqAtauAgD/AQgAxKkC464CADacXwDZBJNeAKsDD084UyAtIEdvZCBLZWZrYQ==` in your clipboard.
+## Share and Import
+To share a preset, right click the preset and click share to copy it to your clipboard. It will be a URL like [`https://sourpuh.github.io/waymarkstudio?preset=wms1.ADsDd8-JAvysC-DIB5PIBfysC6bDAfS0AfysC6jDAYggkK4L_vAEp7MEkK4LgPEEz4kCkK4LsG0ET3ptYQ.e1IJ7Q`](https://sourpuh.github.io/waymarkstudio?preset=wms1.ADsDd8-JAvysC-DIB5PIBfysC6bDAfS0AfysC6jDAYggkK4L_vAEp7MEkK4LgPEEz4kCkK4LsG0ET3ptYQ.e1IJ7Q).
 
-To import a preset, copy the preset to your clipboard. An import button will appear next to the "Saved Presets" heading that will load the preset from your clipboard when pressed.
+You can open a preset URL to see a map preview. If you want to import the preset, copy it to your clipboard and click the import button.
+<img height=350 src="https://sourpuh.github.io/assets/import_button.png">
 
 To import a preset from FFLogs:
 1. Copy a report URL to your clipboard. It should look something like `https://www.fflogs.com/reports/dY98jQtfJkAWLaZ3?fight=16`.
-1. Press the blue gem button next to the "Saved Presets" heading to open the importer.
-1. Paste the URL and press '✔' to begin the import.
+1. Press the blue gem button to begin the import.
 1. If your URL does not have a `fight=N` parameter, you will be prompted to choose a fight from the report.
 1. A chat message will indicate whether or not the import succeeded.
 1. FFLogs does not provide "height" coordinates for waymarks, so WMS determines height for you when you enter the corresponding zone.
