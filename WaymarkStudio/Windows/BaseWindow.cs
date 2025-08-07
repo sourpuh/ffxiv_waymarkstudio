@@ -267,12 +267,11 @@ public abstract class BaseWindow : Window
         bool focusTextInput = false;
         bool performImport = false;
         var textToImport = "";
-        var canMaybeImportClipboard = false;
 
         if (ImGuiComponents.IconButton("import_preset", FontAwesomeIcon.FileImport))
         {
             string clipboard = ImGui.GetClipboardText();
-            canMaybeImportClipboard = PresetImporter.IsTextImportable(clipboard);
+            var canMaybeImportClipboard = PresetImporter.IsTextImportable(clipboard);
             if (canMaybeImportClipboard)
             {
                 performImport = true;
@@ -329,79 +328,121 @@ public abstract class BaseWindow : Window
         }
     }
 
+    bool wasFFLogsPopupOpen = false;
     internal void ImguiFFLogsImportButton()
     {
+        const string popUpName = "fflogs_import_popup";
+        bool isPopupOpen = ImGui.IsPopupOpen(popUpName);
         bool focusTextInput = false;
+        bool beginImport = false;
         ImGui.PushStyleColor(ImGuiCol.Text, 0xFFE1C864);
         if (ImGuiComponents.IconButton("import_fflogs", FontAwesomeIcon.Gem))
         {
-            ImGui.OpenPopup("fflogs_import_popup");
-            focusTextInput = true;
+            import = FFLogsImport.New();
+            string clipboard = ImGui.GetClipboardText();
+            var canMaybeImportClipboard = FFLogsImport.IsTextImportable(clipboard);
+            if (canMaybeImportClipboard)
+            {
+                import.URL = clipboard;
+                beginImport = true;
+            }
+            else
+            {
+                import.URL = "Paste FFLogs link here";
+                ImGui.OpenPopup(popUpName);
+                focusTextInput = true;
+            }
         }
         ImGui.PopStyleColor();
         MyGui.HoverTooltip("Import From FFLogs");
 
-        if (ImGui.BeginPopup("fflogs_import_popup"))
+        // Detect if the user clicked out of the popup and kill the import.
+        // TODO there should be a way to cancel the task properly.
+        if (wasFFLogsPopupOpen && !isPopupOpen)
         {
-            if (import == null)
-                import = FFLogsImport.New("Paste FFLogs link here");
+            import = null;
+        }
 
-            // Url Input
+        if (import == null)
+        {
+            wasFFLogsPopupOpen = false;
+            return;
+        }
+
+        if (import.NeedsFightSelection && !wasFFLogsPopupOpen && !isPopupOpen)
+        {
+            ImGui.OpenPopup(popUpName);
+        }
+
+        if (ImGui.BeginPopup(popUpName))
+        {
             if (focusTextInput) ImGui.SetKeyboardFocusHere(0);
             ImGui.Text("FFLogs Report URL:");
             ImGui.SameLine();
-            var runQueryReport = ImGui.InputText("##query_report", ref import.URL, 100, ImGuiInputTextFlags.EnterReturnsTrue);
-            if (!import.IsStarted)
+            var startImport = false;
+            using (ImRaii.Disabled(import.NeedsFightSelection))
             {
-                using (ImRaii.Disabled(!import.CanQuery))
+                startImport = ImGui.InputText("##report_text", ref import.URL, 100, ImGuiInputTextFlags.EnterReturnsTrue);
+            }
+            var canMaybeImport = FFLogsImport.IsTextImportable(import.URL);
+            if (!import.NeedsFightSelection)
+            {
+                using (ImRaii.Disabled(!canMaybeImport || import.IsStarted))
                 {
-                    if (ImGuiComponents.IconButton("query_report", FontAwesomeIcon.Check) || runQueryReport)
+                    if (ImGuiComponents.IconButton("confirm_import", FontAwesomeIcon.Check) || canMaybeImport && startImport)
                     {
-                        import.Start();
+                        beginImport = true;
                     }
                 }
             }
-
-            // Fight dropdown
-            if (import.FightArray.Length > 0)
+            else
             {
                 ImGui.Text("Fight:"); ImGui.SameLine();
                 ImGui.Combo("##fight", ref import.UserSelectedFightIndex, import.FightArray, import.FightArray.Length);
 
                 using (ImRaii.Disabled(!import.CanQuery))
                 {
-                    if (ImGuiComponents.IconButton("query_fight", FontAwesomeIcon.Check))
+                    if (ImGuiComponents.IconButton("continue_import", FontAwesomeIcon.Check))
                     {
                         import.Continue();
                     }
                 }
             }
 
-            if (import.IsStarted)
-            {
-                if (import.Task.IsCompletedSuccessfully)
-                {
-                    var preset = import.Task.Result;
-                    Plugin.Storage.SavePreset(preset);
-                }
-                else if (import.Task.IsFaulted)
-                {
-                    Plugin.ReportError(import.Task.Exception);
-                }
-                else
-                {
-                    ImGui.Text("Import in progress. Please wait.");
-                }
-            }
-
             ImGui.SameLine();
-            if (ImGuiComponents.IconButton("cancel_query", FontAwesomeIcon.Times) || import.IsCompleted)
+            if (ImGuiComponents.IconButton("cancel_import", FontAwesomeIcon.Times))
             {
-                import = null;
                 ImGui.CloseCurrentPopup();
+                import = null;
             }
-
             ImGui.EndPopup();
         }
+
+        if (beginImport)
+        {
+            import.Start();
+        }
+        if (import?.IsStarted ?? false)
+        {
+            if (import.Task.IsCompletedSuccessfully)
+            {
+                var preset = import.Task.Result;
+                Plugin.Storage.SavePreset(preset);
+            }
+            else if (import.Task.IsFaulted)
+            {
+                Plugin.ReportError(import.Task.Exception);
+            }
+            else
+            {
+                ImGui.Text("Import in progress. Please wait.");
+            }
+
+            if (import.IsCompleted)
+            {
+                import = null;
+            }
+        }
+        wasFFLogsPopupOpen = ImGui.IsPopupOpen(popUpName);
     }
 }

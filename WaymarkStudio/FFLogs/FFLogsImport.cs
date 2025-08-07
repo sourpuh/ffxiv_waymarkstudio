@@ -10,9 +10,20 @@ internal class FFLogsImport
 {
     private readonly static FFLogsClient Client = new();
 
-    internal static FFLogsImport New(string url)
+    internal static bool IsTextImportable(string text)
     {
-        return new(url);
+        try
+        {
+            _ = ParseUrl(text);
+            return true;
+        }
+        catch (Exception) { }
+        return false;
+    }
+
+    internal static FFLogsImport New()
+    {
+        return new();
     }
 
     public string URL = "";
@@ -23,16 +34,17 @@ internal class FFLogsImport
     private SemaphoreSlim continueSignal = new SemaphoreSlim(0, 1);
     private bool isQueryRunning = false;
 
-    private FFLogsImport(string url)
+    private FFLogsImport()
     {
-        URL = url;
     }
 
     internal bool CanQuery => !isQueryRunning;
 
     internal bool IsStarted => Task != null;
 
-    internal bool IsCompleted => Task?.IsCompleted ?? false;
+    internal bool IsCompleted => Task!.IsCompleted;
+
+    internal bool NeedsFightSelection => FightArray.Length > 0;
 
     internal void Start()
     {
