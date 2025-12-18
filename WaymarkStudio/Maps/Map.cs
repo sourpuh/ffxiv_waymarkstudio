@@ -82,7 +82,7 @@ public class Map : IDisposable
 
     public Vector2 WorldToNormTexCoords(Vector3 worldCoordinates)
     {
-        return WorldToNormTexCoords(worldCoordinates.XZ());
+        return WorldToNormTexCoords(worldCoordinates.XZ);
     }
 
     private unsafe Task<IDalamudTextureWrap?> LoadTexture()

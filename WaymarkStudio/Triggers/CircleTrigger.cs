@@ -57,6 +57,6 @@ public class CircleTrigger
 
     public bool Contains(Vector3 point)
     {
-        return Vector2.DistanceSquared(point.XZ(), Center.XZ()) < Radius * Radius;
+        return Vector2.DistanceSquared(point.XZ, Center.XZ) < Radius * Radius;
     }
 }

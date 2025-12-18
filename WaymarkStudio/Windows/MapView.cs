@@ -44,7 +44,7 @@ internal partial class MapView
 
         ZoomToFit(bb);
 
-        var center = bb.Center.XZ();
+        var center = bb.Center.XZ;
         if (Vector2.Distance(center, map.Center) < 20)
             center = map.Center;
         Pan(center);

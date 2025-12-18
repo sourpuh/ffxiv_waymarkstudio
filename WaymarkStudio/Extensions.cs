@@ -39,9 +39,9 @@ internal static class Extensions
         }
     }
 
-    internal static Vector2 XZ(this Vector3 v)
+    extension(Vector3 v)
     {
-        return new Vector2(v.X, v.Z);
+        public Vector2 XZ => new Vector2(v.X, v.Z);
     }
 
     // The game rounds world positions floats for waymarks to the thousandth decimal.

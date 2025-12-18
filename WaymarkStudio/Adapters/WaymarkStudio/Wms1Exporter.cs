@@ -72,7 +72,7 @@ internal static class Wms1Exporter
             if (preset.MarkerPositions.TryGetValue(w, out var position))
             {
                 var offset = (position - center).Round();
-                writer.Write(offset.XZ());
+                writer.Write(offset.XZ);
             }
         }
         writer.Write(preset.Name);

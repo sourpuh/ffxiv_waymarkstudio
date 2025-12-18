@@ -40,7 +40,7 @@ public class WaymarkPreset
 
     public float DistanceToNearestNonAdjustedMarker(Vector3 position)
     {
-        return MarkerPositions.Where(x => PendingHeightAdjustment.IsSet(x.Key)).Select(x => (position.XZ() - x.Value.XZ()).Length()).Min();
+        return MarkerPositions.Where(x => PendingHeightAdjustment.IsSet(x.Key)).Select(x => (position.XZ - x.Value.XZ).Length()).Min();
     }
 
     public virtual FontAwesomeIcon GetIcon()
