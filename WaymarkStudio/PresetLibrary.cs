@@ -31,7 +31,10 @@ internal class PresetLibrary
         }
 
         if (cachedFilteredView == null || filter != lastFilter)
+        {
             cachedFilteredView = GetInternal(filter);
+            lastFilter = filter;
+        }
         return cachedFilteredView;
     }
 

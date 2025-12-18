@@ -14,7 +14,7 @@ public class RectangleGuide(float halfWidth = 1, float halfDepth = 1, int gridSi
 
     public override void Draw(PctDrawList drawList)
     {
-        drawList.AddText(PointAtOffset(0, HalfDepth + 0.1f) + Vector3.UnitY * 0.1f, 0xFFFFFFFF, "N", 5f);
+        drawList.AddText(PointAtOffset(0, HalfDepth + 0.1f) + Vector3.UnitY * 0.1f, 0xFFFFFFFF, "N", 1.5f);
 
         drawList.PathLineTo(NorthEast);
         drawList.PathLineTo(SouthEast);

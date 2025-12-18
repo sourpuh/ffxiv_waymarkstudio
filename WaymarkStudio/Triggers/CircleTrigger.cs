@@ -37,7 +37,7 @@ public class CircleTrigger
 
     public void Draw()
     {
-        var alpha = Contains(Plugin.ClientState.LocalPlayer.Position) ? 0.8f : 0.4f;
+        var alpha = Contains(Plugin.ObjectTable.LocalPlayer!.Position) ? 0.8f : 0.4f;
         if (Editing)
         {
             var pulse = (Environment.TickCount64 % 2000) / 1000f;

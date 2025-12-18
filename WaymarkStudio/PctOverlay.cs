@@ -20,7 +20,7 @@ internal class PctOverlay
     // TODO maybe Queue up everything to draw in this list if selection and placeholders should be separate
     internal List<Action<PctDrawList>> list = new();
     internal bool showGuide = false;
-    internal Guide guide;
+    internal Guide guide = new CircleGuide();
 
     Quaternion? rmbStart;
     Quaternion? lmbStart;
@@ -62,7 +62,7 @@ internal class PctOverlay
             if (debugHeight)
             {
                 var castHeight = 20f;
-                pa.Y = Plugin.ClientState.LocalPlayer.Position.Y;
+                pa.Y = Plugin.ObjectTable.LocalPlayer!.Position.Y;
                 if (Raycaster.CheckAndSnapY(ref pa, castHeight: castHeight))
                 {
                     drawList.PathLineTo(p + new Vector3(0, castHeight / 2, 0));

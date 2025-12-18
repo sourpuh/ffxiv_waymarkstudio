@@ -96,7 +96,7 @@ internal class TriggerManager
     {
         foreach ((var trigger, var preset) in ActiveTriggers)
         {
-            if (trigger.Contains(Plugin.ClientState.LocalPlayer))
+            if (trigger.Contains(Plugin.ObjectTable.LocalPlayer))
             {
                 if (lastTrigger != trigger)
                 {

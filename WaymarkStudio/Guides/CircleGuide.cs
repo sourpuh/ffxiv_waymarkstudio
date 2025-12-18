@@ -23,7 +23,7 @@ public class CircleGuide(float radius = 1, int spokes = 0, int rings = 1, int ro
                 ring == Rings ? 0xFFFFFFFF : 0xCCFFFFFF,
                 thickness: ring == Rings ? 2 : 1);
         }
-        drawList.AddText(PointAtDegrees(0, Radius + 0.1f) + Vector3.UnitY * 0.1f, 0xFFFFFFFF, "N", 5f);
+        drawList.AddText(PointAtDegrees(0, Radius + 0.1f) + Vector3.UnitY * 0.1f, 0xFFFFFFFF, "N", 1.5f);
         if (Spokes > 0)
         {
             var angleStep = MathF.PI * 2 / Spokes;

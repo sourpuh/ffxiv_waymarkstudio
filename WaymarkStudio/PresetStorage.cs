@@ -19,7 +19,6 @@ internal class PresetStorage
     internal const string Community = "Community Presets";
 
     const uint MaxEntries = 30;
-    private TerritoryFilter lastFilter;
     public PresetLibrary Library;
     public PresetLibrary WPPLibrary;
     public PresetLibrary MMLibrary;

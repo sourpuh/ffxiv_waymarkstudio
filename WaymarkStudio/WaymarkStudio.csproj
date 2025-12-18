@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/13.0.0">
+<Project Sdk="Dalamud.NET.Sdk/14.0.0">
     <PropertyGroup>
-    <Version>0.0.0.36</Version>
+    <Version>0.0.0.37</Version>
     <Description>The ultimate waymark plugin.</Description>
     <PackageProjectUrl>https://github.com/sourpuh/ffxiv_waymarkstudio</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
@@ -24,9 +24,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Pictomancy" Version="0.0.1" />
-        <PackageReference Include="System.IO.Hashing" Version="9.0.8" />
-        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.13.0" />
-        <PackageReference Include="System.Drawing.Common" Version="9.0.8" />
+        <PackageReference Include="Pictomancy" Version="0.0.2" />
+        <PackageReference Include="System.IO.Hashing" Version="10.0.1" />
+        <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.15.0" />
+        <PackageReference Include="System.Drawing.Common" Version="10.0.1" />
     </ItemGroup>
 </Project>

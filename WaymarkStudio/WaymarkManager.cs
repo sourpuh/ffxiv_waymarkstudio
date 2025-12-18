@@ -99,9 +99,9 @@ internal class WaymarkManager
 
     public bool IsPlayerWithinTraceDistance(WaymarkPreset preset)
     {
-        if (Plugin.ClientState.LocalPlayer == null)
+        if (Plugin.ObjectTable.LocalPlayer == null)
             return false;
-        return preset.DistanceToNearestNonAdjustedMarker(Plugin.ClientState.LocalPlayer.Position) < 200;
+        return preset.DistanceToNearestNonAdjustedMarker(Plugin.ObjectTable.LocalPlayer.Position) < 200;
     }
 
     public void SetHoverPreview(WaymarkPreset preset)
@@ -130,7 +130,7 @@ internal class WaymarkManager
 
     internal PlacementUnsafeReason GeneralWaymarkPlacementStatus()
     {
-        if (Plugin.ClientState.LocalPlayer == null)
+        if (Plugin.ObjectTable.LocalPlayer == null)
             return PlacementUnsafeReason.NoLocalPlayer;
         if (WaymarksUnsupported)
             return PlacementUnsafeReason.UnsupportedArea;
@@ -184,7 +184,7 @@ internal class WaymarkManager
                || Condition[ConditionFlag.Fishing]
                || Condition[ConditionFlag.Transformed]
                || Condition[ConditionFlag.UsingHousingFunctions]
-               || Plugin.ClientState.LocalPlayer?.IsTargetable != true;
+               || Plugin.ObjectTable.LocalPlayer?.IsTargetable != true;
     }
 
     internal bool IsSafeToPlaceWaymarks()
@@ -199,7 +199,7 @@ internal class WaymarkManager
             return status;
         if (Plugin.Config.DisableWorldPresetSafetyChecks)
             return PlacementUnsafeReason.Safe;
-        if (Vector3.Distance(wPos, Plugin.ClientState.LocalPlayer.Position) > 200)
+        if (Vector3.Distance(wPos, Plugin.ObjectTable.LocalPlayer!.Position) > 200)
             return PlacementUnsafeReason.TooFar;
         if (!IsPointGrounded(wPos))
             return PlacementUnsafeReason.NotGrounded;
@@ -256,7 +256,7 @@ internal class WaymarkManager
             if (preset.PendingHeightAdjustment.IsSet(w)
                 && preset.MarkerPositions.TryGetValue(w, out Vector3 p))
             {
-                p.Y = Plugin.ClientState.LocalPlayer.Position.Y;
+                p.Y = Plugin.ObjectTable.LocalPlayer!.Position.Y;
                 if (Raycaster.CheckAndSnapY(ref p, castHeight: castHeight))
                 {
                     preset.MarkerPositions[w] = p.Round();
