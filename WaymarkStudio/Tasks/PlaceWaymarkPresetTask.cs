@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using System.Threading;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace WaymarkStudio.Tasks;
 internal class PlaceWaymarkPresetTask : RetriableTaskBase
@@ -24,7 +23,7 @@ internal class PlaceWaymarkPresetTask : RetriableTaskBase
         if (Plugin.WaymarkManager.Waymarks.Equals(preset.MarkerPositions))
             return 0;
         var placementStruct = preset.ToMarkerPresetPlacement();
-        return NativeFunctions.PlacePreset(MarkingController.Instance(), &placementStruct);
+        return NativeFunctions.PlacePreset(&placementStruct);
     }
 
     private async Task PlacePresetPolyfill(WaymarkPreset preset)

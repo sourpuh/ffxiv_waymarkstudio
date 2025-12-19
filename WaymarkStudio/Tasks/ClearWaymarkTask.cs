@@ -1,4 +1,3 @@
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +20,7 @@ internal class ClearWaymarkTask : RetriableTaskBase
     {
         if (!Plugin.WaymarkManager.Waymarks.ContainsKey(waymark))
             return 0;
-        return NativeFunctions.ClearWaymark(MarkingController.Instance(), (uint)waymark);
+        return NativeFunctions.ClearWaymark(waymark);
     }
 
     internal override Task BeginAsyncRetriableOperation()

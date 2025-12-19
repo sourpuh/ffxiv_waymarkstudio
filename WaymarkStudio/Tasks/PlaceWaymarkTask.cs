@@ -2,7 +2,6 @@ using System;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using static WaymarkStudio.WaymarkManager;
 
 namespace WaymarkStudio.Tasks;
@@ -25,7 +24,7 @@ internal class PlaceWaymarkTask : RetriableTaskBase
     {
         if (Plugin.WaymarkManager.Waymarks.TryGetValue(waymark, out var currPosition) && newPosition == currPosition)
             return 0;
-        return NativeFunctions.PlaceWaymark(MarkingController.Instance(), (uint)waymark, newPosition);
+        return NativeFunctions.PlaceWaymark(waymark, newPosition);
     }
     
     internal override Task BeginAsyncRetriableOperation()

@@ -53,7 +53,6 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin()
     {
-        NativeFunctions.Initialize();
         Config = Interface.GetPluginConfig() as Configuration ?? new Configuration();
 
         FieldMarkerAddon = new();
