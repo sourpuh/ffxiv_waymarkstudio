@@ -26,9 +26,9 @@
       },
       "Pictomancy": {
         "type": "Direct",
-        "requested": "[0.0.2, )",
-        "resolved": "0.0.2",
-        "contentHash": "th7LcwtMgGWbhfZu7cyKYQKIOpRHzC/O9YvbWy5FSEs0zs1rgC/jgFg1MuX6F4XireR3XJgmg+RcHY+TCKBpsw==",
+        "requested": "[0.0.3, )",
+        "resolved": "0.0.3",
+        "contentHash": "n/RJ3k3l1yRsWvaGn8xEigK0SFX4Vnk9INMQDBIEaxq+t7Mlbr2s34i428TVIjrj2i+bI48aE7nUrhvPDJyVkQ==",
         "dependencies": {
           "SharpDX.D3DCompiler": "4.2.0",
           "SharpDX.Direct2D1": "4.2.0",

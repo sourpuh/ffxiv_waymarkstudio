@@ -395,7 +395,10 @@ internal class StudioWindow : BaseWindow
         ImGui.SameLine();
         PresetImportButton();
         ImGui.SameLine();
-        ImguiFFLogsImportButton();
+        using (ImRaii.Disabled())
+        {
+            ImguiFFLogsImportButton();
+        }
     }
 
     internal void DrawSavedPresets()

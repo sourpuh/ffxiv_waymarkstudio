@@ -354,7 +354,7 @@ public abstract class BaseWindow : Window
             }
         }
         ImGui.PopStyleColor();
-        MyGui.HoverTooltip("Import From FFLogs");
+        MyGui.HoverTooltip("Import From FFLogs (Disabled for API updates)");
 
         // Detect if the user clicked out of the popup and kill the import.
         // TODO there should be a way to cancel the task properly.
