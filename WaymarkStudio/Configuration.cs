@@ -22,6 +22,7 @@ public class Configuration : IPluginConfiguration
 
     public bool EnableVfxTesting = false;
 
+    public bool SwapGuideSquareSide = false;
     public bool SnapXZToGrid = true;
     public bool PlaceRealIfPossible = true;
     public bool CombineEquivalentDutyPresets = true;

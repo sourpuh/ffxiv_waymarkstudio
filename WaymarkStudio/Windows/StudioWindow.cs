@@ -73,6 +73,7 @@ internal class StudioWindow : BaseWindow
 
     internal void DrawDraftSection()
     {
+        var needSave = false;
         using (ImRaii.Disabled(Plugin.WaymarkManager.WaymarksUnsupported))
         {
             WaymarkButton(Waymark.A); ImGui.SameLine();
@@ -99,14 +100,32 @@ internal class StudioWindow : BaseWindow
             using (ImRaii.Disabled(!Plugin.Overlay.showGuide))
             {
                 var guide = Plugin.Overlay.guide;
-                if (MyGui.CustomTextureButton("square_intercard", waymarkIconPlaceButtonSize))
+                if (Plugin.Config.SwapGuideSquareSide)
                 {
-                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.One, guide.NorthWest);
-                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Two, guide.NorthEast);
-                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Three, guide.SouthEast);
-                    Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Four, guide.SouthWest);
+                    if (MyGui.CustomTextureButton("square_intercard_ne", waymarkIconPlaceButtonSize))
+                    {
+                        Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.One, guide.NorthEast);
+                        Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Two, guide.SouthEast);
+                        Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Three, guide.SouthWest);
+                        Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Four, guide.NorthWest);
+                    }
                 }
-                MyGui.HoverTooltip("Place Square draft markers on guide intercardinals");
+                else
+                {
+                    if (MyGui.CustomTextureButton("square_intercard_nw", waymarkIconPlaceButtonSize))
+                    {
+                        Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.One, guide.NorthWest);
+                        Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Two, guide.NorthEast);
+                        Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Three, guide.SouthEast);
+                        Plugin.WaymarkManager.TraceAndPlaceDraftMarker(Waymark.Four, guide.SouthWest);
+                    }
+                }
+                MyGui.HoverTooltip("Place Square draft markers on guide intercardinals\nRight click to swap");
+            }
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+            {
+                needSave |= true;
+                Plugin.Config.SwapGuideSquareSide = !Plugin.Config.SwapGuideSquareSide;
             }
             using (ImRaii.Disabled(!Plugin.WaymarkManager.HasDraftMarkers))
             {
@@ -146,7 +165,6 @@ internal class StudioWindow : BaseWindow
             }
             MyGui.HoverTooltip("Replace draft markers with real waymarks");
         }
-        var needSave = false;
         needSave |= ImGui.Checkbox("Use real waymarks", ref Plugin.Config.PlaceRealIfPossible);
         MyGui.HoverTooltip("Only place draft markers if real waymarks are unavailable, such as while in combat, duty recorder, or while character is occupied.");
 
