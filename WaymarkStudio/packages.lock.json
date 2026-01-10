@@ -28,7 +28,7 @@
         "type": "Direct",
         "requested": "[0.0.3, )",
         "resolved": "0.0.3",
-        "contentHash": "n/RJ3k3l1yRsWvaGn8xEigK0SFX4Vnk9INMQDBIEaxq+t7Mlbr2s34i428TVIjrj2i+bI48aE7nUrhvPDJyVkQ==",
+        "contentHash": "1wTEHaMhcjbpwJq5wNvWD3Z6Dbopp3n7GXwnUhkOgC6w4CKmJV8b2yMwWLmLPSlnJ3Zoq4hE+8o5rcPRJjt1sg==",
         "dependencies": {
           "SharpDX.D3DCompiler": "4.2.0",
           "SharpDX.Direct2D1": "4.2.0",
