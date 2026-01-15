@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using FieldMarker = FFXIVClientStructs.FFXIV.Client.Game.UI.FieldMarker;
 
 namespace WaymarkStudio;
 internal static class Extensions
@@ -19,6 +20,12 @@ internal static class Extensions
     }
 
     public static bool DeepEquals<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, IDictionary<TKey, TValue> otherDictionary)
+    {
+        return dictionary.Equals(otherDictionary)
+            || dictionary.OrderBy(kv => kv.Key).SequenceEqual(otherDictionary.OrderBy(kv => kv.Key));
+    }
+
+    public static bool DeepEquals<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, IReadOnlyDictionary<TKey, TValue> otherDictionary)
     {
         return dictionary.Equals(otherDictionary)
             || dictionary.OrderBy(kv => kv.Key).SequenceEqual(otherDictionary.OrderBy(kv => kv.Key));
@@ -130,16 +137,52 @@ internal static class Extensions
         return p;
     }
 
-    public static IReadOnlyDictionary<Waymark, Vector3> ActiveMarkers(this MarkingController controller)
+    public static IReadOnlyDictionary<Waymark, Vector3> ToDict(this ReadOnlySpan<FieldMarker> markers)
     {
         var activeFieldMarkers = new Dictionary<Waymark, Vector3>();
-        for (int i = 0; i < controller.FieldMarkers.Length; i++)
+        for (int i = 0; i < markers.Length; i++)
         {
-            var marker = controller.FieldMarkers[i];
+            var marker = markers[i];
             if (marker.Active)
                 activeFieldMarkers.Add((Waymark)i, marker.Position);
         }
         return activeFieldMarkers;
+    }
+
+    public static int CountDiffs(this IReadOnlyDictionary<Waymark, Vector3> first, IReadOnlyDictionary<Waymark, Vector3> second)
+    {
+        int diffCount = 0;
+        foreach (var kvp in first)
+        {
+            if (!second.TryGetValue(kvp.Key, out var secondValue))
+            {
+                diffCount++;
+            }
+            else if (kvp.Value != secondValue)
+            {
+                diffCount++;
+            }
+        }
+
+        foreach (var key in second.Keys)
+        {
+            if (!first.ContainsKey(key))
+            {
+                diffCount++;
+            }
+        }
+        return diffCount;
+    }
+
+    public static long GetUserVisibleHashCode(this IDictionary<Waymark, Vector3> dictionary)
+    {
+        int hash = 0;
+        foreach (var kvp in dictionary)
+        {
+            int entryHash = HashCode.Combine(kvp.Key, kvp.Value);
+            hash ^= entryHash;
+        }
+        return (long)int.MaxValue + hash;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

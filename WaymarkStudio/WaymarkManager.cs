@@ -8,6 +8,8 @@ using System.Numerics;
 using System.Threading;
 using WaymarkStudio.Tasks;
 using TerritoryInfo = WaymarkStudio.TerritorySheet.TerritoryInfo;
+using FieldMarker = FFXIVClientStructs.FFXIV.Client.Game.UI.FieldMarker;
+using System.Threading.Tasks;
 
 namespace WaymarkStudio;
 /**
@@ -41,16 +43,46 @@ internal class WaymarkManager
 
     internal IReadOnlyDictionary<Waymark, Vector3> DraftMarkers => draftMarkers;
     internal IReadOnlyDictionary<Waymark, Vector3> HoverPreviews => hoverPreviews;
-    internal unsafe IReadOnlyDictionary<Waymark, Vector3> Waymarks => MarkingController.Instance()->ActiveMarkers();
+    internal IReadOnlyDictionary<Waymark, Vector3> Waymarks = EmptyWaymarks;
 
-    internal void OnTerritoryChange(TerritoryType territory)
+    internal unsafe void OnTerritoryChange(TerritoryType territory)
     {
         territoryInfo = TerritorySheet.GetInfo((ushort)territory.RowId);
         territoryId = territoryInfo.Id;
         draftMarkers.Clear();
         hoverPreviews = EmptyWaymarks;
         taskCancelToken?.Cancel();
+        var currentFieldMarkers = MarkingController.Instance()->FieldMarkers;
+        prevFieldMarkers = currentFieldMarkers.ToArray();
+        Waymarks = currentFieldMarkers.ToDict();
     }
+
+    private Task? placePresetTask;
+    private ReadOnlyMemory<FieldMarker> prevFieldMarkers;
+    public delegate void OnPresetPlacedDelegate(IReadOnlyDictionary<Waymark, Vector3> newWaymarks, bool placedByMe);
+    public event OnPresetPlacedDelegate? OnPresetPlaced;
+    public unsafe void Update()
+    {
+        var currentFieldMarkers = MarkingController.Instance()->FieldMarkers;
+        if (!currentFieldMarkers.SequenceEqual(prevFieldMarkers.Span))
+        {
+            var prevWaymarks = Waymarks;
+            Waymarks = currentFieldMarkers.ToDict();
+            var diffCount = Waymarks.CountDiffs(prevWaymarks);
+            if (diffCount >= 2 && Waymarks.Count > 2)
+            {
+                var placedByMe = placePresetTask != null;
+                OnPresetPlaced?.Invoke(Waymarks, placedByMe);
+            }
+            prevFieldMarkers = currentFieldMarkers.ToArray();
+        }
+
+        if (placePresetTask?.IsCompleted ?? false)
+        {
+            placePresetTask = null;
+        }
+    }
+
     internal bool WaymarksUnsupported => !territoryInfo.AreWaymarksSupported;
     internal bool HasWaymarks => Waymarks.Count > 0;
     internal bool HasDraftMarkers => draftMarkers.Count > 0;
@@ -94,7 +126,7 @@ internal class WaymarkManager
         taskCancelToken = new();
         SetDraftPreset(preset);
         ClearHoverPreview();
-        PlaceWaymarkPresetTask.Start(taskCancelToken, preset);
+        placePresetTask = PlaceWaymarkPresetTask.Start(taskCancelToken, preset);
     }
 
     public bool IsPlayerWithinTraceDistance(WaymarkPreset preset)

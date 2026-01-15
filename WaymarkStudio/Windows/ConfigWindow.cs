@@ -43,7 +43,7 @@ public class ConfigWindow : Window
         ImGui.Text("Libraries");
         using (ImRaii.PushIndent())
         {
-            foreach (string x in new string[] { PresetStorage.WPP, PresetStorage.MM, PresetStorage.Native, PresetStorage.Community })
+            foreach (string x in new string[] { PresetStorage.WPP, PresetStorage.MM, PresetStorage.Native, PresetStorage.Seen, PresetStorage.Community })
             {
                 bool visible = Plugin.Config.IsLibraryVisible(x);
                 if (VisibilityToggleButton(x, ref visible))

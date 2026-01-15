@@ -1,6 +1,5 @@
 global using Dalamud.Bindings.ImGui;
 
-using Dalamud.Game;
 using Dalamud.Game.Command;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Windowing;
@@ -9,7 +8,9 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using WaymarkStudio.Triggers;
 using WaymarkStudio.Windows;
 
@@ -60,6 +61,7 @@ public sealed class Plugin : IDalamudPlugin
         if (Config.EnableVfxTesting)
             WaymarkVfx = new();
         Storage = new();
+        WaymarkManager.OnPresetPlaced += OnPresetPlacedDelegate;
         Triggers = new();
 
         ConfigWindow = new();
@@ -105,9 +107,20 @@ public sealed class Plugin : IDalamudPlugin
 
     internal void Update(IFramework framework)
     {
+        WaymarkManager.Update();
         Triggers.Update();
         Storage.Update();
         WaymarkVfx?.Update();
+    }
+
+    internal void OnPresetPlacedDelegate(IReadOnlyDictionary<Waymark, Vector3> newWaymarks, bool placedByMe)
+    {
+        if (!placedByMe)
+            return;
+        var preset = WaymarkManager.WaymarkPreset;
+        // Add a user visible hashcode to the name so there's a way to distinguish between multiple "Recently Seen" presets
+        preset.Name = $"Recently Seen ({preset.MarkerPositions.GetUserVisibleHashCode()})";
+        Storage.SeePreset(preset);
     }
 
     private void OnCommand(string command, string args)

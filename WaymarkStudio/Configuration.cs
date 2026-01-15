@@ -59,6 +59,7 @@ public class Configuration : IPluginConfiguration
     public bool NotificationSuccessDalamud = false;
 
     public List<WaymarkPreset> SavedPresets { get; set; } = [];
+    public List<WaymarkPreset> SeenPresets { get; set; } = [];
 
     [JsonIgnore]
     public List<(CircleTrigger, WaymarkPreset?)> Triggers = [];

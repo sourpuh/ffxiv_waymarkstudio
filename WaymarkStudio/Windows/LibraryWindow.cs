@@ -67,6 +67,12 @@ internal class LibraryWindow : BaseWindow
                         if (tab)
                             DrawLibrary(Plugin.Storage.NativeLibrary.Get(filter), readOnly: true);
                     }
+                if (Plugin.Config.IsLibraryVisible(PresetStorage.Seen))
+                    using (var tab = ImRaii.TabItem("Seen"))
+                    {
+                        if (tab)
+                            DrawLibrary(Plugin.Storage.SeenLibrary.Get(filter), readOnly: true);
+                    }
                 if (Plugin.Config.IsLibraryVisible(PresetStorage.Community))
                     using (var tab = ImRaii.TabItem("Community"))
                     {

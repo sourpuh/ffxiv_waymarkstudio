@@ -12,11 +12,13 @@ internal class PresetLibrary
     private TerritoryFilter lastFilter;
     private LibraryView? cachedFullView;
     private LibraryView? cachedFilteredView;
+    private bool sortByRecency;
 
-    public PresetLibrary(Func<IEnumerable<WaymarkPreset>> getter, Func<bool> visibility)
+    public PresetLibrary(Func<IEnumerable<WaymarkPreset>> getter, Func<bool> visibility, bool sortByRecency = false)
     {
         this.getter = getter;
         this.visibility = visibility;
+        this.sortByRecency = sortByRecency;
     }
 
     public LibraryView Get(TerritoryFilter filter = default)
@@ -41,11 +43,21 @@ internal class PresetLibrary
     private LibraryView GetInternal(TerritoryFilter? filter = null)
     {
         var i = 0;
-        return getter()
-        .Select(x => (i++, x))
+        var grouping = getter()
+        .Select(preset => (index: i++, preset))
         .Where(preset => filter == null || !filter.Value.IsTerritoryFiltered(preset.Item2.TerritoryId))
-        .GroupBy(preset => preset.Item2.TerritoryId, v => v)
-        .ToImmutableSortedDictionary(g => g.Key, g => g.AsEnumerable());
+        .GroupBy(preset => preset.Item2.TerritoryId, v => v);
+        if (sortByRecency)
+            return grouping.ToImmutableSortedDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(e => e.preset.Time)
+                      .AsEnumerable()
+            );
+        else
+            return grouping.ToImmutableSortedDictionary(
+                g => g.Key,
+                g => g.AsEnumerable()
+            );
     }
 
     public PresetList ListPresets(ushort territoryId)
@@ -67,5 +79,11 @@ internal class PresetLibrary
     {
         cachedFullView = null;
         cachedFilteredView = null;
+    }
+
+    public bool ContainsEquivalentPreset(WaymarkPreset preset)
+    {
+        return ListPresets(preset.TerritoryId)
+            .Any(p => p.Item2.IsEquivalent(preset));
     }
 }

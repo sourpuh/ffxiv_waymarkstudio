@@ -16,6 +16,7 @@ internal class PresetStorage
     internal const string WPP = "Waymark Preset Plugin Presets";
     internal const string MM = "Memory Marker Presets";
     internal const string Native = "Native Presets";
+    internal const string Seen = "Recently Seen Presets";
     internal const string Community = "Community Presets";
 
     const uint MaxEntries = 30;
@@ -23,6 +24,7 @@ internal class PresetStorage
     public PresetLibrary WPPLibrary;
     public PresetLibrary MMLibrary;
     public PresetLibrary NativeLibrary;
+    public PresetLibrary SeenLibrary;
     public PresetLibrary CommunityLibrary;
 
     internal PresetStorage()
@@ -31,6 +33,7 @@ internal class PresetStorage
         WPPLibrary = new(ListWPPPresets, () => Plugin.Config.IsLibraryVisible(WPP));
         MMLibrary = new(ListMMPresets, () => Plugin.Config.IsLibraryVisible(MM));
         NativeLibrary = new(ListNativePresets, () => Plugin.Config.IsLibraryVisible(Native));
+        SeenLibrary = new(ListSeenPresets, () => Plugin.Config.IsLibraryVisible(Seen), true);
         CommunityLibrary = new(ListCommunityPresets, () => Plugin.Config.IsLibraryVisible(Community));
     }
 
@@ -51,11 +54,6 @@ internal class PresetStorage
             throw new ArgumentOutOfRangeException($"Illegal Index: {index} >= {MaxEntries}");
         }
         return FieldMarkerModule.Instance()->Presets[(int)index];
-    }
-
-    public bool ContainsEquivalentPreset(WaymarkPreset preset)
-    {
-        return Plugin.Config.SavedPresets.Where(x => x.IsEquivalent(preset)).Any();
     }
 
     public void SavePreset(WaymarkPreset preset)
@@ -147,6 +145,49 @@ internal class PresetStorage
             if (nativePreset.ActiveMarkers == 0) continue;
             yield return nativePreset.ToPreset($"Slot {i + 1}");
         }
+    }
+
+    private bool PermanentStorageContainsEquivalentPreset(WaymarkPreset preset)
+    {
+        return Library.ContainsEquivalentPreset(preset)
+            || WPPLibrary.ContainsEquivalentPreset(preset)
+            || MMLibrary.ContainsEquivalentPreset(preset)
+            || NativeLibrary.ContainsEquivalentPreset(preset)
+            || CommunityLibrary.ContainsEquivalentPreset(preset);
+    }
+
+    public void SeePreset(WaymarkPreset preset)
+    {
+        if (!TerritorySheet.IsValid(preset.TerritoryId))
+        {
+            throw new InvalidOperationException($"Attempted to see illegal Territory ID: {preset.TerritoryId}");
+        }
+        if (preset.MarkerPositions.Count == 0)
+        {
+            throw new InvalidOperationException($"Attempted to see empty preset");
+        }
+        if (PermanentStorageContainsEquivalentPreset(preset))
+        {
+            return;
+        }
+
+        // Remove all equivalent presets to keep the most recent one at the top.
+        Plugin.Config.SeenPresets.RemoveAll(x => x.IsEquivalent(preset));
+        Plugin.Config.SeenPresets.Add(preset);
+        // Purge old presets if we exceed the per-territory limit.
+        const int SeenPerTerritoryMax = 5;
+        var sameTerritoryPresets = Plugin.Config.SeenPresets.Where(x => x.TerritoryId == preset.TerritoryId).ToList();
+        var countToRemove = Math.Max(0, sameTerritoryPresets.Count - SeenPerTerritoryMax);
+        var toRemove = sameTerritoryPresets.OrderByDescending(x => x.Time).TakeLast(countToRemove).ToHashSet();
+        Plugin.Config.SeenPresets.RemoveAll(toRemove.Contains);
+
+        SeenLibrary.InvalidateCache();
+        SaveConfig();
+    }
+
+    private IEnumerable<WaymarkPreset> ListSeenPresets()
+    {
+        return Plugin.Config.SeenPresets.Where(x => TerritorySheet.IsValid(x.TerritoryId) && x.MarkerPositions.Count > 0);
     }
 
     // Don't use without testing

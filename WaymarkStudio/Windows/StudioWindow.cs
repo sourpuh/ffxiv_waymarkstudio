@@ -447,6 +447,15 @@ internal class StudioWindow : BaseWindow
                     readOnly: true);
             }
         }
+        var seenPresets = Plugin.Storage.SeenLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
+        if (seenPresets.Any())
+        {
+            ImGui.Text($"Recently Seen Presets");
+            MyGui.HoverTooltip("The most recent presets that you've seen placed by other players\nUp to 5 are stored so save them if you want to keep them");
+            DrawPresetList("seenListView",
+                seenPresets,
+                readOnly: true);
+        }
         var communityPresets = Plugin.Storage.CommunityLibrary.ListPresets(Plugin.WaymarkManager.territoryId);
         if (communityPresets.Any())
         {

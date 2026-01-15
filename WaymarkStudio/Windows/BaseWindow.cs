@@ -184,7 +184,7 @@ public abstract class BaseWindow : Window
                                 closePopup = true;
                             }
                         }
-                        if (!Plugin.Storage.ContainsEquivalentPreset(preset)
+                        if (!Plugin.Storage.Library.ContainsEquivalentPreset(preset)
                             && ImGuiComponents.IconButtonWithText(FontAwesomeIcon.CartArrowDown, "Clone to WMS library", size: size, defaultColor: new()))
                         {
                             Plugin.Storage.SavePreset(preset.Clone());
