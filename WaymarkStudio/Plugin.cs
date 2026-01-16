@@ -115,7 +115,7 @@ public sealed class Plugin : IDalamudPlugin
 
     internal void OnPresetPlacedDelegate(IReadOnlyDictionary<Waymark, Vector3> newWaymarks, bool placedByMe)
     {
-        if (!placedByMe)
+        if (placedByMe)
             return;
         var preset = WaymarkManager.WaymarkPreset;
         // Add a user visible hashcode to the name so there's a way to distinguish between multiple "Recently Seen" presets
