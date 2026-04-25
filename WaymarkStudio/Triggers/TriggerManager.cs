@@ -48,18 +48,12 @@ internal class TriggerManager
 
     public IEnumerable<(int, CircleTrigger, WaymarkPreset?)> ListSavedTriggers(ushort territoryId = 0)
     {
-        var altTerritoryId = TerritorySheet.GetAlternativeId(territoryId) ?? 0;
-
         var triggers = Plugin.Config.Triggers;
         for (int i = 0; i < triggers.Count; i++)
         {
-            var trigger = triggers[i];
-            var isAlt = altTerritoryId > 0 && trigger.Item1.TerritoryId == altTerritoryId;
-
-            if (territoryId == 0
-                || trigger.Item1.TerritoryId == territoryId
-                || isAlt)
-                yield return (i, trigger.Item1, trigger.Item2);
+            (var trigger, var preset) = triggers[i];
+            if (territoryId == 0 || trigger.IsCompatibleTerritory(territoryId))
+                yield return (i, trigger, preset);
         }
     }
 

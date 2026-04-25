@@ -64,14 +64,11 @@ internal class PresetLibrary
     {
         var library = Get();
         var presets = Enumerable.Empty<(int, WaymarkPreset)>();
-        if (library.TryGetValue(territoryId, out var presetList))
-            presets = presets.Concat(presetList);
-
-        var altTerritoryId = TerritorySheet.GetAlternativeId(territoryId);
-        if (altTerritoryId != null)
-            if (library.TryGetValue(altTerritoryId.Value, out var altPresetList))
-                presets = presets.Concat(altPresetList);
-
+        foreach (var altTerritoryId in TerritorySheet.GetAlternativeIds(territoryId))
+        {
+            if (library.TryGetValue(altTerritoryId, out var presetList))
+                presets = presets.Concat(presetList);
+        }
         return presets;
     }
 

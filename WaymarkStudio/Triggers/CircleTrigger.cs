@@ -2,20 +2,21 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Newtonsoft.Json;
 using Pictomancy;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace WaymarkStudio.Triggers;
 public class CircleTrigger
 {
     public string Name;
-    public uint TerritoryId;
+    public ushort TerritoryId;
     public Vector3 Center;
     public float Radius;
     [JsonIgnore] private readonly string transientId = Guid.NewGuid().ToString();
     [JsonIgnore] public bool Editing;
 
     [JsonConstructor]
-    public CircleTrigger(string Name, uint TerritoryId)
+    public CircleTrigger(string Name, ushort TerritoryId)
     {
         this.Name = Name;
         this.TerritoryId = TerritoryId;
@@ -58,5 +59,10 @@ public class CircleTrigger
     public bool Contains(Vector3 point)
     {
         return Vector2.DistanceSquared(point.XZ, Center.XZ) < Radius * Radius;
+    }
+
+    internal bool IsCompatibleTerritory(ushort territoryId)
+    {
+        return TerritorySheet.GetAlternativeIds(TerritoryId).Contains(territoryId);
     }
 }

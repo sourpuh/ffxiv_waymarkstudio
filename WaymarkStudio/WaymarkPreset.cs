@@ -74,7 +74,7 @@ public class WaymarkPreset
 
     internal bool IsCompatibleTerritory(ushort territoryId)
     {
-        return TerritoryId == territoryId || Plugin.Config.CombineEquivalentDutyPresets && TerritoryId == TerritorySheet.GetAlternativeId(territoryId);
+        return TerritorySheet.GetAlternativeIds(TerritoryId).Contains(territoryId);
     }
 
     internal void MarkPendingHeightAdjustment()

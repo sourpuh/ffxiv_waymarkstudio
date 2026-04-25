@@ -13,40 +13,30 @@ using ExpansionInfo = (uint icon, string name);
 using LuminaContentType = Lumina.Excel.Sheets.ContentType;
 using TerritoryType = Lumina.Excel.Sheets.TerritoryType;
 using ExVersion = Lumina.Excel.Sheets.ExVersion;
-using ContentFinderCondition = Lumina.Excel.Sheets.ContentFinderCondition;
 
 internal static class TerritorySheet
 {
     private static Dictionary<Expansion, ExpansionInfo> ExpansionInfos;
     private static Dictionary<ContentType, ContentTypeInfo> ContentTypeInfos;
-    private static Dictionary<ushort, ushort> EquivalentTerritoryIds = new()
-    {
-        [1075] = 1076, // ASS
-        [1155] = 1156, // AMR
-        [1179] = 1180, // AAI
-        // [1153] = 1154, // P12 for testing
-    };
+    private static ILookup<ushort, ushort> AlternativeTerritoryIds;
 
     internal readonly struct TerritoryInfo
     {
-        internal readonly ushort Id { get; init; }
-        internal readonly string Name { get; init; }
-        internal readonly ushort ContentId { get; init; }
-        internal readonly Expansion Expansion { get; init; }
-        internal readonly ContentType ContentType { get; init; }
-        internal readonly string Bg { get; init; }
-        internal readonly uint MapId { get; init; }
-        internal readonly bool AreWaymarksSupported { get; init; }
-        internal readonly bool ArePresetsSupported { get; init; }
+        internal ushort Id { get; init; }
+        internal string Name { get; init; }
+        internal ushort ContentId { get; init; }
+        internal Expansion Expansion { get; init; }
+        internal ContentType ContentType { get; init; }
+        internal string Bg { get; init; }
+        internal uint MapId { get; init; }
+        internal bool AreWaymarksSupported { get; init; }
+        internal bool ArePresetsSupported { get; init; }
     }
     private static Dictionary<ushort, TerritoryInfo> TerritoryIdToInfo;
     private static Dictionary<string, IEnumerable<MapRange>> BgToMapRangeCache = new();
 
     static TerritorySheet()
     {
-        foreach (var kvp in EquivalentTerritoryIds.ToList())
-            EquivalentTerritoryIds.Add(kvp.Value, kvp.Key);
-
         TerritoryIdToInfo = Plugin.DataManager.GetExcelSheet<TerritoryType>()
             .Where(x=> !x.TerritoryIntendedUse.Value.DisableFieldMarkers)
             .ToDictionary(x => (ushort)x.RowId,
@@ -62,6 +52,12 @@ internal static class TerritorySheet
                 AreWaymarksSupported = !x.TerritoryIntendedUse.Value.DisableFieldMarkers,
                 ArePresetsSupported = x.TerritoryIntendedUse.Value.EnableFieldMarkerPresets,
             });
+
+        AlternativeTerritoryIds = TerritoryIdToInfo.Values
+            .Where(t => t.ContentType == ContentType.VCDungeonFinder)
+            .GroupBy(t => t.Bg)
+            .SelectMany(g => g.SelectMany(t => g.Select(alt => (Key: t.Id, Value: alt.Id))))
+            .ToLookup(x => x.Key, x => x.Value);
 
         ExpansionInfos = new();
         var exVersion = Plugin.DataManager.GetExcelSheet<ExVersion>();
@@ -210,16 +206,18 @@ internal static class TerritorySheet
         return TerritoryIdToInfo.GetValueOrDefault(territoryId).ContentId;
     }
 
-    internal static ushort? GetAlternativeId(ushort territoryId)
+    internal static IEnumerable<ushort> GetAlternativeIds(ushort territoryId)
     {
-        if (Plugin.Config.CombineEquivalentDutyPresets && EquivalentTerritoryIds.TryGetValue(territoryId, out var altTerritoryId))
-            return altTerritoryId;
-        return null;
+        if (Plugin.Config.CombineEquivalentDutyPresets && AlternativeTerritoryIds.Contains(territoryId))
+        {
+            return AlternativeTerritoryIds[territoryId];
+        }
+        return [territoryId];
     }
 
     internal static ushort TerritoryIdForContentId(ushort contentId)
     {
-        var kv = TerritoryIdToInfo.Where(x => x.Value.ContentId == contentId).LastOrDefault();
+        var kv = TerritoryIdToInfo.LastOrDefault(x => x.Value.ContentId == contentId);
         return kv.Key;
     }
 
