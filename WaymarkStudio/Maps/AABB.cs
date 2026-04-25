@@ -35,6 +35,14 @@ public class AABB
         Max = Convert(t.Translation) + Convert(t.Scale);
     }
 
+    internal void RecenterXZ(Vector2 newCenter)
+    {
+        var dx = MathF.Max(newCenter.X - Min.X, Max.X - newCenter.X);
+        var dz = MathF.Max(newCenter.Y - Min.Z, Max.Z - newCenter.Y);
+        Min = new Vector3(newCenter.X - dx, Min.Y, newCenter.Y - dz);
+        Max = new Vector3(newCenter.X + dx, Max.Y, newCenter.Y + dz);
+    }
+
     public bool Contains(Vector3 v)
     {
         return v.X > Min.X &&

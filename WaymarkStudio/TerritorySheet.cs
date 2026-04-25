@@ -87,13 +87,13 @@ internal static class TerritorySheet
         }
     }
 
-    public static IEnumerable<(uint, ISet<Waymark>)> GetPresetMapIds(WaymarkPreset preset)
+    public static IEnumerable<(uint, HashSet<Waymark>)> GetPresetMapIds(WaymarkPreset preset)
     {
         var territory = TerritoryIdToInfo[preset.TerritoryId];
         var ranges = GetMapRanges(territory);
 
-        Dictionary<uint, ISet<Waymark>> mapWaymarks = [];
-        foreach(var range in ranges)
+        Dictionary<uint, HashSet<Waymark>> mapWaymarks = [];
+        foreach (var range in ranges)
         {
             var waymarks = preset.MarkerPositions.Where(x => range.Contains(x.Value)).Select(x => x.Key).ToHashSet();
             if (waymarks.Any())
@@ -103,20 +103,14 @@ internal static class TerritorySheet
                     mapWaymarks[range.MapId] = waymarks;
         }
 
-        // Purge the default map if another map exists with the same set of waymarks.
-        // This is necessary because M8S has 2 similar maps for the main ring that show the same set.
-        var defaultMapId = territory.MapId;
-        if (mapWaymarks.TryGetValue(defaultMapId, out var defaultMapWaymarks))
-        {
-            foreach ((var mapId, var waymarks) in mapWaymarks)
-            {
-                if (mapId != defaultMapId && waymarks.SequenceEqual(defaultMapWaymarks))
-                {
-                    mapWaymarks.Remove(defaultMapId);
-                    break;
-                }
-            }
-        }
+        // I don't know how the game chooses which map to display when multiple maps are viable for the same waymark.
+        // Lumina maps have a territory ID which does not necessarily match the territory ID they are used on.
+        // This is an approximation that is close enough to ingame behavior. M8N is the only territory I know of where this will use the wrong map.
+        // If there are multiple map ranges containing the same set of waymarks, arbitrarily keep the map range with the highest ID value.
+        mapWaymarks = mapWaymarks
+            .GroupBy(kvp => kvp.Value, HashSet<Waymark>.CreateSetComparer())
+            .Select(g => g.MaxBy(kvp => kvp.Key))
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         var mappedWaymarks = mapWaymarks.Select(x => x.Value).SelectMany(x => x).ToHashSet();
         var unmappedWaymarks = preset.MarkerPositions.Keys.Where(x => !mappedWaymarks.Contains(x));
@@ -124,6 +118,7 @@ internal static class TerritorySheet
         // If there was no MapRange containing the waymarks, return the default map.
         if (unmappedWaymarks.Any())
         {
+            var defaultMapId = territory.MapId;
             mapWaymarks[defaultMapId] = preset.MarkerPositions.Keys.ToHashSet();
         }
 

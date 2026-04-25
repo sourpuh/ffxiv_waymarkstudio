@@ -42,11 +42,13 @@ internal partial class MapView
         this.markers = markers;
         var bb = AABB.BoundingPoints(markers.Values);
 
-        ZoomToFit(bb);
-
         var center = bb.Center.XZ;
         if (Vector2.Distance(center, map.Center) < 20)
+        {
+            bb.RecenterXZ(map.Center);
             center = map.Center;
+        }
+        ZoomToFit(bb);
         Pan(center);
     }
 

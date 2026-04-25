@@ -4,7 +4,6 @@ using Dalamud.Utility;
 using System;
 using System.Numerics;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace WaymarkStudio.Maps;
 
@@ -16,14 +15,14 @@ public class Map : IDisposable
     /// Full map Id; typically in the form "TerritoryTypeName/SubId".
     /// For example, two maps for the same zone are "x6r8/00" or "x6r8/01".
     /// </summary>
-    public string Id { get; set; }
+    public string Id { get; init; }
 
     private string BgTexPath => $"ui/map/{Id}/{Id.Replace("/", "")}m_m.tex";
     private string FgTexPath => $"ui/map/{Id}/{Id.Replace("/", "")}_m.tex";
 
-    public string Name { get; set; }
+    public string Name { get; init; }
 
-    public ushort SizeFactor { get; set; }
+    public ushort SizeFactor { get; init; }
 
     /// <summary>
     /// Scale of the map in pixels per world unit.
@@ -33,7 +32,7 @@ public class Map : IDisposable
     /// <summary>
     /// World position of the center of the map.
     /// </summary>
-    public Vector2 Center { get; set; }
+    public Vector2 Center { get; init; }
 
     /// <summary>
     /// Size of the map texture in pixels.
