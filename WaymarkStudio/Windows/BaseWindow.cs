@@ -20,6 +20,7 @@ public abstract class BaseWindow : Window
     internal FFLogsImport? import;
     WaymarkPreset? currTooltipPreset = null;
     List<MapView> currMapViews = new();
+    Task<List<MapView>>? mapViewLoadTask = null;
     static Dictionary<uint, Map> MapCache = new();
 
     public BaseWindow(string name, ImGuiWindowFlags flags = ImGuiWindowFlags.None) : base(name, flags) { }
@@ -63,28 +64,49 @@ public abstract class BaseWindow : Window
 
         if (preset != currTooltipPreset)
         {
-            currMapViews.Clear();
             currTooltipPreset = preset;
-            var mapIdsToWaymarks = TerritorySheet.GetPresetMapIds(preset);
-            foreach ((var mapId, var waymarks) in mapIdsToWaymarks)
+            currMapViews = new();
+            mapViewLoadTask = Task.Run(() => BuildMapViews(preset));
+        }
+        if (mapViewLoadTask != null)
+        {
+            if (mapViewLoadTask.IsCompletedSuccessfully)
             {
-                Map? map = null;
-                if (!MapCache.TryGetValue(mapId, out map))
-                {
-                    map = new Map(Plugin.DataManager.GetExcelSheet<Lumina.Excel.Sheets.Map>().GetRowAt((int)mapId));
-                    MapCache.Add(mapId, map);
-                }
-                MapView mapView = new(map);
-
-                var positions = preset.MarkerPositions.Where(x => waymarks.Contains(x.Key)).ToImmutableDictionary();
-                mapView.FocusMarkers(positions);
-                currMapViews.Add(mapView);
+                currMapViews = mapViewLoadTask.Result;
+                mapViewLoadTask = null;
+            }
+            else if (mapViewLoadTask.IsFaulted)
+            {
+                Plugin.ReportError(mapViewLoadTask.Exception!);
+                mapViewLoadTask = null;
             }
         }
         foreach (var mapView in currMapViews)
         {
             mapView.Draw();
         }
+    }
+
+    private static List<MapView> BuildMapViews(WaymarkPreset preset)
+    {
+        var views = new List<MapView>();
+        foreach ((var mapId, var waymarks) in TerritorySheet.GetPresetMapIds(preset))
+        {
+            Map? map;
+            lock (MapCache)
+            {
+                if (!MapCache.TryGetValue(mapId, out map))
+                {
+                    map = new Map(Plugin.DataManager.GetExcelSheet<Lumina.Excel.Sheets.Map>().GetRowAt((int)mapId));
+                    MapCache.Add(mapId, map);
+                }
+            }
+            MapView mapView = new(map);
+            var positions = preset.MarkerPositions.Where(x => waymarks.Contains(x.Key)).ToImmutableDictionary();
+            mapView.FocusMarkers(positions);
+            views.Add(mapView);
+        }
+        return views;
     }
 
     internal void DrawPresetList(string id, PresetList presetList, bool readOnly = false)

@@ -129,9 +129,11 @@ internal static class TerritorySheet
     private static IEnumerable<MapRange> GetMapRanges(TerritoryInfo territory)
     {
         var bg = territory.Bg;
-        IEnumerable<MapRange>? ranges;
-        if (!BgToMapRangeCache.TryGetValue(bg, out ranges))
+        lock (BgToMapRangeCache)
         {
+            if (BgToMapRangeCache.TryGetValue(bg, out var ranges))
+                return ranges;
+
             var rangeList = new List<MapRange>();
             var slashIndex = bg.LastIndexOf('/');
             if (slashIndex == -1) return rangeList;
@@ -151,10 +153,8 @@ internal static class TerritorySheet
                 }
             }
             BgToMapRangeCache.Add(bg, rangeList);
-            ranges = rangeList;
+            return rangeList;
         }
-
-        return ranges;
     }
 
     private static ContentType GetContentType(TerritoryType territoryType)
