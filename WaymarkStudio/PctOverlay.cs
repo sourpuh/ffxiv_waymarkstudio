@@ -27,13 +27,13 @@ internal class PctOverlay
 
     public PctOverlay()
     {
-        PictoService.Initialize(Plugin.Interface);
+        PctService.Initialize(Plugin.Interface);
         Plugin.Interface.UiBuilder.Draw += OnUpdate;
     }
 
     public void Dispose()
     {
-        PictoService.Dispose();
+        PctService.Dispose();
         Plugin.Interface.UiBuilder.Draw -= OnUpdate;
     }
 
@@ -215,7 +215,7 @@ internal class PctOverlay
             }
             try
             {
-                using (var drawList = PictoService.Draw())
+                using (var drawList = PctService.Draw(hints: new() { DefaultParams = new() { OcclusionTolerance = 0.5f, OccludedAlpha = 0.25f } }))
                 {
 
                     if (drawList == null)

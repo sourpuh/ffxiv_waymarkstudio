@@ -9,7 +9,7 @@ internal class TriggerManager
     {
         get
         {
-            return cachedActiveTriggers ??= ListSavedTriggers(Plugin.ClientState.TerritoryType)
+            return cachedActiveTriggers ??= ListSavedTriggers((ushort)Plugin.ClientState.TerritoryType)
                 .Where(x => x.Item3 != null)
                 .Select(x => (x.Item2, x.Item3!))
                 .ToList();

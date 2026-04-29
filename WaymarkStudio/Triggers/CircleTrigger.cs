@@ -47,7 +47,7 @@ public class CircleTrigger
         }
         var color = Vector4.One;
         color.W = alpha;
-        PictoService.VfxRenderer.AddOmen(transientId, "general01bf", Center, new(Radius, 100, Radius), 0, color);
+        PctService.VfxRenderer.AddOmen(transientId, "general01bf", Center, new(Radius, 100, Radius), 0, color);
     }
 
     public bool Contains(IPlayerCharacter? character)

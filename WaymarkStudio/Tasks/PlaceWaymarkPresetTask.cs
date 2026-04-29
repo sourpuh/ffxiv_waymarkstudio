@@ -80,7 +80,7 @@ internal class PlaceWaymarkPresetTask : RetriableTaskBase
     private async Task PlaceWaymarksWithMinimalOperations(WaymarkPreset preset)
     {
         if (preset.MarkerPositions.Count == 0) return;
-        if (!preset.IsCompatibleTerritory(Plugin.ClientState.TerritoryType)) return;
+        if (!preset.IsCompatibleTerritory((ushort)Plugin.ClientState.TerritoryType)) return;
         if (preset.PendingHeightAdjustment.IsAnySet()) return;
 
         if (Plugin.WaymarkManager.IsPossibleToNativePlace())

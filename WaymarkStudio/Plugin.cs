@@ -127,7 +127,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         ToggleMainUI();
     }
-    private void OnTerritoryChange(ushort id)
+    private void OnTerritoryChange(uint id)
     {
         if (DataManager.GetExcelSheet<TerritoryType>().TryGetRow(id, out var territory))
         {
