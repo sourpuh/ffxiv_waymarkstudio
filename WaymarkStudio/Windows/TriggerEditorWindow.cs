@@ -52,6 +52,16 @@ internal class TriggerEditorWindow : Window
         if (trigger == null)
             return;
 
+        switch (Plugin.Overlay.MouseWorldPosSelection("trigger", ref trigger.Center))
+        {
+            case PctOverlay.SelectionResult.Canceled:
+                if (startingPosition.HasValue)
+                    trigger.Center = startingPosition.Value;
+                else
+                    trigger = null;
+                return;
+        }
+
         ImGui.TextUnformatted("Name:");
         ImGui.SameLine();
         ImGui.InputText("##trigger_name", ref trigger.Name, 100);
@@ -65,16 +75,6 @@ internal class TriggerEditorWindow : Window
             startingPosition = trigger.Center;
             Plugin.Overlay.StartMouseWorldPosSelecting("trigger");
         }
-        switch (Plugin.Overlay.MouseWorldPosSelection("trigger", ref trigger.Center))
-        {
-            case PctOverlay.SelectionResult.Canceled:
-                if (startingPosition.HasValue)
-                    trigger.Center = startingPosition.Value;
-                else
-                    trigger = null;
-                break;
-        }
-
         ImGui.TextUnformatted("Radius:");
         ImGui.SetNextItemWidth(120f);
         ImGui.SameLine();
