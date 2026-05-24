@@ -157,6 +157,8 @@ public partial class MyGui
                     s.dragTargetIndex = RowIndex;
                     DrawCursorLine(Cursor, ButtonActiveColor.ToUint());
                     isValidTarget = true;
+                    if (IsDropping(Dragging))
+                        IsMoved = true;
                 }
             }
 
@@ -172,11 +174,6 @@ public partial class MyGui
                         ImGui.TextUnformatted($"Move preset here");
                     s.dragSourceIndex = RowIndex;
                 }
-            }
-
-            if (IsDropping(Dragging))
-            {
-                IsMoved = true;
             }
         }
     }
