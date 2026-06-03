@@ -87,4 +87,9 @@ public class Configuration : IPluginConfiguration
 
     [JsonIgnore]
     public int WaymarkPlacementFrequency => DisableWorldPresetSafetyChecks ? 1 : 60;
+
+    [JsonIgnore]
+    public Pictomancy.AutoDraw OverlayAutoDraw = Pictomancy.AutoDraw.ImGuiOverlay;
+    [JsonIgnore]
+    public Pictomancy.UIMask OverlayUIMask = Pictomancy.UIMask.BackbufferAlpha;
 }

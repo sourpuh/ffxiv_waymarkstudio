@@ -2,6 +2,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Interface.Utility.Raii;
+using System;
 
 namespace WaymarkStudio.Windows;
 
@@ -54,6 +55,13 @@ public class ConfigWindow : Window
             }
         }
 
+        ImGui.Text("Overlay Rendering");
+        using (ImRaii.PushIndent())
+        {
+            needSave |= EnumCombo("Display mode", ref Configuration.OverlayAutoDraw);
+            needSave |= EnumCombo("UI mask", ref Configuration.OverlayUIMask);
+        }
+
         ImGui.Text("Error Notifications");
         using (ImRaii.PushIndent())
         {
@@ -73,6 +81,27 @@ public class ConfigWindow : Window
         {
             Configuration.Save();
         }
+    }
+
+    private static bool EnumCombo<T>(string label, ref T value) where T : struct, Enum
+    {
+        bool changed = false;
+        if (ImGui.BeginCombo(label, value.ToString()))
+        {
+            foreach (T option in Enum.GetValues<T>())
+            {
+                bool selected = option.Equals(value);
+                if (ImGui.Selectable(option.ToString(), selected))
+                {
+                    value = option;
+                    changed = true;
+                }
+                if (selected)
+                    ImGui.SetItemDefaultFocus();
+            }
+            ImGui.EndCombo();
+        }
+        return changed;
     }
 
     private bool VisibilityToggleButton(string name, ref bool visible)

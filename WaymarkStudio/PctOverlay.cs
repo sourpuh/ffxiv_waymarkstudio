@@ -27,7 +27,7 @@ internal class PctOverlay
 
     public PctOverlay()
     {
-        PctService.Initialize(Plugin.Interface);
+        PctService.Initialize(Plugin.Interface, new PctOptions() { EnableKtkOutput = true });
         Plugin.Interface.UiBuilder.Draw += OnUpdate;
     }
 
@@ -215,7 +215,7 @@ internal class PctOverlay
             }
             try
             {
-                using (var drawList = PctService.Draw(hints: new() { DefaultParams = new() { OcclusionTolerance = 0.5f, OccludedAlpha = 0.25f } }))
+                using (var drawList = PctService.Draw(hints: new() { AutoDraw = Plugin.Config.OverlayAutoDraw, UIMask = Plugin.Config.OverlayUIMask, DefaultParams = new() { OcclusionTolerance = 0.5f, OccludedAlpha = 0.25f } }))
                 {
 
                     if (drawList == null)
