@@ -91,5 +91,5 @@ public class Configuration : IPluginConfiguration
     [JsonIgnore]
     public Pictomancy.AutoDraw OverlayAutoDraw = Pictomancy.AutoDraw.ImGuiOverlay;
     [JsonIgnore]
-    public Pictomancy.UIMask OverlayUIMask = Pictomancy.UIMask.BackbufferAlpha;
+    public Pictomancy.UIMask OverlayUIMask = Pictomancy.UIMask.Default;
 }
