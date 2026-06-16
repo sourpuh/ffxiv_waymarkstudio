@@ -1,4 +1,3 @@
-using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -25,6 +24,7 @@ internal class PctOverlay
 
     Quaternion? rmbStart;
     Quaternion? lmbStart;
+    Vector3? lastPreviewWorldPos;
 
     public PctOverlay()
     {
@@ -168,9 +168,6 @@ internal class PctOverlay
         }
 
         var mousePos = ImGui.GetIO().MousePos;
-        var windowPos = ImGuiHelpers.MainViewport.Pos;
-        var offset = mousePos - windowPos;
-        ImGui.SetTooltip($"Mouse: {mousePos.X:F0}, {mousePos.Y:F0}\nWindow: {windowPos.X:F0}, {windowPos.Y:F0}\nOffset: {offset.X:F0}, {offset.Y:F0}");
         if (Raycaster.ScreenToWorld(mousePos, out worldPos))
         {
             if (Plugin.Config.SnapXZToGrid)
@@ -187,9 +184,15 @@ internal class PctOverlay
 
             if (IsClicked(MouseButtonFlags.LBUTTON, ref lmbStart))
             {
+                // In windowed mode, the mouse pos of the frame where the click registers can randomly be offset by some amount (+46y on my machine)
+                // To counter this bug, use the last frame's preview world position instead of retracing with a bad mouse position.
+                if (lastPreviewWorldPos.HasValue)
+                    worldPos = lastPreviewWorldPos.Value;
+                lastPreviewWorldPos = null;
                 return SelectionResult.Selected;
             }
 
+            lastPreviewWorldPos = worldPos;
             var worldPosTemp = worldPos;
             list.Add((PctDrawList drawList) => DrawCrosshair(drawList, worldPosTemp));
             return SelectionResult.SelectingValid;
