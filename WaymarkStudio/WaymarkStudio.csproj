@@ -2,7 +2,7 @@
 <!--DON'T FORGET TO UPDATE THE DYNAMIS VERSION TOO-->
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
     <PropertyGroup>
-        <Version>0.0.0.50</Version>
+        <Version>0.0.0.51</Version>
         <Description>The ultimate waymark plugin.</Description>
         <PackageProjectUrl>https://github.com/sourpuh/ffxiv_waymarkstudio</PackageProjectUrl>
         <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>

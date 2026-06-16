@@ -66,7 +66,7 @@ internal static class Raycaster
             return false;
         }
 
-        var ray = camera->ScreenPointToRay(screenPos);
+        var ray = camera->ScreenPointToRay(screenPos - windowPos);
         var result = Raycast(ray.Origin, ray.Direction, out var hit);
         worldPos = hit.Point;
 
