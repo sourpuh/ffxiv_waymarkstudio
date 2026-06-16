@@ -1,3 +1,4 @@
+using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -167,6 +168,9 @@ internal class PctOverlay
         }
 
         var mousePos = ImGui.GetIO().MousePos;
+        var windowPos = ImGuiHelpers.MainViewport.Pos;
+        var offset = mousePos - windowPos;
+        ImGui.SetTooltip($"Mouse: {mousePos.X:F0}, {mousePos.Y:F0}\nWindow: {windowPos.X:F0}, {windowPos.Y:F0}\nOffset: {offset.X:F0}, {offset.Y:F0}");
         if (Raycaster.ScreenToWorld(mousePos, out worldPos))
         {
             if (Plugin.Config.SnapXZToGrid)
